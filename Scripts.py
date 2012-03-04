@@ -14,8 +14,6 @@ sip.setapi('QVariant', 2)
 #   
 #   - Auto-check the database folder for integrity
 #   - Duplicate checking feature
-#   - Split Graces and Vesperia
-#   - Add Graces f
 #
 ################################################
 
@@ -36,8 +34,18 @@ from Config import *
 
 
 # load config
-configData = Configuration('config.xml')
+try:
+    configfile = sys.argv[1]
+except:
+    configfile = 'config.xml'
+print 'Loading configuration: ' + configfile
+configData = Configuration(configfile)
 
+# load graces folder config if it's available
+try:
+    configDataGracesFolders = Configuration('config_graces_byfolder.xml').FileList
+except:
+    configDataGracesFolders = [[]]
 
 
 if os.path.exists('Clips'):
@@ -82,7 +90,6 @@ CursorGracesJapanese = ConnectionGracesJapanese.cursor()
 LogCon = sqlite3.connect(configData.LocalDatabasePath + '/ChangeLog')
 LogCur = LogCon.cursor()
 
-VesperiaFlag = True
 EnglishVoiceLanguageFlag = False
 UpdateLowerStatusFlag = False
 ModeFlag = 'Semi-Auto'
@@ -762,7 +769,6 @@ class Scripts2(QtGui.QWidget):
         # Current Variables
         self.state = 'ENG'
         self.text = []
-        VesperiaFlag = True
         EnglishVoiceLanguageFlag = False
 
         # True Entries Translated Count
@@ -838,17 +844,17 @@ class Scripts2(QtGui.QWidget):
 #        self.treemodel.setSourceModel(self.treemodel)
         self.tree.setModel(self.treemodel)
 
-        self.sortSwapGroup = QtGui.QGroupBox()
-        self.sortSwapGroup.setTitle('Sort by:')
+#        self.sortSwapGroup = QtGui.QGroupBox()
+#        self.sortSwapGroup.setTitle('Sort by:')
         
-        self.sortByType = QtGui.QRadioButton('Type')
-        self.sortByType.setChecked(True)
-        self.sortByLocation = QtGui.QRadioButton('Location')
+#        self.sortByType = QtGui.QRadioButton('Type')
+#        self.sortByType.setChecked(True)
+#        self.sortByLocation = QtGui.QRadioButton('Location')
         
-        boxLayout = QtGui.QHBoxLayout()
-        boxLayout.addWidget(self.sortByType)
-        boxLayout.addWidget(self.sortByLocation)
-        self.sortSwapGroup.setLayout(boxLayout)
+#        boxLayout = QtGui.QHBoxLayout()
+#        boxLayout.addWidget(self.sortByType)
+#        boxLayout.addWidget(self.sortByLocation)
+#        self.sortSwapGroup.setLayout(boxLayout)
         
 
 
@@ -941,8 +947,8 @@ class Scripts2(QtGui.QWidget):
         self.editfuture.manualEdit.connect(self.UpdateFuture)
         self.debug.toggled.connect(self.DebugFilter)
         self.filter.returnPressed.connect(self.LiveSearch)
-        self.sortByType.toggled.connect(self.SortToggle)
-        self.sortByLocation.toggled.connect(self.SortToggle)
+        #self.sortByType.toggled.connect(self.SortToggle)
+        #self.sortByLocation.toggled.connect(self.SortToggle)
 
 
         # Toolbar
@@ -1077,9 +1083,9 @@ class Scripts2(QtGui.QWidget):
         self.grammarmode.setToolTip('<b>Editing Mode</b>\n\Editing mode involves a full grammar, structure, phrasing, tone, and consistency check.')
         self.grammarmode.setShortcut(QtGui.QKeySequence('Ctrl-Shift-4'))
 
-        self.vesperiaAct = QtGui.QAction('Deactivate', None)
-        self.vesperiaAct.triggered.connect(self.VesperiaSwap)
-        self.vesperiaAct.setShortcut(QtGui.QKeySequence('Ctrl-Shift-Alt-V'))
+        self.reloadConfigAct = QtGui.QAction('Reload Config', None)
+        self.reloadConfigAct.triggered.connect(self.ReloadConfiguration)
+        self.reloadConfigAct.setShortcut(QtGui.QKeySequence('Ctrl-Shift-Alt-R'))
         self.voiceLangAct = QtGui.QAction('Japanese Voices', None)
         self.voiceLangAct.triggered.connect(self.VoiceLanguageSwap)
         self.voiceLangAct.setShortcut(QtGui.QKeySequence('Ctrl-Shift-Alt-E'))
@@ -1219,10 +1225,10 @@ class Scripts2(QtGui.QWidget):
         modeMenu.triggered.connect(self.setMode)
         
 
-        vesperiaMenu = QtGui.QMenu("Vesperia", self)
-        vesperiaMenu.addAction(self.vesperiaAct)
-        vesperiaMenu.addAction(self.voiceLangAct)
-        vesperiaMenu.addAction(self.updateLowerStatusAct)
+        optionsMenu = QtGui.QMenu("Options", self)
+        optionsMenu.addAction(self.reloadConfigAct)
+        optionsMenu.addAction(self.voiceLangAct)
+        optionsMenu.addAction(self.updateLowerStatusAct)
 
         parent.menuBar().addMenu(fileMenu)
         parent.menuBar().addMenu(parent.editMenu)
@@ -1230,7 +1236,7 @@ class Scripts2(QtGui.QWidget):
         parent.menuBar().addMenu(roleMenu)
         parent.menuBar().addMenu(modeMenu)
         parent.menuBar().addMenu(toolsMenu)
-        parent.menuBar().addMenu(vesperiaMenu)
+        parent.menuBar().addMenu(optionsMenu)
 
 
         # Layout
@@ -1347,29 +1353,13 @@ class Scripts2(QtGui.QWidget):
         self.parent.setWindowTitle("Grace Note - {0} in {1} mode".format(self.roletext[self.role] , ModeFlag))
 
 
-    def VesperiaSwap(self):
+    def ReloadConfiguration(self):
+        global configfile
+        global configData
         
-        global VesperiaFlag
-
+        configData = Configuration(configfile)
+        self.PopulateModel(configData.FileList)
         
-        if self.vesperiaAct.text() == 'Activate':
-            self.vesperiaAct.setText('Deactivate')
-            self.PopulateModel(configData.FileList)
-                    
-            VesperiaFlag = True
-
-        elif self.vesperiaAct.text() == 'Deactivate':
-            self.vesperiaAct.setText('Activate')
-            self.PopulateModel(configData.FileList)
-                    
-            VesperiaFlag = False
-
-        else:
-            self.vesperiaAct.setText('Activate')
-            self.PopulateModel(configData.FileList)
-                    
-            VesperiaFlag = False
-
     def VoiceLanguageSwap(self):
         
         global EnglishVoiceLanguageFlag
@@ -1442,16 +1432,16 @@ class Scripts2(QtGui.QWidget):
             self.Beditfuture.hide()
 
         
-    def SortToggle(self):
-        global VesperiaFlag
-        if VesperiaFlag == True:
-            return
-        if self.sortByType.isChecked():
-            self.PopulateModel(configData.FileList)
-        elif self.sortByLocation.isChecked():
-            self.PopulateModel(configData.FileList)
-        else:
-            print 'Unknown Sort Type'
+#    def SortToggle(self):
+#        global VesperiaFlag
+#        if VesperiaFlag == True:
+#            return
+#        if self.sortByType.isChecked():
+#            self.PopulateModel(configData.FileList)
+#        elif self.sortByLocation.isChecked():
+#            self.PopulateModel(configData.FileList)
+#        else:
+#            print 'Unknown Sort Type'
 
 
     def ConsolidateDebug(self):
@@ -2665,12 +2655,12 @@ class Scripts2(QtGui.QWidget):
         progress.setWindowModality(QtCore.Qt.WindowModal)
 
 
-        Archive = ByFolder[1][:] # Chat_MS
-        Archive.extend(ByFolder[2][:]) # Chat_SB
-        Archive.extend(ByFolder[-1][:]) # SysString.bin
+        Archive = configDataGracesFolders[1][:] # Chat_MS
+        Archive.extend(configDataGracesFolders[2][:]) # Chat_SB
+        Archive.extend(configDataGracesFolders[-1][:]) # SysString.bin
         Archive = (['TOG_SS_ChatName', 'TOG_SS_StringECommerce']) # Special Cased Sys Subs
-        Archive.extend(ByFolder[-2][:]) # Movie Subtitles
-        Archive.extend(ByFolder[-3][:]) # Special Strings
+        Archive.extend(configDataGracesFolders[-2][:]) # Movie Subtitles
+        Archive.extend(configDataGracesFolders[-3][:]) # Special Strings
 
         self.MakeSCS(Archive, progress, 'Wii', rootFile)
 
@@ -2699,7 +2689,7 @@ class Scripts2(QtGui.QWidget):
         i = 4
 
         for CPK in Map0RCPK:
-            Archive = ByFolder[i]
+            Archive = configDataGracesFolders[i]
             self.MakeSCS(Archive, progress, 'Wii', map0File)
             i += 1
             
@@ -2711,7 +2701,7 @@ class Scripts2(QtGui.QWidget):
         i = 46
 
         for CPK in Map1RCPK:
-            Archive = ByFolder[i]
+            Archive = configDataGracesFolders[i]
             self.MakeSCS(Archive, progress, 'Wii', map1File)
             i += 1
 
@@ -3011,8 +3001,8 @@ class Scripts2(QtGui.QWidget):
 
     
         # Chat  
-        Archive = ByFolder[1][:] # Chat_MS
-        Archive.extend(ByFolder[2][:]) # Chat_SB
+        Archive = configDataGracesFolders[1][:] # Chat_MS
+        Archive.extend(configDataGracesFolders[2][:]) # Chat_SB
         ArchiveLocation = 'chat' + os.sep + 'scs' + os.sep + 'JA' + os.sep
 
         for file in Archive:
@@ -3024,7 +3014,7 @@ class Scripts2(QtGui.QWidget):
             
 
         # SysString
-        Archive = (ByFolder[-1]) # SysString.bin
+        Archive = (configDataGracesFolders[-1]) # SysString.bin
         ArchiveLocation = 'sys' + os.sep + 'ja' + os.sep
         args.extend(["{0}{1}.bin".format(GracesPath, Archive[0]), "{0}{1}.bin".format(ArchiveLocation, Archive[0])])
         tempFile = open("{0}{1}.bin".format(GracesPath, Archive[0]))
@@ -3046,7 +3036,7 @@ class Scripts2(QtGui.QWidget):
 
 
         # Movies
-        Archive = (ByFolder[-2]) # Movie Subtitles
+        Archive = (configDataGracesFolders[-2]) # Movie Subtitles
         ArchiveLocation = 'movie' + os.sep + 'str' + os.sep + 'ja' + os.sep
 
         for file in Archive:
@@ -3060,7 +3050,7 @@ class Scripts2(QtGui.QWidget):
 
 
         # Special Strings
-        Archive = (ByFolder[-3]) # Special Stuff
+        Archive = (configDataGracesFolders[-3]) # Special Stuff
         ArchiveLocation = 'str' + os.sep + 'ja' + os.sep
 
         for file in Archive:
@@ -3132,7 +3122,7 @@ class Scripts2(QtGui.QWidget):
             if os.name != 'posix':
                 args = [str(Graceful), "4", "1", str(Map0R), CPK]
             
-            Archive = ByFolder[i]
+            Archive = configDataGracesFolders[i]
             i += 1
             ArchiveLocation = 'map' + os.sep + 'sce' + os.sep + 'R' + os.sep + 'ja' + os.sep
 
@@ -3168,7 +3158,7 @@ class Scripts2(QtGui.QWidget):
             if os.name != 'posix':
                 args = [str(Graceful), "4", "1", str(Map0R), CPK]
             
-            Archive = ByFolder[i]
+            Archive = configDataGracesFolders[i]
             i += 1
             ArchiveLocation = 'map' + os.sep + 'sce' + os.sep + 'R' + os.sep + 'ja' + os.sep
 
@@ -3417,8 +3407,8 @@ class Scripts2(QtGui.QWidget):
         off = 0
 
         # Chat  
-        Archive = ByFolder[1][:] # Chat_MS
-        Archive.extend(ByFolder[2][:]) # Chat_SB
+        Archive = configDataGracesFolders[1][:] # Chat_MS
+        Archive.extend(configDataGracesFolders[2][:]) # Chat_SB
         ArchiveLocation = 'chat' + os.sep + 'scs' + os.sep + 'JA' + os.sep
 
         for file in Archive:
@@ -3430,7 +3420,7 @@ class Scripts2(QtGui.QWidget):
             
             
         # SysString        
-        Archive = (ByFolder[-1]) # SysString.bin
+        Archive = (configDataGracesFolders[-1]) # SysString.bin
         ArchiveLocation = 'sys' + os.sep + 'ja' + os.sep
         args.extend(["{0}{1}.bin".format(GracesPath, Archive[0]), "{0}{1}.bin".format(ArchiveLocation, Archive[0])])
         tempFile = open("{0}{1}.bin".format(GracesPath, Archive[0]))
@@ -3452,7 +3442,7 @@ class Scripts2(QtGui.QWidget):
                     
         
         # Movies
-        Archive = (ByFolder[-2]) # Movie Subtitles
+        Archive = (configDataGracesFolders[-2]) # Movie Subtitles
         ArchiveLocation = 'movie' + os.sep + 'str' + os.sep + 'ja' + os.sep
 
         for file in Archive:
@@ -3466,7 +3456,7 @@ class Scripts2(QtGui.QWidget):
 
 
         # Special Strings
-        Archive = (ByFolder[-3]) # Special Stuff
+        Archive = (configDataGracesFolders[-3]) # Special Stuff
         ArchiveLocation = 'str' + os.sep + 'ja' + os.sep
 
         for file in Archive:
@@ -3540,7 +3530,7 @@ class Scripts2(QtGui.QWidget):
             if os.name != 'posix':
                 args = [str(Graceful), "4", "1", str(Map0R), CPK]
             
-            Archive = ByFolder[i]
+            Archive = configDataGracesFolders[i]
             i += 1
             ArchiveLocation = 'map' + os.sep + 'sce' + os.sep + 'R' + os.sep + 'ja' + os.sep
 
@@ -3576,7 +3566,7 @@ class Scripts2(QtGui.QWidget):
             if os.name != 'posix':
                 args = [str(Graceful), "4", "1", str(Map0R), CPK]
             
-            Archive = ByFolder[i]
+            Archive = configDataGracesFolders[i]
             i += 1
             ArchiveLocation = 'map' + os.sep + 'sce' + os.sep + 'R' + os.sep + 'ja' + os.sep
 
@@ -5533,190 +5523,3 @@ SubstitutionTable = [
 ]
 
 ]
-
-
-
-
-
-
-
-
-
-ByFolder = [
-
-['Chat_MS', 'Chat_SB', 'Debug', 'M0Basi', 'M0Bria', 'M0Brid', 'M0Cave', 'M0Fall', 'M0ff12', 'M0ff13', 'M0ff14', 'M0ff15', 'M0ff16', 'M0ff17', 'M0ff19', 'M0ff20', 'M0Fore', 'M0gent', 'M0iceb', 'M0Iron', 'M0Kone', 'M0Kot', 'M0Las', 'M0Mont', 'M0Rock', 'M0Sand', 'M0sf08', 'M0sf09', 'M0sf10', 'M0sf11', 'M0sf18', 'M0Snee', 'M0Snow', 'M0Stda', 'M0Varo', 'M0wf01', 'M0wf02', 'M0wf03', 'M0wf04', 'M0wf05', 'M0wf06', 'M0wf07', 'M0wf21', 'M0Winc', 'M0Zone', 'M1Anma', 'M1Bera', 'M1Debug', 'M1Fend', 'M1Kame', 'M1Koya', 'M1Lake', 'M1Lan', 'M1Neko', 'M1Olle', 'M1Other', 'M1Ozwe', 'M1Riot', 'M1Sabl', 'M1Shat', 'M1Ship', 'M1Strt', 'M1Supa', 'M1System', 'M1Win', 'RootStrings', 'Subtitles', 'DR', 'System'], 
-
-['CHT_MS001', 'CHT_MS002', 'CHT_MS003', 'CHT_MS004', 'CHT_MS005', 'CHT_MS006', 'CHT_MS007', 'CHT_MS008', 'CHT_MS009', 'CHT_MS010', 'CHT_MS011', 'CHT_MS012', 'CHT_MS013', 'CHT_MS014', 'CHT_MS015', 'CHT_MS016', 'CHT_MS017', 'CHT_MS018', 'CHT_MS019', 'CHT_MS020', 'CHT_MS021', 'CHT_MS022', 'CHT_MS023', 'CHT_MS024', 'CHT_MS025', 'CHT_MS026', 'CHT_MS027', 'CHT_MS028', 'CHT_MS029', 'CHT_MS030', 'CHT_MS031', 'CHT_MS032', 'CHT_MS033', 'CHT_MS034', 'CHT_MS035', 'CHT_MS036', 'CHT_MS037', 'CHT_MS038', 'CHT_MS039', 'CHT_MS040', 'CHT_MS041', 'CHT_MS042', 'CHT_MS043', 'CHT_MS044', 'CHT_MS045', 'CHT_MS046', 'CHT_MS047', 'CHT_MS048', 'CHT_MS049', 'CHT_MS050', 'CHT_MS051', 'CHT_MS052', 'CHT_MS053', 'CHT_MS054', 'CHT_MS055', 'CHT_MS056', 'CHT_MS057', 'CHT_MS058', 'CHT_MS059', 'CHT_MS060', 'CHT_MS061', 'CHT_MS062', 'CHT_MS063', 'CHT_MS064', 'CHT_MS065', 'CHT_MS066', 'CHT_MS067', 'CHT_MS068', 'CHT_MS069', 'CHT_MS070', 'CHT_MS071', 'CHT_MS072', 'CHT_MS073', 'CHT_MS074', 'CHT_MS075', 'CHT_MS076', 'CHT_MS077', 'CHT_MS078', 'CHT_MS079', 'CHT_MS080', 'CHT_MS081', 'CHT_MS082', 'CHT_MS083', 'CHT_MS084', 'CHT_MS085', 'CHT_MS086', 'CHT_MS087', 'CHT_MS088', 'CHT_MS089', 'CHT_MS090', 'CHT_MS091', 'CHT_MS092', 'CHT_MS093', 'CHT_MS094', 'CHT_MS095', 'CHT_MS096', 'CHT_MS097', 'CHT_MS098', 'CHT_MS099', 'CHT_MS100', 'CHT_MS101', 'CHT_MS102', 'CHT_MS103', 'CHT_MS104', 'CHT_MS105', 'CHT_MS106', 'CHT_MS107', 'CHT_MS108', 'CHT_MS109', 'CHT_MS110', 'CHT_MS111', 'CHT_MS112', 'CHT_MS113', 'CHT_MS114', 'CHT_MS115', 'CHT_MS116', 'CHT_MS117', 'CHT_MS118', 'CHT_MS119', 'CHT_MS120', 'CHT_MS121', 'CHT_MS122', 'CHT_MS123', 'CHT_MS124', 'CHT_MS125', 'CHT_MS126', 'CHT_MS127', 'CHT_MS128', 'CHT_MS129', 'CHT_MS130', 'CHT_MS131', 'CHT_MS132', 'CHT_MS133', 'CHT_MS134', 'CHT_MS135', 'CHT_MS136', 'CHT_MS137', 'CHT_MS138', 'CHT_MS139', 'CHT_MS140', 'CHT_MS141', 'CHT_MS142', 'CHT_MS143', 'CHT_MS144', 'CHT_MS145', 'CHT_MS146', 'CHT_MS147', 'CHT_MS148', 'CHT_MS149', 'CHT_MS150', 'CHT_MS151', 'CHT_MS152', 'CHT_MS153', 'CHT_MS154', 'CHT_MS155', 'CHT_MS156', 'CHT_MS157', 'CHT_MS158', 'CHT_MS159', 'CHT_MS160', 'CHT_MS161', 'CHT_MS162', 'CHT_MS163', 'CHT_MS164', 'CHT_MS165', 'CHT_MS166', 'CHT_MS167', 'CHT_MS168', 'CHT_MS169', 'CHT_MS170', 'CHT_MS171', 'CHT_MS172', 'CHT_MS173', 'CHT_MS174', 'CHT_MS175', 'CHT_MS176', 'CHT_MS177', 'CHT_MS178', 'CHT_MS179', 'CHT_MS180', 'CHT_MS181', 'CHT_MS182', 'CHT_MS183', 'CHT_MS184', 'CHT_MS185', 'CHT_MS186', 'CHT_MS187', 'CHT_MS188', 'CHT_MS189', 'CHT_MS190', 'CHT_MS191', 'CHT_MS192', 'CHT_MS193', 'CHT_MS194', 'CHT_MS195', 'CHT_MS196', 'CHT_MS197', 'CHT_MS198', 'CHT_MS199', 'CHT_MS200', 'CHT_MS201', 'CHT_MS202', 'CHT_MS203', 'CHT_MS204', 'CHT_MS205', 'CHT_MS206', 'CHT_MS207', 'CHT_MS208', 'CHT_MS209', 'CHT_MS210', 'CHT_MS211', 'CHT_MS212', 'CHT_MS213', 'CHT_MS214', 'CHT_MS215', 'CHT_MS216', 'CHT_MS217', 'CHT_MS218', 'CHT_MS219', 'CHT_MS220', 'CHT_MS221', 'CHT_MS222', 'CHT_MS223', 'CHT_MS224', 'CHT_MS225', 'CHT_MS226', 'CHT_MS227', 'CHT_MS228', 'CHT_MS229', 'CHT_MS230', 'CHT_MS231', 'CHT_MS232', 'CHT_MS233', 'CHT_MS234', 'CHT_MS235', 'CHT_MS236', 'CHT_MS237', 'CHT_MS238', 'CHT_MS239', 'CHT_MS240', 'CHT_MS241', 'CHT_MS242'], 
-
-['CHT_SB001', 'CHT_SB002', 'CHT_SB003', 'CHT_SB004', 'CHT_SB005', 'CHT_SB006', 'CHT_SB007', 'CHT_SB008', 'CHT_SB009', 'CHT_SB010', 'CHT_SB011', 'CHT_SB012', 'CHT_SB013', 'CHT_SB014', 'CHT_SB015', 'CHT_SB016', 'CHT_SB017', 'CHT_SB018', 'CHT_SB019', 'CHT_SB020', 'CHT_SB021', 'CHT_SB022', 'CHT_SB023', 'CHT_SB024', 'CHT_SB025', 'CHT_SB026', 'CHT_SB027', 'CHT_SB028', 'CHT_SB029', 'CHT_SB030', 'CHT_SB031', 'CHT_SB032', 'CHT_SB033', 'CHT_SB034', 'CHT_SB035', 'CHT_SB036', 'CHT_SB037', 'CHT_SB038', 'CHT_SB039', 'CHT_SB040', 'CHT_SB041', 'CHT_SB042', 'CHT_SB043', 'CHT_SB044', 'CHT_SB045', 'CHT_SB046', 'CHT_SB047', 'CHT_SB048', 'CHT_SB049', 'CHT_SB050', 'CHT_SB051', 'CHT_SB052', 'CHT_SB053', 'CHT_SB054', 'CHT_SB055', 'CHT_SB056', 'CHT_SB057', 'CHT_SB058', 'CHT_SB059', 'CHT_SB060', 'CHT_SB061', 'CHT_SB062', 'CHT_SB063', 'CHT_SB064', 'CHT_SB065', 'CHT_SB066', 'CHT_SB067', 'CHT_SB068', 'CHT_SB069', 'CHT_SB070', 'CHT_SB071', 'CHT_SB072'], 
-
-['debug_00', 'debug_01', 'debug_02', 'sample'], 
-
-['basi_d01', 'basi_d02', 'basi_d03', 'basi_d04', 'basi_d05', 'basi_d06', 'basi_d07', 'basi_d08', 'basi_d09', 'basi_d10', 'basi_d11', 'basi_d12', 'basi_d13', 'basi_d14', 'basi_d15', 'basi_d16', 'basi_d17', 'e731_090', 'e731_100', 'e731_101', 's231_001'], 
-
-['bria_d01', 'bria_d02', 'e312_050', 'e312_060', 'e312_061', 'e312_070', 'e314_010', 's211_002'], 
-
-['brid_d01', 'brid_d05', 'brid_d06', 'brid_d07', 'brid_d08', 'brid_d09', 'brid_d10', 'brid_d11', 'brid_d12', 'brid_d13', 'brid_d14', 'brid_d15', 'brid_d16', 'brid_d17', 'e314_020', 'e314_030', 'e314_030a', 'e314_040', 'e314_040a', 'e314_050', 'e314_060', 'e314_060a', 'e314_070', 'e314_071', 'e314_080', 'e314_090', 'e314_100', 'e314_110', 'e314_120', 's404_001', 's404_003'], 
-
-['cave_d01', 'cave_d02', 'e210_020', 'e210_030', 'e210_040', 'e210_041', 'e628_070', 'e628_080', 'e629_120', 'e629_130', 'e629_140', 'e629_150', 'e629_160', 'e629_161', 'e629_170'], 
-
-['e835_090', 'fall_d04', 'fall_e01', 's220_001'], 
-
-['e523_010', 'e523_020', 'e628_055', 'fend_f12', 'port_i04', 'port_t04'], 
-
-['fend_f13', 'koya_r08', 's230_001', 's230_002'], 
-
-['e523_070', 'fend_f14', 'port_i05', 'port_t05', 's234_001'], 
-
-['e523_120', 'e523_130', 'e523_131', 'fend_f15', 's233_001'], 
-
-['fend_f16'], 
-
-['e526_030', 'e629_080', 'e629_090', 'e629_110', 'e629_111', 'fend_f17'], 
-
-['e730_020', 'e731_010', 'e731_080', 'fodr_f19'], 
-
-['e731_110', 'fodr_f20', 's243_001'], 
-
-['e206_010', 'e206_011', 'e206_011t', 'e206_020', 'e206_031', 'e206_032', 'e206_033', 'fore_d01', 's107_001', 's207_001'], 
-
-['gent_d01', 'gent_d02', 's249_001', 's413_001', 's413_002', 's413_003'], 
-
-['e525_080', 'e525_090', 'e525_091', 'e525_092', 'e525_093', 'e836_020', 'iceb_d01', 'iceb_d02', 'iceb_d03', 'iceb_d04', 'iceb_d05', 'iceb_d08', 'iceb_d09', 'iceb_d10', 'iceb_e01', 'iceb_e02', 's240_001'], 
-
-['e525_030', 'e525_040', 'e525_041', 'e525_050', 'e525_060', 'e525_070', 'iron_d01', 'iron_d02', 'iron_d03', 'iron_d04', 'iron_d05', 'iron_d06', 'iron_d07', 'iron_d08', 'iron_d09', 'iron_d10', 'iron_d11', 'iron_d12', 'iron_d13', 'iron_d14', 'iron_d15', 'iron_d16', 'iron_d17', 'iron_d18', 'iron_d19', 's128_001', 's236_001'], 
-
-['e731_030', 'e731_040', 'e731_050', 'e731_060', 'e731_061', 'e731_062', 'e731_063', 'e731_064', 'e731_065', 'e731_066', 'e731_070', 'e835_030', 'e835_050', 'kone_d02', 'kone_d03', 'kone_d04', 'kone_d05', 'kone_d06', 'kone_d07', 'kone_d08', 'kone_d09', 'kone_d10', 'kone_d11', 'kone_d12', 'kone_d13', 'kone_d14', 'kone_d15', 'kone_d16', 'kone_d17', 'kone_d18', 'kone_d19', 'kone_d20', 'kone_d21', 'kone_d22', 'kone_d23', 'kone_d24', 'kone_d25', 'kone_d26', 'kone_d29', 'kone_d30', 'kone_e01', 's242_001', 's244_002', 's416_003', 's416_004'], 
-
-['e526_060', 'e526_070', 'e526_071', 'e526_072', 'e731_020', 'e833_010', 'e833_020', 'e833_030', 'e833_031', 'e833_032', 'e833_033', 'kot1_d01', 'kot1_d02', 'kot2_d01', 'kot2_d02', 'kot2_d03', 'kot2_d04', 'kot2_d05', 'kot2_d06', 'kot2_d07', 'kot2_d08', 'kot2_d09', 'kot2_d10', 'kot2_d11', 'kot2_d12', 'kot2_d13', 'kot2_d14', 'kot2_d15', 'kot2_d16', 'kot2_d17', 'kot2_d18', 'kot2_d19', 'kot2_d20', 'kot2_d21', 'kot2_d22', 'kot2_d23', 'kot2_d24', 'kot2_d25', 'kot2_d26', 'kot2_d27', 's244_001'], 
-
-['e835_010', 'e835_020', 'e835_040', 'e835_140', 'e835_141', 'e835_142', 'e835_150', 'e835_160', 'e835_170', 'e835_180', 'las1_d01', 'las2_d01', 'las2_d02', 'las2_d03', 'las3_d01', 'las3_d02', 'las4_d01', 'las4_d02', 'las4_e01'], 
-
-['e101_010', 'e101_020', 'e101_021', 'e101_022', 'e103_040', 'e103_041', 'e103_050', 'e103_060', 'e103_061', 'e103_070', 'e208_030', 'e208_031', 'e208_040', 'e418_030', 'e834_070', 'mont_d01', 'mont_d02', 'mont_d03', 's202_001'], 
-
-['e419_040', 'e419_050', 'e419_060', 'e419_061', 'e419_070', 'e419_080', 'e419_081', 'e419_090', 'rock_d01', 'rock_d02', 'rock_d03', 'rock_e01'], 
-
-['sand_d01', 'sand_d02', 'sand_d03', 'sand_d04', 'sand_d05', 'sand_d06', 'sand_d07', 'sand_d08', 'sand_d09', 'sand_d10', 'sand_d11', 'sand_d12', 'sand_d13', 'sand_d14', 'sand_d15', 'sand_d16'], 
-
-['s213_001', 'stra_f08'], 
-
-['koya_r05', 's222_002', 'stra_f09'], 
-
-['s221_002', 's221_005', 'stra_f10'], 
-
-['e522_010', 'port_i03', 'port_t03', 's219_002', 'stra_f11'], 
-
-['e421_020', 's216_001', 'stra_f18'], 
-
-['e524_040', 'e524_050', 'e524_051', 'e524_060', 's134_001', 's239_001', 's239_002', 'snee_d01', 'snee_d02', 'snee_d03', 'snee_d04', 'snee_d05', 'snee_d06', 'snee_d07', 'snee_d08', 'snee_d09', 'snee_d10', 'snee_d11', 'snee_d12', 'snee_d13', 'snee_d14', 'snee_d15', 'snee_d16', 'snee_d17', 'snee_d18', 'snee_d19', 'snee_d20', 'snee_d21', 'snee_d22', 'snee_d23', 'snee_d24', 'snee_d25', 'snee_d26', 'snee_d27', 'snee_d28', 'snee_d29'], 
-
-['e629_100', 'snow_d01', 'snow_d02', 'snow_d03', 'snow_d04', 'snow_d05', 'snow_d06', 'snow_d07', 'snow_d08', 'snow_d09', 'snow_d10', 'snow_d11', 'snow_d12', 'snow_d13', 'snow_d14', 'snow_d15', 'snow_d16', 'snow_d17', 'snow_d18', 'snow_d19', 'snow_d20', 'snow_d21', 'snow_d22', 'snow_d23', 'snow_d24', 'snow_d25', 'snow_d26', 'snow_d27', 'snow_d28'], 
-
-['e420_080', 'e420_090', 'e420_091', 'stda_d01', 'stda_d02'], 
-
-['e315_020', 'e315_030', 'e315_040', 'e315_041', 'e315_050', 'e316_010', 'e316_020', 'e316_030', 'e418_150', 's211_003', 's214_002', 's214_003', 's414_003', 'varo_d01', 'varo_d02', 'varo_d03', 'varo_d04', 'varo_d05', 'varo_d06', 'varo_d07', 'varo_d08', 'varo_d09', 'varo_d10', 'varo_d11', 'varo_d12', 'varo_d13', 'varo_d14', 'varo_d15', 'varo_d16', 'varo_d17', 'varo_d18', 'varo_d19', 'varo_d20', 'varo_d21', 'varo_d22', 'varo_d23', 'varo_d24', 'varo_d25', 'varo_d26', 'varo_d27', 'varo_d28', 'varo_d29', 'varo_d30'], 
-
-['e103_010', 'e103_011', 'e103_110', 'e207_060', 'e207_061', 'e210_090', 'e210_120', 'e210_130', 'e210_140', 'e210_150', 'e316_060', 'e835_110', 'koya_r01', 'port_i01', 'port_t01', 's103_001b', 's206_001', 'wind_e01', 'wind_f01'], 
-
-['e104_060', 'e206_040', 'koya_r02', 's108_001', 'wind_f02'], 
-
-['e102_030', 'e418_090', 'e418_100', 'e418_101', 'e418_120', 'e418_130', 'koya_r04', 'port_i02', 'port_t02', 's103_001c', 'wind_f03'], 
-
-['e208_020', 'e208_021', 'e210_010', 'e210_050', 'e418_020', 'wind_f04'], 
-
-['e312_010', 'e312_020', 'e312_021', 'e312_030', 'e312_040', 'e315_010', 'e836_010', 'koya_r03', 'wind_e05', 'wind_f05'], 
-
-['e312_080', 'e312_090', 'wind_f06'], 
-
-['s210_001', 'wind_f07'], 
-
-['e628_060', 'wind_f21'], 
-
-['e105_020', 'e105_021', 'e105_022', 'e211_030', 'e211_031', 'e835_120', 'winc_d01', 'winc_d02'], 
-
-['s426_003', 's426_004', 's426_005', 's426_006', 's426_007', 's426_008', 's426_009', 's426_010', 's426_011', 's426_012', 's426_013', 'zone_d01', 'zone_d01_01', 'zone_d01_02', 'zone_d01_03', 'zone_d01_04', 'zone_d01_05', 'zone_d01_06', 'zone_d01_07', 'zone_d01_08', 'zone_d01_09', 'zone_d01_10', 'zone_d02', 'zone_d03'], 
-
-['anma_e01', 'anma_i01', 'anma_i02', 'anma_i03', 'anma_i04', 'anma_t01', 'e524_010', 'e524_020', 'e524_030', 'e526_010', 'e526_020', 's238_001', 's238_002', 's411_009', 's414_004'], 
-
-['bera_i01', 'bera_i02', 'bera_i03', 'bera_t01', 'e523_030', 'e523_040', 'e523_050', 'e523_060', 'e523_061', 'e523_062', 's122_001', 's229_002', 's408_001', 's408_002', 's408_002b', 's408_003', 's408_004', 's411_007'], 
-
-['test_ikeda'], 
-
-['e523_090', 'e523_100', 'e523_110', 'e525_010', 'e525_020', 'e526_040', 'e627_010', 'e627_020', 'e627_030', 'fend_e01', 'fend_i01', 'fend_i02', 'fend_i03', 'fend_i04', 'fend_i05', 'fend_i06', 'fend_i07', 'fend_t01', 'fend_t02', 'port_i06', 's125_001', 's126_001', 's127_001', 's127_002', 's128_002', 's129_001', 's234_002', 's409_001', 's409_002', 's409_003', 's409_004', 's411_008', 's430_001'], 
-
-['kame_d01', 's212_001', 's414_002'], 
-
-['koya_r06', 's424_004'], 
-
-['e313_010', 'e313_020', 'e313_030', 'e313_040', 'e313_050', 'lake_e01', 'lake_e02', 'lake_i01', 'lake_i02', 'lake_i03', 'lake_i04', 'lake_t01', 'lake_t02', 'lake_t03', 's211_001', 's411_001'], 
-
-['e102_010', 'e102_020', 'e102_040', 'e102_050', 'e102_060', 'e103_020', 'e103_020s', 'e103_030', 'e103_080', 'e103_090', 'e103_100', 'e105_030', 'e105_040', 'e208_010', 'e209_010', 'e209_020', 'e209_030', 'e209_040', 'e209_050', 'e210_060', 'e210_061', 'e210_070', 'e210_080', 'e210_081', 'e210_100', 'e317_010', 'e317_020', 'e317_021', 'e317_022', 'e418_010', 'e418_040', 'e418_050', 'e418_060', 'e418_061', 'e418_062', 'e418_070', 'e418_080', 'e418_110', 'e629_010', 'e629_020', 'e629_030', 'e629_040', 'e629_050', 'e629_060', 'e629_070', 'e834_010', 'e834_020', 'e834_030', 'e834_040', 'e834_050', 'e834_051', 'e834_060', 'e834_080', 'e834_090', 'e834_100', 'e834_110', 'e834_120', 'e834_130', 'e834_140', 'e834_150', 'e836_040', 'e836_041', 'lan1_i01', 'lan1_i02', 'lan1_i03', 'lan1_i04', 'lan1_i05', 'lan1_i07', 'lan1_t01', 'lan2_e01', 'lan2_e02', 'lan2_i01', 'lan2_i02', 'lan2_i03', 'lan2_i04', 'lan2_i05', 'lan2_i06', 'lan2_i07', 'lan2_t01', 'lan2_t01_01', 'lan3_e01', 'lan3_t01', 'lan4_t01', 's101_001', 's102_001', 's103_001', 's105_001', 's105_002', 's112_002', 's119_001', 's132_001', 's201_001', 's201_002', 's203_001', 's203_003', 's204_001', 's208_001', 's214_001', 's402_001', 's402_002', 's402_003', 's402_004', 's409_005', 's411_010', 's411_011', 's426_002'], 
-
-['neko_e01', 'neko_i01', 'neko_t01', 's245_001', 's246_001', 's247_001', 's248_001'], 
-
-['e419_010', 'e628_010', 'e628_050', 'olle_i01', 'olle_t01', 's218_001', 's218_002', 's401_002', 's401_003', 's411_003'], 
-
-['e730_030', 'e730_040', 'e730_041', 'e730_042', 'e732_010', 'e732_011', 'e835_070', 'othe_e01', 'othe_i01', 'othe_i02', 'othe_i03', 'othe_i04', 'othe_t01', 'othe_t02', 'othe_t03', 's134_002', 's241_001', 's241_002', 's241_003', 's241_004', 's416_001', 's416_002'], 
-
-['ozwe_d01', 'ozwe_d02', 's224_001'], 
-
-['e522_030', 'e522_040', 'e522_041', 'e522_050', 'riot_i01', 'riot_i02', 'riot_t01', 's225_001', 's407_001', 's407_002', 's411_006'], 
-
-['e419_020', 'e419_030', 'e628_020', 'e628_030', 'e628_040', 's217_001', 's405_001', 's405_003', 's411_004', 'sabl_i01', 'sabl_i02', 'sabl_i03', 'sabl_t01'], 
-
-['e730_010', 'e833_040', 'shat_i01', 'shat_i02', 'shat_i03', 'shat_i04'], 
-
-['e103_120', 'e105_050', 'e207_050', 'e210_160', 'e316_050', 'e418_140', 'e522_020', 'e522_060', 'e523_080', 'e526_050', 'e627_040', 's215_002', 's235_002', 'ship_e01', 'ship_e02', 'ship_e03', 'ship_e04', 'ship_e05', 'ship_e06', 'ship_e07', 'ship_e08', 'ship_e09', 'ship_e10'], 
-
-['e420_010', 'e420_020', 'e420_030', 'e420_040', 'e420_050', 'e420_060', 'e420_070', 'e421_010', 'e836_030', 's120_001', 's121_001', 's136_002', 's221_001', 's221_003', 's221_004', 's221_006', 's222_001', 's222_003', 's223_001', 's411_005', 'strt_e01', 'strt_i01', 'strt_i02', 'strt_i03', 'strt_i04', 'strt_i05', 'strt_i06', 'strt_t01', 'strt_t01_01', 'strt_t01_02', 'strt_t01_03', 'strt_t02', 'strt_t03'], 
-
-['s419_002', 's419_003', 's420_001', 'supa_r01', 'supa_r02'], 
-
-['mg01_e01', 'mg02_e01', 'sysm_d01'], 
-
-['e104_010', 'e104_020', 'e104_030', 'e104_040', 'e104_050', 'e104_070', 'e104_080', 'e104_090', 'e105_010', 'e105_051', 'e207_010', 'e207_020', 'e207_030', 'e207_040', 'e211_010', 'e211_020', 's112_001', 's203_002', 's205_001', 's205_002', 's219_001', 's401_001', 's411_002', 's414_001', 's431_001', 'win1_i03', 'win1_i04', 'win1_i06', 'win1_i07', 'win1_i08', 'win1_i09', 'win1_t01', 'win1_t02', 'win1_t03', 'win2_i01', 'win2_i02', 'win2_i03', 'win2_i04', 'win2_i05', 'win2_i06', 'win2_i07', 'win2_i08', 'win2_i09', 'win2_t01', 'win2_t02', 'win2_t03'], 
-
-['ActInfo', 'Navigation', 'CharName', 'MapName'], 
-
-['TOG_S01', 'TOG_S02', 'TOG_S03', 'TOG_S04', 'TOG_S05', 'TOG_S06', 'TOG_S07', 'TOG_S08', 'TOG_S09', 'TOG_S10', 'TOG_S11'], 
-
-['DR00002344','DR00002345','DR00002346','DR00002347','DR00002348','DR00002349','DR00002350','DR00002372','DR00002374','DR00002375','DR00002377','DR00002378','DR00002380','DR00002382','DR00002384','DR00002386','DR00002387','DR00002388','DR00002389','DR00002390','DR00002391','DR00002392','DR00002394','DR00002395','DR00002396','DR00002397','DR00002398','DR00002400','DR00002401','DR00002402','DR00002403','DR00002404','DR00002405','DR00002406','DR00002407','DR00002408','DR00002409','DR00002410','DR00002411','DR00002412','DR00002413','DR00002414','DR00002415','DR00002416','DR00002418','DR00002419','DR00002420','DR00002421','DR00002422','DR00002423','DR00002424','DR00002425','DR00002426','DR00002427','DR00002428','DR00002429','DR00002430','DR00002431','DR00002432','DR00002433','DR00002434','DR00002436','DR00002437','DR00002439','DR00002441','DR00002442','DR00002443','DR00002445','DR00002447','DR00002448','DR00002449','DR00002450','DR00002452','DR00002454','DR00002456','DR00002458','DR00002459','DR00002461','DR00002462','DR00002464','DR00002465','DR00002467','DR00002468','DR00002470','DR00002472','DR00002473','DR00002474','DR00002475','DR00002476','DR00002477','DR00002478','DR00002479','DR00002480','DR00002481','DR00002482','DR00002484','DR00002485','DR00002486','DR00002488','DR00002491','DR00002493','DR00002495','DR00002496','DR00002497','DR00002499','DR00002501','DR00002503','DR00002504','DR00002505','DR00002507','DR00002509','DR00002510','DR00002511','DR00002513','DR00002514','DR00002515','DR00002516','DR00002517','DR00002518','DR00002519','DR00002520','DR00002521','DR00002522','DR00002523','DR00002524','DR00002525','DR00002526','DR00002527','DR00002528','DR00002529','DR00002530','DR00002531','DR00002532','DR00002533','DR00002534','DR00002535','DR00002536','DR00002537','DR00002538','DR00002539','DR00002540','DR00002541','DR00002542','DR00002543','DR00002544','DR00002545','DR00002546','DR00002547','DR00002548','DR00002549','DR00002550','DR00002551','DR00002552','DR00002553','DR00002554','DR00002555','DR00002556','DR00002557','DR00002560','DR00002561','DR00002562','DR00002563','DR00002564','DR00002565','DR00002566','DR00002567','DR00002569','DR00002570','DR00002571','DR00002572','DR00002573','DR00002574','DR00002575','DR00002577','DR00002579','DR00002580','DR00002581','DR00002582','DR00002583','DR00002584','DR00002585','DR00002586','DR00002587','DR00002589','DR00002590','DR00002592','DR00002594','DR00002596','DR00002597','DR00002598','DR00002599','DR00002600','DR00002601','DR00002602','DR00002603','DR00002604','DR00002605','DR00002607','DR00002609','DR00002610','DR00002612','DR00002613','DR00002614','DR00002615','DR00002616','DR00002617','DR00002618','DR00002619','DR00002620','DR00002622','DR00002624','DR00002625','DR00002626','DR00002627','DR00002628','DR00002630','DR00002631','DR00002632','DR00002634','DR00002636','DR00002637','DR00002639','DR00002640','DR00002642','DR00002643','DR00002645','DR00002647','DR00002648','DR00002650','DR00002652','DR00002653','DR00002654','DR00002655','DR00002656','DR00002657','DR00002659','DR00002661','DR00002662','DR00002664','DR00002665','DR00002666','DR00002667','DR00002668','DR00002669','DR00002671','DR00002673','DR00002675','DR00002676','DR00002678','DR00002680','DR00002681','DR00002682','DR00002684','DR00002685','DR00002686','DR00002687','DR00002688','DR00002689','DR00002690','DR00002691','DR00002692','DR00002693','DR00002694','DR00002695','DR00002696','DR00002697','DR00002698','DR00002699','DR00002700','DR00002701','DR00002702','DR00002703','DR00002704','DR00002705','DR00002706','DR00002707','DR00002708','DR00002709','DR00002710','DR00002711','DR00002712','DR00002714','DR00002715','DR00002716','DR00002718','DR00002719','DR00002720','DR00002721','DR00002722','DR00002723','DR00002724','DR00002725','DR00002726','DR00002727','DR00002728','DR00002729','DR00002730','DR00002731','DR00002732','DR00002733','DR00002734','DR00002735','DR00002736','DR00002737','DR00002738','DR00002739','DR00002740','DR00002741','DR00002742','DR00002743','DR00002744','DR00002745','DR00002746','DR00002747','DR00002748','DR00002749','DR00002750','DR00002751','DR00002753','DR00002754','DR00002755','DR00002756','DR00002757','DR00002758','DR00002759','DR00002760','DR00002761','DR00002762','DR00002763','DR00002766','DR00002767','DR00002768','DR00002769','DR00002770','DR00002771','DR00002772','DR00002774','DR00002775','DR00002776','DR00002778','DR00002779','DR00002780','DR00002781','DR00002782','DR00002783','DR00002784','DR00002785','DR00002787','DR00002788','DR00002789','DR00002790','DR00002791','DR00002793','DR00002794','DR00002798','DR00002799','DR00002800','DR00002801','DR00002802','DR00002803','DR00002805','DR00002806','DR00002807','DR00002809','DR00002811','DR00002813','DR00002814','DR00002815','DR00002816','DR00002817','DR00002818','DR00002819','DR00002820','DR00002821','DR00002822','DR00002823','DR00002824','DR00002825','DR00002826','DR00002827','DR00002828','DR00002830','DR00002831','DR00002832','DR00002834','DR00002835','DR00002836','DR00002838','DR00002840','DR00002841','DR00002843','DR00002845','DR00002846','DR00002847','DR00002848','DR00002849','DR00002850','DR00002852','DR00002853','DR00002855','DR00002857','DR00002858','DR00002860','DR00002861','DR00002863','DR00002864','DR00002865','DR00002866','DR00002867','DR00002868','DR00002870','DR00002871','DR00002872','DR00002873','DR00002874','DR00002875','DR00002877','DR00002878','DR00002880','DR00002882','DR00002883','DR00002884','DR00002885','DR00002886','DR00002887','DR00002889','DR00002890','DR00002891','DR00002892','DR00002893','DR00002894','DR00002896','DR00002897','DR00002899','DR00002900','DR00002902','DR00002903','DR00002904','DR00002906','DR00002907','DR00002908','DR00002909','DR00002910','DR00002911','DR00002912','DR00002913','DR00002915','DR00002917','DR00002919','DR00002921','DR00002922','DR00002924','DR00002925','DR00002926','DR00002928','DR00002930','DR00002932','DR00002933','DR00002935','DR00002936','DR00002937','DR00002939','DR00002941','DR00002942','DR00002943','DR00002945','DR00002946','DR00002947','DR00002948','DR00002949','DR00002950','DR00002951','DR00002953','DR00002954','DR00002956','DR00002957','DR00002958','DR00002959','DR00002960','DR00002961','DR00002962','DR00002963','DR00002964','DR00002965','DR00002966','DR00002967','DR00002968','DR00002969','DR00002970','DR00002971','DR00002972','DR00002973','DR00002974','DR00002975','DR00002976','DR00002977','DR00002978','DR00002979','DR00002980','DR00002981','DR00002982','DR00002983','DR00002984','DR00002985','DR00002986','DR00002987','DR00002988','DR00002989','DR00002990','DR00002991','DR00002992','DR00002993','DR00002995','DR00002997','DR00002999','DR00003001','DR00003002','DR00003003','DR00003005','DR00003006','DR00003007','DR00003009','DR00003010','DR00003011','DR00003012','DR00003014','DR00003015','DR00003016','DR00003017','DR00003018','DR00003019','DR00003020','DR00003021','DR00003022','DR00003023','DR00003024','DR00003025','DR00003026','DR00003027','DR00003028','DR00003029','DR00003030','DR00003031','DR00003032','DR00003033','DR00003034','DR00003035','DR00003036','DR00003037','DR00003038','DR00003039','DR00003040','DR00003041','DR00003042','DR00003043','DR00003044','DR00003045','DR00003046','DR00003047','DR00003048','DR00003049','DR00003050','DR00003051','DR00003052','DR00003053','DR00003055','DR00003056','DR00003058','DR00003059','DR00003061','DR00003062','DR00003063','DR00003064','DR00003066','DR00003067','DR00003068','DR00003069','DR00003070','DR00003071','DR00003072','DR00003075','DR00003076','DR00003077','DR00003078','DR00003079','DR00003080','DR00003081','DR00003082','DR00003083','DR00003084','DR00003086','DR00003087','DR00003088','DR00003089','DR00003090','DR00003091','DR00003092','DR00003093','DR00003094','DR00003096','DR00003097','DR00003098','DR00003099','DR00003100','DR00003101','DR00003102','DR00003103','DR00003104','DR00003105','DR00003106','DR00003107','DR00003108','DR00003109','DR00003110','DR00003111','DR00003112','DR00003113','DR00003114','DR00003115','DR00003116','DR00003117','DR00003118','DR00003119','DR00003121','DR00003122','DR00003123','DR00003125','DR00003127','DR00003129','DR00003130','DR00003131','DR00003132','DR00003133','DR00003134','DR00003136','DR00003138','DR00003139','DR00003141','DR00003142','DR00003144','DR00003145','DR00003147','DR00003149','DR00003150','DR00003151','DR00003152','DR00003153','DR00003155','DR00003156','DR00003157','DR00003159','DR00003161','DR00003163','DR00003164','DR00003165','DR00003166','DR00003168','DR00003169','DR00003170','DR00003171','DR00003172','DR00003174','DR00003175','DR00003177','DR00003179','DR00003180','DR00003181','DR00003182','DR00003183','DR00003186','DR00003187','DR00003188','DR00003189','DR00003192','DR00003193','DR00003195','DR00003196','DR00003197','DR00003198','DR00003199','DR00003200','DR00003201','DR00003202','DR00003203','DR00003204','DR00003206','DR00003207','DR00003208','DR00003209','DR00003210','DR00003211','DR00003213','DR00003214','DR00003215','DR00003216','DR00003217','DR00003218','DR00003219','DR00003220','DR00003221','DR00003222','DR00003223','DR00003224','DR00003225','DR00003226','DR00003227','DR00003229','DR00003230','DR00003231','DR00003232','DR00003233','DR00003234','DR00003235','DR00003236','DR00003237','DR00003239','DR00003240','DR00003242','DR00003243','DR00003244','DR00003245','DR00003246','DR00003247','DR00003248','DR00003249','DR00003250','DR00003251','DR00003252','DR00003253','DR00003254','DR00003255','DR00003256','DR00003257','DR00003258','DR00003259','DR00003260','DR00003261','DR00003262','DR00003263','DR00003264','DR00003265','DR00003266','DR00003267','DR00003268','DR00003269','DR00003270','DR00003271','DR00003272','DR00003273','DR00003274','DR00003275','DR00003276','DR00003277','DR00003278','DR00003279','DR00003280','DR00003281','DR00003282','DR00003283','DR00003284','DR00003285','DR00003286','DR00003287','DR00003288','DR00003289','DR00003290','DR00003291','DR00003292','DR00003293','DR00003294','DR00003295','DR00003296','DR00003298','DR00003299','DR00003300','DR00003301','DR00003302','DR00003303','DR00003304','DR00003305','DR00003306','DR00003307','DR00003308','DR00003309','DR00003310','DR00003311','DR00003312','DR00003313','DR00003314','DR00003315','DR00003316','DR00003317','DR00003319','DR00003320','DR00003321','DR00003322','DR00003323','DR00003324','DR00003325','DR00003326','DR00003327','DR00003328','DR00003329','DR00003330','DR00003331','DR00003332','DR00003333','DR00003334','DR00003336','DR00003337','DR00003338','DR00003339','DR00003340','DR00003341','DR00003342','DR00003343','DR00003344','DR00003346','DR00003347','DR00003348','DR00003349','DR00003350','DR00003351','DR00003352','DR00003353','DR00003354','DR00003355','DR00003357','DR00003359','DR00003360','DR00003362','DR00003363','DR00003364','DR00003365','DR00003366','DR00003367','DR00003368','DR00003369','DR00003370','DR00003372','DR00003374','DR00003376','DR00003378','DR00003380','DR00003381','DR00003383','DR00003385','DR00003386','DR00003388','DR00003390','DR00003391','DR00003393','DR00003394','DR00003396','DR00003398','DR00003399','DR00003401','DR00003403','DR00003404','DR00003406','DR00003407','DR00003408','DR00003409','DR00003411','DR00003413','DR00003415','DR00003416','DR00003418','DR00003419','DR00003420','DR00003421','DR00003422','DR00003423','DR00003425','DR00003426','DR00003428','DR00003430','DR00003431','DR00003432','DR00003434','DR00003435','DR00003436','DR00003437','DR00003438','DR00003439','DR00003440','DR00003441','DR00003442','DR00003443','DR00003445','DR00003446','DR00003447','DR00003448','DR00003449','DR00003450','DR00003451','DR00003452','DR00003453','DR00003454','DR00003455','DR00003456','DR00003458','DR00003459','DR00003461','DR00003463','DR00003465','DR00003466','DR00003467','DR00003469','DR00003470','DR00003471','DR00003472','DR00003473','DR00003474','DR00003475','DR00003476','DR00003477','DR00003479','DR00003480','DR00003481','DR00003482','DR00003484','DR00003485','DR00003486','DR00003487','DR00003488','DR00003489','DR00003490','DR00003491','DR00003492','DR00003493','DR00003494','DR00003495','DR00003496','DR00003497','DR00003498','DR00003499','DR00003500','DR00003501','DR00003502','DR00003503','DR00003504','DR00003505','DR00003506','DR00003507','DR00003508','DR00003509','DR00003510','DR00003511','DR00003512','DR00003514','DR00003515','DR00003517','DR00003518','DR00003519','DR00003520','DR00003521','DR00003523','DR00003524','DR00003525','DR00003526','DR00003527','DR00003528','DR00003529','DR00003530','DR00003531','DR00003532','DR00003533','DR00003534','DR00003535','DR00003536','DR00003537','DR00003538','DR00003539','DR00003540','DR00003541','DR00003542','DR00003544','DR00003545','DR00003546','DR00003547','DR00003548','DR00003549','DR00003550','DR00003551','DR00003552','DR00003553','DR00003554','DR00003555','DR00003556','DR00003557','DR00003558','DR00003559','DR00003560','DR00003562','DR00003563','DR00003564','DR00003565','DR00003566','DR00003567','DR00003568','DR00003569','DR00003570','DR00003571','DR00003572','DR00003573','DR00003574','DR00003575','DR00003576','DR00003577','DR00003578','DR00003579','DR00003580','DR00003581','DR00003582','DR00003583','DR00003587','DR00003590','DR00003591','DR00003592','DR00003593','DR00003595','DR00003597','DR00003598','DR00003599','DR00003601','DR00003603','DR00003604','DR00003606','DR00003607','DR00003608','DR00003609','DR00003611','DR00003612','DR00003613','DR00003614','DR00003615','DR00003616','DR00003617','DR00003618','DR00003619','DR00003620','DR00003621','DR00003622','DR00003623','DR00003625','DR00003627','DR00003629','DR00003630','DR00003631','DR00003632','DR00003634','DR00003636','DR00003638','DR00003639','DR00003640','DR00003642','DR00003643','DR00003644','DR00003645','DR00003646','DR00003647','DR00003648','DR00003649','DR00003650','DR00003651','DR00003652','DR00003653','DR00003654','DR00003655','DR00003656','DR00003657','DR00003658','DR00003659','DR00003660','DR00003662','DR00003663','DR00003664','DR00003665','DR00003666','DR00003667','DR00003668','DR00003669','DR00003670','DR00003671','DR00003672','DR00003674','DR00003675','DR00003676','DR00003677','DR00003678','DR00003679','DR00003680','DR00003681','DR00003682','DR00003683','DR00003684','DR00003685','DR00003686','DR00003687','DR00003688','DR00003689','DR00003690','DR00003691','DR00003692','DR00003693','DR00003694','DR00003695','DR00003697','DR00003698','DR00003699','DR00003700','DR00003701','DR00003702','DR00003704','DR00003705','DR00003707','DR00003708','DR00003709','DR00003710','DR00003711','DR00003712','DR00003713','DR00003714','DR00003715','DR00003716','DR00003717','DR00003718','DR00003719','DR00003720','DR00003721','DR00003722','DR00003723','DR00003724','DR00003725','DR00003726','DR00003727','DR00003728','DR00003729','DR00003730','DR00003731','DR00003732','DR00003733','DR00003734','DR00003735','DR00003736','DR00003737','DR00003738','DR00003739','DR00003740','DR00003741','DR00003742','DR00003743','DR00003744','DR00003745','DR00003746','DR00003747','DR00003748','DR00003749','DR00003750','DR00003751','DR00003752','DR00003753','DR00003754','DR00003755','DR00003756','DR00003757','DR00003758','DR00003759','DR00003760','DR00003761','DR00003762','DR00003763','DR00003764','DR00003765','DR00003766','DR00003767','DR00003768','DR00003769','DR00003770','DR00003771','DR00003772','DR00003773','DR00003774','DR00003775','DR00003776','DR00003777','DR00003778','DR00003779','DR00003780','DR00003781','DR00003782','DR00003783','DR00003784','DR00003785','DR00003786','DR00003787','DR00003788','DR00003789','DR00003790','DR00003791','DR00003792','DR00003793','DR00003794','DR00003795','DR00003796','DR00003797','DR00003798','DR00003799','DR00003800','DR00003801','DR00003802','DR00003803','DR00003804','DR00003805','DR00003806','DR00003807','DR00003808','DR00003809','DR00003810','DR00003811','DR00003812','DR00003813','DR00003814','DR00003815','DR00003816','DR00003817','DR00003818','DR00003819','DR00003820','DR00003821','DR00003822','DR00003823','DR00003824','DR00003825','DR00003826','DR00003827','DR00003828','DR00003829','DR00003830','DR00003831','DR00003832','DR00003833','DR00003834','DR00003835','DR00003836','DR00003837','DR00003838','DR00003839','DR00003840','DR00003841','DR00003842','DR00003843','DR00003844','DR00003845','DR00003846','DR00003847','DR00003848','DR00003849','DR00003850','DR00003851','DR00003852','DR00003853','DR00003854','DR00003855','DR00003856','DR00003857','DR00003858','DR00003859','DR00003860','DR00003861','DR00003862','DR00003863','DR00003864','DR00003865','DR00003866','DR00003867','DR00003868','DR00003869','DR00003870','DR00003871','DR00003872','DR00003873','DR00003874','DR00003875','DR00003876','DR00003877','DR00003878','DR00003879','DR00003880','DR00003881','DR00003882','DR00003883','DR00003884','DR00003885','DR00003886','DR00003887','DR00003888','DR00003889','DR00003890','DR00003891','DR00003892','DR00003893','DR00003894','DR00003895','DR00003896','DR00003897','DR00003898','DR00003899','DR00003900','DR00003901','DR00003902','DR00003903','DR00003904','DR00003905','DR00003906','DR00003907','DR00003908','DR00003909','DR00003910','DR00003911','DR00003912','DR00003913','DR00003914','DR00003915','DR00003916','DR00003917','DR00003918','DR00003919','DR00003920','DR00003921','DR00003922','DR00003923','DRMenu00002311','DRMenu00002312','DRMenu00002313','DRMenu00002314','DRMenu00002315','DRMenu00002316','DRMenu00002317','DRMenu00002318','DRMenu00002319','DRMenu00002320','DRMenu00002321','DRMenu00002322','DRMenu00002323','DRMenu00002324','DRMenu00002325','DRMenu00002326','DRMenu00002327','DRMenu00002328','DRMenu00002329','DRMenu00002330','DRMenu00002331','DRMenu00002332','DRMenu00002333','DRMenu00002334','DRMenu00002335','DRMenu00002336','DRMenu00002337','DRMenu00002338','DRMenu00002339','DRMenu00002340','DRMenu00002341','DRMenu00002342','DRMenu00003925','DRMenu00003926','DRMenu00003927','DRMenu00003928','DRMenu00003929','DRMenu00003930','DRMenu00003931','DRMenu00003932','DRMenu00003933','DRMenu00003934','DRMenu00003935','DRMenu00003936','DRMenu00003937','DRMenu00003938','DRMenu00003939','DRMenu00003940','DRMenu00003941','DRMenu00003942','DRMenu00003943','DRMenu00003944','DRMenu00003945','DRMenu00003946','DRMenu00003947','DRMenu00003948','DRMenu00003949','DRMenu00003950','DRMenu00003951','DRMenu00003952','DRMenu00003953','DRMenu00003954','DRMenu00003955','DRMenu00003956','DRMenu00003966'],
-
-['SysString'],
-
-]
-
-
-
-
-
-ByType = [
-
-['Skits', 'Story Events', 'Sub Events', 'Movies', 'NPC locations', 'Menu', 'System Strings', 'Debug',
-#'DR',
-'Graces-f', 'Xillia'],
-
-['CHT_MS001', 'CHT_MS002', 'CHT_MS003', 'CHT_MS004', 'CHT_MS005', 'CHT_MS006', 'CHT_MS007', 'CHT_MS008', 'CHT_MS009', 'CHT_MS010', 'CHT_MS011', 'CHT_MS012', 'CHT_MS013', 'CHT_MS014', 'CHT_MS015', 'CHT_MS016', 'CHT_MS017', 'CHT_MS018', 'CHT_MS019', 'CHT_MS020', 'CHT_MS021', 'CHT_MS022', 'CHT_MS023', 'CHT_MS024', 'CHT_MS025', 'CHT_MS026', 'CHT_MS027', 'CHT_MS028', 'CHT_MS029', 'CHT_MS030', 'CHT_MS031', 'CHT_MS032', 'CHT_MS033', 'CHT_MS034', 'CHT_MS035', 'CHT_MS036', 'CHT_MS037', 'CHT_MS038', 'CHT_MS039', 'CHT_MS040', 'CHT_MS041', 'CHT_MS042', 'CHT_MS043', 'CHT_MS044', 'CHT_MS045', 'CHT_MS046', 'CHT_MS047', 'CHT_MS048', 'CHT_MS049', 'CHT_MS050', 'CHT_MS051', 'CHT_MS052', 'CHT_MS053', 'CHT_MS054', 'CHT_MS055', 'CHT_MS056', 'CHT_MS057', 'CHT_MS058', 'CHT_MS059', 'CHT_MS060', 'CHT_MS061', 'CHT_MS062', 'CHT_MS063', 'CHT_MS064', 'CHT_MS065', 'CHT_MS066', 'CHT_MS067', 'CHT_MS068', 'CHT_MS069', 'CHT_MS070', 'CHT_MS071', 'CHT_MS072', 'CHT_MS073', 'CHT_MS074', 'CHT_MS075', 'CHT_MS076', 'CHT_MS077', 'CHT_MS078', 'CHT_MS079', 'CHT_MS080', 'CHT_MS081', 'CHT_MS082', 'CHT_MS083', 'CHT_MS084', 'CHT_MS085', 'CHT_MS086', 'CHT_MS087', 'CHT_MS088', 'CHT_MS089', 'CHT_MS090', 'CHT_MS091', 'CHT_MS092', 'CHT_MS093', 'CHT_MS094', 'CHT_MS095', 'CHT_MS096', 'CHT_MS097', 'CHT_MS098', 'CHT_MS099', 'CHT_MS100', 'CHT_MS101', 'CHT_MS102', 'CHT_MS103', 'CHT_MS104', 'CHT_MS105', 'CHT_MS106', 'CHT_MS107', 'CHT_MS108', 'CHT_MS109', 'CHT_MS110', 'CHT_MS111', 'CHT_MS112', 'CHT_MS113', 'CHT_MS114', 'CHT_MS115', 'CHT_MS116', 'CHT_MS117', 'CHT_MS118', 'CHT_MS119', 'CHT_MS120', 'CHT_MS121', 'CHT_MS122', 'CHT_MS123', 'CHT_MS124', 'CHT_MS125', 'CHT_MS126', 'CHT_MS127', 'CHT_MS128', 'CHT_MS129', 'CHT_MS130', 'CHT_MS131', 'CHT_MS132', 'CHT_MS133', 'CHT_MS134', 'CHT_MS135', 'CHT_MS136', 'CHT_MS137', 'CHT_MS138', 'CHT_MS139', 'CHT_MS140', 'CHT_MS141', 'CHT_MS142', 'CHT_MS143', 'CHT_MS144', 'CHT_MS145', 'CHT_MS146', 'CHT_MS147', 'CHT_MS148', 'CHT_MS149', 'CHT_MS150', 'CHT_MS151', 'CHT_MS152', 'CHT_MS153', 'CHT_MS154', 'CHT_MS155', 'CHT_MS156', 'CHT_MS157', 'CHT_MS158', 'CHT_MS159', 'CHT_MS160', 'CHT_MS161', 'CHT_MS162', 'CHT_MS163', 'CHT_MS164', 'CHT_MS165', 'CHT_MS166', 'CHT_MS167', 'CHT_MS168', 'CHT_MS169', 'CHT_MS170', 'CHT_MS171', 'CHT_MS172', 'CHT_MS173', 'CHT_MS174', 'CHT_MS175', 'CHT_MS176', 'CHT_MS177', 'CHT_MS178', 'CHT_MS179', 'CHT_MS180', 'CHT_MS181', 'CHT_MS182', 'CHT_MS183', 'CHT_MS184', 'CHT_MS185', 'CHT_MS186', 'CHT_MS187', 'CHT_MS188', 'CHT_MS189', 'CHT_MS190', 'CHT_MS191', 'CHT_MS192', 'CHT_MS193', 'CHT_MS194', 'CHT_MS195', 'CHT_MS196', 'CHT_MS197', 'CHT_MS198', 'CHT_MS199', 'CHT_MS200', 'CHT_MS201', 'CHT_MS202', 'CHT_MS203', 'CHT_MS204', 'CHT_MS205', 'CHT_MS206', 'CHT_MS207', 'CHT_MS208', 'CHT_MS209', 'CHT_MS210', 'CHT_MS211', 'CHT_MS212', 'CHT_MS213', 'CHT_MS214', 'CHT_MS215', 'CHT_MS216', 'CHT_MS217', 'CHT_MS218', 'CHT_MS219', 'CHT_MS220', 'CHT_MS221', 'CHT_MS222', 'CHT_MS223', 'CHT_MS224', 'CHT_MS225', 'CHT_MS226', 'CHT_MS227', 'CHT_MS228', 'CHT_MS229', 'CHT_MS230', 'CHT_MS231', 'CHT_MS232', 'CHT_MS233', 'CHT_MS234', 'CHT_MS235', 'CHT_MS236', 'CHT_MS237', 'CHT_MS238', 'CHT_MS239', 'CHT_MS240', 'CHT_MS241', 'CHT_MS242','CHT_SB001', 'CHT_SB002', 'CHT_SB003', 'CHT_SB004', 'CHT_SB005', 'CHT_SB006', 'CHT_SB007', 'CHT_SB008', 'CHT_SB009', 'CHT_SB010', 'CHT_SB011', 'CHT_SB012', 'CHT_SB013', 'CHT_SB014', 'CHT_SB015', 'CHT_SB016', 'CHT_SB017', 'CHT_SB018', 'CHT_SB019', 'CHT_SB020', 'CHT_SB021', 'CHT_SB022', 'CHT_SB023', 'CHT_SB024', 'CHT_SB025', 'CHT_SB026', 'CHT_SB027', 'CHT_SB028', 'CHT_SB029', 'CHT_SB030', 'CHT_SB031', 'CHT_SB032', 'CHT_SB033', 'CHT_SB034', 'CHT_SB035', 'CHT_SB036', 'CHT_SB037', 'CHT_SB038', 'CHT_SB039', 'CHT_SB040', 'CHT_SB041', 'CHT_SB042', 'CHT_SB043', 'CHT_SB044', 'CHT_SB045', 'CHT_SB046', 'CHT_SB047', 'CHT_SB048', 'CHT_SB049', 'CHT_SB050', 'CHT_SB051', 'CHT_SB052', 'CHT_SB053', 'CHT_SB054', 'CHT_SB055', 'CHT_SB056', 'CHT_SB057', 'CHT_SB058', 'CHT_SB059', 'CHT_SB060', 'CHT_SB061', 'CHT_SB062', 'CHT_SB063', 'CHT_SB064', 'CHT_SB065', 'CHT_SB066', 'CHT_SB067', 'CHT_SB068', 'CHT_SB069', 'CHT_SB070', 'CHT_SB071', 'CHT_SB072'], 
-
-['e101_010', 'e101_020', 'e101_021', 'e101_022', 'e102_010', 'e102_020', 'e102_030', 'e102_040', 'e102_050', 'e102_060', 'e103_010', 'e103_011', 'e103_020', 'e103_020s', 'e103_030', 'e103_040', 'e103_041', 'e103_050', 'e103_060', 'e103_061', 'e103_070', 'e103_080', 'e103_090', 'e103_100', 'e103_110', 'e103_120', 'e104_010', 'e104_020', 'e104_030', 'e104_040', 'e104_050', 'e104_060', 'e104_070', 'e104_080', 'e104_090', 'e105_010', 'e105_020', 'e105_021', 'e105_022', 'e105_030', 'e105_040', 'e105_050', 'e105_051', 'e206_010', 'e206_011', 'e206_011t', 'e206_020', 'e206_031', 'e206_032', 'e206_033', 'e206_040', 'e207_010', 'e207_020', 'e207_030', 'e207_040', 'e207_050', 'e207_060', 'e207_061', 'e208_010', 'e208_020', 'e208_021', 'e208_030', 'e208_031', 'e208_040', 'e209_010', 'e209_020', 'e209_030', 'e209_040', 'e209_050', 'e210_010', 'e210_020', 'e210_030', 'e210_040', 'e210_041', 'e210_050', 'e210_060', 'e210_061', 'e210_070', 'e210_080', 'e210_081', 'e210_090', 'e210_100', 'e210_120', 'e210_130', 'e210_140', 'e210_150', 'e210_160', 'e211_010', 'e211_020', 'e211_030', 'e211_031', 'e312_010', 'e312_020', 'e312_021', 'e312_030', 'e312_040', 'e312_050', 'e312_060', 'e312_061', 'e312_070', 'e312_080', 'e312_090', 'e313_010', 'e313_020', 'e313_030', 'e313_040', 'e313_050', 'e314_010', 'e314_020', 'e314_030', 'e314_030a', 'e314_040', 'e314_040a', 'e314_050', 'e314_060', 'e314_060a', 'e314_070', 'e314_071', 'e314_080', 'e314_090', 'e314_100', 'e314_110', 'e314_120', 'e315_010', 'e315_020', 'e315_030', 'e315_040', 'e315_041', 'e315_050', 'e316_010', 'e316_020', 'e316_030', 'e316_050', 'e316_060', 'e317_010', 'e317_020', 'e317_021', 'e317_022', 'e418_010', 'e418_020', 'e418_030', 'e418_040', 'e418_050', 'e418_060', 'e418_061', 'e418_062', 'e418_070', 'e418_080', 'e418_090', 'e418_100', 'e418_101', 'e418_110', 'e418_120', 'e418_130', 'e418_140', 'e418_150', 'e419_010', 'e419_020', 'e419_030', 'e419_040', 'e419_050', 'e419_060', 'e419_061', 'e419_070', 'e419_080', 'e419_081', 'e419_090', 'e420_010', 'e420_020', 'e420_030', 'e420_040', 'e420_050', 'e420_060', 'e420_070', 'e420_080', 'e420_090', 'e420_091', 'e421_010', 'e421_020', 'e522_010', 'e522_020', 'e522_030', 'e522_040', 'e522_041', 'e522_050', 'e522_060', 'e523_010', 'e523_020', 'e523_030', 'e523_040', 'e523_050', 'e523_060', 'e523_061', 'e523_062', 'e523_070', 'e523_080', 'e523_090', 'e523_100', 'e523_110', 'e523_120', 'e523_130', 'e523_131', 'e524_010', 'e524_020', 'e524_030', 'e524_040', 'e524_050', 'e524_051', 'e524_060', 'e525_010', 'e525_020', 'e525_030', 'e525_040', 'e525_041', 'e525_050', 'e525_060', 'e525_070', 'e525_080', 'e525_090', 'e525_091', 'e525_092', 'e525_093', 'e526_010', 'e526_020', 'e526_030', 'e526_040', 'e526_050', 'e526_060', 'e526_070', 'e526_071', 'e526_072', 'e627_010', 'e627_020', 'e627_030', 'e627_040', 'e628_010', 'e628_020', 'e628_030', 'e628_040', 'e628_050', 'e628_055', 'e628_060', 'e628_070', 'e628_080', 'e629_010', 'e629_020', 'e629_030', 'e629_040', 'e629_050', 'e629_060', 'e629_070', 'e629_080', 'e629_090', 'e629_100', 'e629_110', 'e629_111', 'e629_120', 'e629_130', 'e629_140', 'e629_150', 'e629_160', 'e629_161', 'e629_170', 'e730_010', 'e730_020', 'e730_030', 'e730_040', 'e730_041', 'e730_042', 'e731_010', 'e731_020', 'e731_030', 'e731_040', 'e731_050', 'e731_060', 'e731_061', 'e731_062', 'e731_063', 'e731_064', 'e731_065', 'e731_066', 'e731_070', 'e731_080', 'e731_090', 'e731_100', 'e731_101', 'e731_110', 'e732_010', 'e732_011', 'e833_010', 'e833_020', 'e833_030', 'e833_031', 'e833_032', 'e833_033', 'e833_040', 'e834_010', 'e834_020', 'e834_030', 'e834_040', 'e834_050', 'e834_051', 'e834_060', 'e834_070', 'e834_080', 'e834_090', 'e834_100', 'e834_110', 'e834_120', 'e834_130', 'e834_140', 'e834_150', 'e835_010', 'e835_020', 'e835_030', 'e835_040', 'e835_050', 'e835_070', 'e835_090', 'e835_110', 'e835_120', 'e835_140', 'e835_141', 'e835_142', 'e835_150', 'e835_160', 'e835_170', 'e835_180', 'e836_010', 'e836_020', 'e836_030', 'e836_040', 'e836_041'],
-
-['s101_001', 's102_001', 's103_001', 's103_001b', 's103_001c', 's105_001', 's105_002', 's107_001', 's108_001', 's112_001', 's112_002', 's119_001', 's120_001', 's121_001', 's122_001', 's125_001', 's126_001', 's127_001', 's127_002', 's128_001', 's128_002', 's129_001', 's132_001', 's134_001', 's134_002', 's136_002', 's201_001', 's201_002', 's202_001', 's203_001', 's203_002', 's203_003', 's204_001', 's205_001', 's205_002', 's206_001', 's207_001', 's208_001', 's210_001', 's211_001', 's211_002', 's211_003', 's212_001', 's213_001', 's214_001', 's214_002', 's214_003', 's215_002', 's216_001', 's217_001', 's218_001', 's218_002', 's219_001', 's219_002', 's220_001', 's221_001', 's221_002', 's221_003', 's221_004', 's221_005', 's221_006', 's222_001', 's222_002', 's222_003', 's223_001', 's224_001', 's225_001', 's229_002', 's230_001', 's230_002', 's231_001', 's233_001', 's234_001', 's234_002', 's235_002', 's236_001', 's238_001', 's238_002', 's239_001', 's239_002', 's240_001', 's241_001', 's241_002', 's241_003', 's241_004', 's242_001', 's243_001', 's244_001', 's244_002', 's245_001', 's246_001', 's247_001', 's248_001', 's249_001', 's401_001', 's401_002', 's401_003', 's402_001', 's402_002', 's402_003', 's402_004', 's404_001', 's404_003', 's405_001', 's405_003', 's407_001', 's407_002', 's408_001', 's408_002', 's408_002b', 's408_003', 's408_004', 's409_001', 's409_002', 's409_003', 's409_004', 's409_005', 's411_001', 's411_002', 's411_003', 's411_004', 's411_005', 's411_006', 's411_007', 's411_008', 's411_009', 's411_010', 's411_011', 's413_001', 's413_002', 's413_003', 's414_001', 's414_002', 's414_003', 's414_004', 's416_001', 's416_002', 's416_003', 's416_004', 's419_002', 's419_003', 's420_001', 's424_004', 's426_002', 's426_003', 's426_004', 's426_005', 's426_006', 's426_007', 's426_008', 's426_009', 's426_010', 's426_011', 's426_012', 's426_013', 's430_001', 's431_001'],
-
-['TOG_S01', 'TOG_S02', 'TOG_S03', 'TOG_S04', 'TOG_S05', 'TOG_S06', 'TOG_S07', 'TOG_S08', 'TOG_S09', 'TOG_S10', 'TOG_S11'],
-
-['anma_e01', 'anma_i01', 'anma_i02', 'anma_i03', 'anma_i04', 'anma_t01', 'basi_d01', 'basi_d02', 'basi_d03', 'basi_d04', 'basi_d05', 'basi_d06', 'basi_d07', 'basi_d08', 'basi_d09', 'basi_d10', 'basi_d11', 'basi_d12', 'basi_d13', 'basi_d14', 'basi_d15', 'basi_d16', 'basi_d17', 'bera_i01', 'bera_i02', 'bera_i03', 'bera_t01', 'bria_d01', 'bria_d02', 'brid_d01', 'brid_d05', 'brid_d06', 'brid_d07', 'brid_d08', 'brid_d09', 'brid_d10', 'brid_d11', 'brid_d12', 'brid_d13', 'brid_d14', 'brid_d15', 'brid_d16', 'brid_d17', 'cave_d01', 'cave_d02', 'fall_d04', 'fall_e01', 'fend_e01', 'fend_f12', 'fend_f13', 'fend_f14', 'fend_f15', 'fend_f16', 'fend_f17', 'fend_i01', 'fend_i02', 'fend_i03', 'fend_i04', 'fend_i05', 'fend_i06', 'fend_i07', 'fend_t01', 'fend_t02', 'fodr_f19', 'fodr_f20', 'fore_d01', 'gent_d01', 'gent_d02', 'iceb_d01', 'iceb_d02', 'iceb_d03', 'iceb_d04', 'iceb_d05', 'iceb_d08', 'iceb_d09', 'iceb_d10', 'iceb_e01', 'iceb_e02', 'iron_d01', 'iron_d02', 'iron_d03', 'iron_d04', 'iron_d05', 'iron_d06', 'iron_d07', 'iron_d08', 'iron_d09', 'iron_d10', 'iron_d11', 'iron_d12', 'iron_d13', 'iron_d14', 'iron_d15', 'iron_d16', 'iron_d17', 'iron_d18', 'iron_d19', 'kame_d01', 'kone_d02', 'kone_d03', 'kone_d04', 'kone_d05', 'kone_d06', 'kone_d07', 'kone_d08', 'kone_d09', 'kone_d10', 'kone_d11', 'kone_d12', 'kone_d13', 'kone_d14', 'kone_d15', 'kone_d16', 'kone_d17', 'kone_d18', 'kone_d19', 'kone_d20', 'kone_d21', 'kone_d22', 'kone_d23', 'kone_d24', 'kone_d25', 'kone_d26', 'kone_d29', 'kone_d30', 'kone_e01', 'kot1_d01', 'kot1_d02', 'kot2_d01', 'kot2_d02', 'kot2_d03', 'kot2_d04', 'kot2_d05', 'kot2_d06', 'kot2_d07', 'kot2_d08', 'kot2_d09', 'kot2_d10', 'kot2_d11', 'kot2_d12', 'kot2_d13', 'kot2_d14', 'kot2_d15', 'kot2_d16', 'kot2_d17', 'kot2_d18', 'kot2_d19', 'kot2_d20', 'kot2_d21', 'kot2_d22', 'kot2_d23', 'kot2_d24', 'kot2_d25', 'kot2_d26', 'kot2_d27', 'koya_r01', 'koya_r02', 'koya_r03', 'koya_r04', 'koya_r05', 'koya_r06', 'koya_r08', 'lake_e01', 'lake_e02', 'lake_i01', 'lake_i02', 'lake_i03', 'lake_i04', 'lake_t01', 'lake_t02', 'lake_t03', 'lan1_i01', 'lan1_i02', 'lan1_i03', 'lan1_i04', 'lan1_i05', 'lan1_i07', 'lan1_t01', 'lan2_e01', 'lan2_e02', 'lan2_i01', 'lan2_i02', 'lan2_i03', 'lan2_i04', 'lan2_i05', 'lan2_i06', 'lan2_i07', 'lan2_t01', 'lan2_t01_01', 'lan3_e01', 'lan3_t01', 'lan4_t01', 'las1_d01', 'las2_d01', 'las2_d02', 'las2_d03', 'las3_d01', 'las3_d02', 'las4_d01', 'las4_d02', 'las4_e01', 'mg01_e01', 'mg02_e01', 'mont_d01', 'mont_d02', 'mont_d03', 'neko_e01', 'neko_i01', 'neko_t01', 'olle_i01', 'olle_t01', 'othe_e01', 'othe_i01', 'othe_i02', 'othe_i03', 'othe_i04', 'othe_t01', 'othe_t02', 'othe_t03', 'ozwe_d01', 'ozwe_d02', 'port_i01', 'port_i02', 'port_i03', 'port_i04', 'port_i05', 'port_i06', 'port_t01', 'port_t02', 'port_t03', 'port_t04', 'port_t05', 'riot_i01', 'riot_i02', 'riot_t01', 'rock_d01', 'rock_d02', 'rock_d03', 'rock_e01', 'sabl_i01', 'sabl_i02', 'sabl_i03', 'sabl_t01', 'sand_d01', 'sand_d02', 'sand_d03', 'sand_d04', 'sand_d05', 'sand_d06', 'sand_d07', 'sand_d08', 'sand_d09', 'sand_d10', 'sand_d11', 'sand_d12', 'sand_d13', 'sand_d14', 'sand_d15', 'sand_d16', 'shat_i01', 'shat_i02', 'shat_i03', 'shat_i04', 'ship_e01', 'ship_e02', 'ship_e03', 'ship_e04', 'ship_e05', 'ship_e06', 'ship_e07', 'ship_e08', 'ship_e09', 'ship_e10', 'snee_d01', 'snee_d02', 'snee_d03', 'snee_d04', 'snee_d05', 'snee_d06', 'snee_d07', 'snee_d08', 'snee_d09', 'snee_d10', 'snee_d11', 'snee_d12', 'snee_d13', 'snee_d14', 'snee_d15', 'snee_d16', 'snee_d17', 'snee_d18', 'snee_d19', 'snee_d20', 'snee_d21', 'snee_d22', 'snee_d23', 'snee_d24', 'snee_d25', 'snee_d26', 'snee_d27', 'snee_d28', 'snee_d29', 'snow_d01', 'snow_d02', 'snow_d03', 'snow_d04', 'snow_d05', 'snow_d06', 'snow_d07', 'snow_d08', 'snow_d09', 'snow_d10', 'snow_d11', 'snow_d12', 'snow_d13', 'snow_d14', 'snow_d15', 'snow_d16', 'snow_d17', 'snow_d18', 'snow_d19', 'snow_d20', 'snow_d21', 'snow_d22', 'snow_d23', 'snow_d24', 'snow_d25', 'snow_d26', 'snow_d27', 'snow_d28', 'stda_d01', 'stda_d02', 'stra_f08', 'stra_f09', 'stra_f10', 'stra_f11', 'stra_f18', 'strt_e01', 'strt_i01', 'strt_i02', 'strt_i03', 'strt_i04', 'strt_i05', 'strt_i06', 'strt_t01', 'strt_t01_01', 'strt_t01_02', 'strt_t01_03', 'strt_t02', 'strt_t03', 'supa_r01', 'supa_r02', 'sysm_d01', 'varo_d01', 'varo_d02', 'varo_d03', 'varo_d04', 'varo_d05', 'varo_d06', 'varo_d07', 'varo_d08', 'varo_d09', 'varo_d10', 'varo_d11', 'varo_d12', 'varo_d13', 'varo_d14', 'varo_d15', 'varo_d16', 'varo_d17', 'varo_d18', 'varo_d19', 'varo_d20', 'varo_d21', 'varo_d22', 'varo_d23', 'varo_d24', 'varo_d25', 'varo_d26', 'varo_d27', 'varo_d28', 'varo_d29', 'varo_d30', 'win1_i03', 'win1_i04', 'win1_i06', 'win1_i07', 'win1_i08', 'win1_i09', 'win1_t01', 'win1_t02', 'win1_t03', 'win2_i01', 'win2_i02', 'win2_i03', 'win2_i04', 'win2_i05', 'win2_i06', 'win2_i07', 'win2_i08', 'win2_i09', 'win2_t01', 'win2_t02', 'win2_t03', 'winc_d01', 'winc_d02', 'wind_e01', 'wind_e05', 'wind_f01', 'wind_f02', 'wind_f03', 'wind_f04', 'wind_f05', 'wind_f06', 'wind_f07', 'wind_f21', 'zone_d01', 'zone_d01_01', 'zone_d01_02', 'zone_d01_03', 'zone_d01_04', 'zone_d01_05', 'zone_d01_06', 'zone_d01_07', 'zone_d01_08', 'zone_d01_09', 'zone_d01_10', 'zone_d02', 'zone_d03'],
-
-['Artes', 'ArteNames', 'Battle', 'Discovery', 'GradeShop-Missions', 'Item', 'MonsterBook', 'Skills', 'System', 'soundTest', 'Tactics', 'Titles', 'Tutorial', 'TOG_SS_ChatName', 'TOG_SS_StringECommerce'],
-
-['ActInfo', 'CharName', 'Navigation', 'SysString', 'endingData', 'MapName'],
-
-['debug_00', 'debug_01', 'debug_02', 'sample', 'test_ikeda'],
-
-#['DR00002344','DR00002345','DR00002346','DR00002347','DR00002348','DR00002349','DR00002350','DR00002372','DR00002374','DR00002375','DR00002377','DR00002378','DR00002380','DR00002382','DR00002384','DR00002386','DR00002387','DR00002388','DR00002389','DR00002390','DR00002391','DR00002392','DR00002394','DR00002395','DR00002396','DR00002397','DR00002398','DR00002400','DR00002401','DR00002402','DR00002403','DR00002404','DR00002405','DR00002406','DR00002407','DR00002408','DR00002409','DR00002410','DR00002411','DR00002412','DR00002413','DR00002414','DR00002415','DR00002416','DR00002418','DR00002419','DR00002420','DR00002421','DR00002422','DR00002423','DR00002424','DR00002425','DR00002426','DR00002427','DR00002428','DR00002429','DR00002430','DR00002431','DR00002432','DR00002433','DR00002434','DR00002436','DR00002437','DR00002439','DR00002441','DR00002442','DR00002443','DR00002445','DR00002447','DR00002448','DR00002449','DR00002450','DR00002452','DR00002454','DR00002456','DR00002458','DR00002459','DR00002461','DR00002462','DR00002464','DR00002465','DR00002467','DR00002468','DR00002470','DR00002472','DR00002473','DR00002474','DR00002475','DR00002476','DR00002477','DR00002478','DR00002479','DR00002480','DR00002481','DR00002482','DR00002484','DR00002485','DR00002486','DR00002488','DR00002491','DR00002493','DR00002495','DR00002496','DR00002497','DR00002499','DR00002501','DR00002503','DR00002504','DR00002505','DR00002507','DR00002509','DR00002510','DR00002511','DR00002513','DR00002514','DR00002515','DR00002516','DR00002517','DR00002518','DR00002519','DR00002520','DR00002521','DR00002522','DR00002523','DR00002524','DR00002525','DR00002526','DR00002527','DR00002528','DR00002529','DR00002530','DR00002531','DR00002532','DR00002533','DR00002534','DR00002535','DR00002536','DR00002537','DR00002538','DR00002539','DR00002540','DR00002541','DR00002542','DR00002543','DR00002544','DR00002545','DR00002546','DR00002547','DR00002548','DR00002549','DR00002550','DR00002551','DR00002552','DR00002553','DR00002554','DR00002555','DR00002556','DR00002557','DR00002560','DR00002561','DR00002562','DR00002563','DR00002564','DR00002565','DR00002566','DR00002567','DR00002569','DR00002570','DR00002571','DR00002572','DR00002573','DR00002574','DR00002575','DR00002577','DR00002579','DR00002580','DR00002581','DR00002582','DR00002583','DR00002584','DR00002585','DR00002586','DR00002587','DR00002589','DR00002590','DR00002592','DR00002594','DR00002596','DR00002597','DR00002598','DR00002599','DR00002600','DR00002601','DR00002602','DR00002603','DR00002604','DR00002605','DR00002607','DR00002609','DR00002610','DR00002612','DR00002613','DR00002614','DR00002615','DR00002616','DR00002617','DR00002618','DR00002619','DR00002620','DR00002622','DR00002624','DR00002625','DR00002626','DR00002627','DR00002628','DR00002630','DR00002631','DR00002632','DR00002634','DR00002636','DR00002637','DR00002639','DR00002640','DR00002642','DR00002643','DR00002645','DR00002647','DR00002648','DR00002650','DR00002652','DR00002653','DR00002654','DR00002655','DR00002656','DR00002657','DR00002659','DR00002661','DR00002662','DR00002664','DR00002665','DR00002666','DR00002667','DR00002668','DR00002669','DR00002671','DR00002673','DR00002675','DR00002676','DR00002678','DR00002680','DR00002681','DR00002682','DR00002684','DR00002685','DR00002686','DR00002687','DR00002688','DR00002689','DR00002690','DR00002691','DR00002692','DR00002693','DR00002694','DR00002695','DR00002696','DR00002697','DR00002698','DR00002699','DR00002700','DR00002701','DR00002702','DR00002703','DR00002704','DR00002705','DR00002706','DR00002707','DR00002708','DR00002709','DR00002710','DR00002711','DR00002712','DR00002714','DR00002715','DR00002716','DR00002718','DR00002719','DR00002720','DR00002721','DR00002722','DR00002723','DR00002724','DR00002725','DR00002726','DR00002727','DR00002728','DR00002729','DR00002730','DR00002731','DR00002732','DR00002733','DR00002734','DR00002735','DR00002736','DR00002737','DR00002738','DR00002739','DR00002740','DR00002741','DR00002742','DR00002743','DR00002744','DR00002745','DR00002746','DR00002747','DR00002748','DR00002749','DR00002750','DR00002751','DR00002753','DR00002754','DR00002755','DR00002756','DR00002757','DR00002758','DR00002759','DR00002760','DR00002761','DR00002762','DR00002763','DR00002766','DR00002767','DR00002768','DR00002769','DR00002770','DR00002771','DR00002772','DR00002774','DR00002775','DR00002776','DR00002778','DR00002779','DR00002780','DR00002781','DR00002782','DR00002783','DR00002784','DR00002785','DR00002787','DR00002788','DR00002789','DR00002790','DR00002791','DR00002793','DR00002794','DR00002798','DR00002799','DR00002800','DR00002801','DR00002802','DR00002803','DR00002805','DR00002806','DR00002807','DR00002809','DR00002811','DR00002813','DR00002814','DR00002815','DR00002816','DR00002817','DR00002818','DR00002819','DR00002820','DR00002821','DR00002822','DR00002823','DR00002824','DR00002825','DR00002826','DR00002827','DR00002828','DR00002830','DR00002831','DR00002832','DR00002834','DR00002835','DR00002836','DR00002838','DR00002840','DR00002841','DR00002843','DR00002845','DR00002846','DR00002847','DR00002848','DR00002849','DR00002850','DR00002852','DR00002853','DR00002855','DR00002857','DR00002858','DR00002860','DR00002861','DR00002863','DR00002864','DR00002865','DR00002866','DR00002867','DR00002868','DR00002870','DR00002871','DR00002872','DR00002873','DR00002874','DR00002875','DR00002877','DR00002878','DR00002880','DR00002882','DR00002883','DR00002884','DR00002885','DR00002886','DR00002887','DR00002889','DR00002890','DR00002891','DR00002892','DR00002893','DR00002894','DR00002896','DR00002897','DR00002899','DR00002900','DR00002902','DR00002903','DR00002904','DR00002906','DR00002907','DR00002908','DR00002909','DR00002910','DR00002911','DR00002912','DR00002913','DR00002915','DR00002917','DR00002919','DR00002921','DR00002922','DR00002924','DR00002925','DR00002926','DR00002928','DR00002930','DR00002932','DR00002933','DR00002935','DR00002936','DR00002937','DR00002939','DR00002941','DR00002942','DR00002943','DR00002945','DR00002946','DR00002947','DR00002948','DR00002949','DR00002950','DR00002951','DR00002953','DR00002954','DR00002956','DR00002957','DR00002958','DR00002959','DR00002960','DR00002961','DR00002962','DR00002963','DR00002964','DR00002965','DR00002966','DR00002967','DR00002968','DR00002969','DR00002970','DR00002971','DR00002972','DR00002973','DR00002974','DR00002975','DR00002976','DR00002977','DR00002978','DR00002979','DR00002980','DR00002981','DR00002982','DR00002983','DR00002984','DR00002985','DR00002986','DR00002987','DR00002988','DR00002989','DR00002990','DR00002991','DR00002992','DR00002993','DR00002995','DR00002997','DR00002999','DR00003001','DR00003002','DR00003003','DR00003005','DR00003006','DR00003007','DR00003009','DR00003010','DR00003011','DR00003012','DR00003014','DR00003015','DR00003016','DR00003017','DR00003018','DR00003019','DR00003020','DR00003021','DR00003022','DR00003023','DR00003024','DR00003025','DR00003026','DR00003027','DR00003028','DR00003029','DR00003030','DR00003031','DR00003032','DR00003033','DR00003034','DR00003035','DR00003036','DR00003037','DR00003038','DR00003039','DR00003040','DR00003041','DR00003042','DR00003043','DR00003044','DR00003045','DR00003046','DR00003047','DR00003048','DR00003049','DR00003050','DR00003051','DR00003052','DR00003053','DR00003055','DR00003056','DR00003058','DR00003059','DR00003061','DR00003062','DR00003063','DR00003064','DR00003066','DR00003067','DR00003068','DR00003069','DR00003070','DR00003071','DR00003072','DR00003075','DR00003076','DR00003077','DR00003078','DR00003079','DR00003080','DR00003081','DR00003082','DR00003083','DR00003084','DR00003086','DR00003087','DR00003088','DR00003089','DR00003090','DR00003091','DR00003092','DR00003093','DR00003094','DR00003096','DR00003097','DR00003098','DR00003099','DR00003100','DR00003101','DR00003102','DR00003103','DR00003104','DR00003105','DR00003106','DR00003107','DR00003108','DR00003109','DR00003110','DR00003111','DR00003112','DR00003113','DR00003114','DR00003115','DR00003116','DR00003117','DR00003118','DR00003119','DR00003121','DR00003122','DR00003123','DR00003125','DR00003127','DR00003129','DR00003130','DR00003131','DR00003132','DR00003133','DR00003134','DR00003136','DR00003138','DR00003139','DR00003141','DR00003142','DR00003144','DR00003145','DR00003147','DR00003149','DR00003150','DR00003151','DR00003152','DR00003153','DR00003155','DR00003156','DR00003157','DR00003159','DR00003161','DR00003163','DR00003164','DR00003165','DR00003166','DR00003168','DR00003169','DR00003170','DR00003171','DR00003172','DR00003174','DR00003175','DR00003177','DR00003179','DR00003180','DR00003181','DR00003182','DR00003183','DR00003186','DR00003187','DR00003188','DR00003189','DR00003192','DR00003193','DR00003195','DR00003196','DR00003197','DR00003198','DR00003199','DR00003200','DR00003201','DR00003202','DR00003203','DR00003204','DR00003206','DR00003207','DR00003208','DR00003209','DR00003210','DR00003211','DR00003213','DR00003214','DR00003215','DR00003216','DR00003217','DR00003218','DR00003219','DR00003220','DR00003221','DR00003222','DR00003223','DR00003224','DR00003225','DR00003226','DR00003227','DR00003229','DR00003230','DR00003231','DR00003232','DR00003233','DR00003234','DR00003235','DR00003236','DR00003237','DR00003239','DR00003240','DR00003242','DR00003243','DR00003244','DR00003245','DR00003246','DR00003247','DR00003248','DR00003249','DR00003250','DR00003251','DR00003252','DR00003253','DR00003254','DR00003255','DR00003256','DR00003257','DR00003258','DR00003259','DR00003260','DR00003261','DR00003262','DR00003263','DR00003264','DR00003265','DR00003266','DR00003267','DR00003268','DR00003269','DR00003270','DR00003271','DR00003272','DR00003273','DR00003274','DR00003275','DR00003276','DR00003277','DR00003278','DR00003279','DR00003280','DR00003281','DR00003282','DR00003283','DR00003284','DR00003285','DR00003286','DR00003287','DR00003288','DR00003289','DR00003290','DR00003291','DR00003292','DR00003293','DR00003294','DR00003295','DR00003296','DR00003298','DR00003299','DR00003300','DR00003301','DR00003302','DR00003303','DR00003304','DR00003305','DR00003306','DR00003307','DR00003308','DR00003309','DR00003310','DR00003311','DR00003312','DR00003313','DR00003314','DR00003315','DR00003316','DR00003317','DR00003319','DR00003320','DR00003321','DR00003322','DR00003323','DR00003324','DR00003325','DR00003326','DR00003327','DR00003328','DR00003329','DR00003330','DR00003331','DR00003332','DR00003333','DR00003334','DR00003336','DR00003337','DR00003338','DR00003339','DR00003340','DR00003341','DR00003342','DR00003343','DR00003344','DR00003346','DR00003347','DR00003348','DR00003349','DR00003350','DR00003351','DR00003352','DR00003353','DR00003354','DR00003355','DR00003357','DR00003359','DR00003360','DR00003362','DR00003363','DR00003364','DR00003365','DR00003366','DR00003367','DR00003368','DR00003369','DR00003370','DR00003372','DR00003374','DR00003376','DR00003378','DR00003380','DR00003381','DR00003383','DR00003385','DR00003386','DR00003388','DR00003390','DR00003391','DR00003393','DR00003394','DR00003396','DR00003398','DR00003399','DR00003401','DR00003403','DR00003404','DR00003406','DR00003407','DR00003408','DR00003409','DR00003411','DR00003413','DR00003415','DR00003416','DR00003418','DR00003419','DR00003420','DR00003421','DR00003422','DR00003423','DR00003425','DR00003426','DR00003428','DR00003430','DR00003431','DR00003432','DR00003434','DR00003435','DR00003436','DR00003437','DR00003438','DR00003439','DR00003440','DR00003441','DR00003442','DR00003443','DR00003445','DR00003446','DR00003447','DR00003448','DR00003449','DR00003450','DR00003451','DR00003452','DR00003453','DR00003454','DR00003455','DR00003456','DR00003458','DR00003459','DR00003461','DR00003463','DR00003465','DR00003466','DR00003467','DR00003469','DR00003470','DR00003471','DR00003472','DR00003473','DR00003474','DR00003475','DR00003476','DR00003477','DR00003479','DR00003480','DR00003481','DR00003482','DR00003484','DR00003485','DR00003486','DR00003487','DR00003488','DR00003489','DR00003490','DR00003491','DR00003492','DR00003493','DR00003494','DR00003495','DR00003496','DR00003497','DR00003498','DR00003499','DR00003500','DR00003501','DR00003502','DR00003503','DR00003504','DR00003505','DR00003506','DR00003507','DR00003508','DR00003509','DR00003510','DR00003511','DR00003512','DR00003514','DR00003515','DR00003517','DR00003518','DR00003519','DR00003520','DR00003521','DR00003523','DR00003524','DR00003525','DR00003526','DR00003527','DR00003528','DR00003529','DR00003530','DR00003531','DR00003532','DR00003533','DR00003534','DR00003535','DR00003536','DR00003537','DR00003538','DR00003539','DR00003540','DR00003541','DR00003542','DR00003544','DR00003545','DR00003546','DR00003547','DR00003548','DR00003549','DR00003550','DR00003551','DR00003552','DR00003553','DR00003554','DR00003555','DR00003556','DR00003557','DR00003558','DR00003559','DR00003560','DR00003562','DR00003563','DR00003564','DR00003565','DR00003566','DR00003567','DR00003568','DR00003569','DR00003570','DR00003571','DR00003572','DR00003573','DR00003574','DR00003575','DR00003576','DR00003577','DR00003578','DR00003579','DR00003580','DR00003581','DR00003582','DR00003583','DR00003587','DR00003590','DR00003591','DR00003592','DR00003593','DR00003595','DR00003597','DR00003598','DR00003599','DR00003601','DR00003603','DR00003604','DR00003606','DR00003607','DR00003608','DR00003609','DR00003611','DR00003612','DR00003613','DR00003614','DR00003615','DR00003616','DR00003617','DR00003618','DR00003619','DR00003620','DR00003621','DR00003622','DR00003623','DR00003625','DR00003627','DR00003629','DR00003630','DR00003631','DR00003632','DR00003634','DR00003636','DR00003638','DR00003639','DR00003640','DR00003642','DR00003643','DR00003644','DR00003645','DR00003646','DR00003647','DR00003648','DR00003649','DR00003650','DR00003651','DR00003652','DR00003653','DR00003654','DR00003655','DR00003656','DR00003657','DR00003658','DR00003659','DR00003660','DR00003662','DR00003663','DR00003664','DR00003665','DR00003666','DR00003667','DR00003668','DR00003669','DR00003670','DR00003671','DR00003672','DR00003674','DR00003675','DR00003676','DR00003677','DR00003678','DR00003679','DR00003680','DR00003681','DR00003682','DR00003683','DR00003684','DR00003685','DR00003686','DR00003687','DR00003688','DR00003689','DR00003690','DR00003691','DR00003692','DR00003693','DR00003694','DR00003695','DR00003697','DR00003698','DR00003699','DR00003700','DR00003701','DR00003702','DR00003704','DR00003705','DR00003707','DR00003708','DR00003709','DR00003710','DR00003711','DR00003712','DR00003713','DR00003714','DR00003715','DR00003716','DR00003717','DR00003718','DR00003719','DR00003720','DR00003721','DR00003722','DR00003723','DR00003724','DR00003725','DR00003726','DR00003727','DR00003728','DR00003729','DR00003730','DR00003731','DR00003732','DR00003733','DR00003734','DR00003735','DR00003736','DR00003737','DR00003738','DR00003739','DR00003740','DR00003741','DR00003742','DR00003743','DR00003744','DR00003745','DR00003746','DR00003747','DR00003748','DR00003749','DR00003750','DR00003751','DR00003752','DR00003753','DR00003754','DR00003755','DR00003756','DR00003757','DR00003758','DR00003759','DR00003760','DR00003761','DR00003762','DR00003763','DR00003764','DR00003765','DR00003766','DR00003767','DR00003768','DR00003769','DR00003770','DR00003771','DR00003772','DR00003773','DR00003774','DR00003775','DR00003776','DR00003777','DR00003778','DR00003779','DR00003780','DR00003781','DR00003782','DR00003783','DR00003784','DR00003785','DR00003786','DR00003787','DR00003788','DR00003789','DR00003790','DR00003791','DR00003792','DR00003793','DR00003794','DR00003795','DR00003796','DR00003797','DR00003798','DR00003799','DR00003800','DR00003801','DR00003802','DR00003803','DR00003804','DR00003805','DR00003806','DR00003807','DR00003808','DR00003809','DR00003810','DR00003811','DR00003812','DR00003813','DR00003814','DR00003815','DR00003816','DR00003817','DR00003818','DR00003819','DR00003820','DR00003821','DR00003822','DR00003823','DR00003824','DR00003825','DR00003826','DR00003827','DR00003828','DR00003829','DR00003830','DR00003831','DR00003832','DR00003833','DR00003834','DR00003835','DR00003836','DR00003837','DR00003838','DR00003839','DR00003840','DR00003841','DR00003842','DR00003843','DR00003844','DR00003845','DR00003846','DR00003847','DR00003848','DR00003849','DR00003850','DR00003851','DR00003852','DR00003853','DR00003854','DR00003855','DR00003856','DR00003857','DR00003858','DR00003859','DR00003860','DR00003861','DR00003862','DR00003863','DR00003864','DR00003865','DR00003866','DR00003867','DR00003868','DR00003869','DR00003870','DR00003871','DR00003872','DR00003873','DR00003874','DR00003875','DR00003876','DR00003877','DR00003878','DR00003879','DR00003880','DR00003881','DR00003882','DR00003883','DR00003884','DR00003885','DR00003886','DR00003887','DR00003888','DR00003889','DR00003890','DR00003891','DR00003892','DR00003893','DR00003894','DR00003895','DR00003896','DR00003897','DR00003898','DR00003899','DR00003900','DR00003901','DR00003902','DR00003903','DR00003904','DR00003905','DR00003906','DR00003907','DR00003908','DR00003909','DR00003910','DR00003911','DR00003912','DR00003913','DR00003914','DR00003915','DR00003916','DR00003917','DR00003918','DR00003919','DR00003920','DR00003921','DR00003922','DR00003923','DRMenu00002311','DRMenu00002312','DRMenu00002313','DRMenu00002314','DRMenu00002315','DRMenu00002316','DRMenu00002317','DRMenu00002318','DRMenu00002319','DRMenu00002320','DRMenu00002321','DRMenu00002322','DRMenu00002323','DRMenu00002324','DRMenu00002325','DRMenu00002326','DRMenu00002327','DRMenu00002328','DRMenu00002329','DRMenu00002330','DRMenu00002331','DRMenu00002332','DRMenu00002333','DRMenu00002334','DRMenu00002335','DRMenu00002336','DRMenu00002337','DRMenu00002338','DRMenu00002339','DRMenu00002340','DRMenu00002341','DRMenu00002342','DRMenu00003925','DRMenu00003926','DRMenu00003927','DRMenu00003928','DRMenu00003929','DRMenu00003930','DRMenu00003931','DRMenu00003932','DRMenu00003933','DRMenu00003934','DRMenu00003935','DRMenu00003936','DRMenu00003937','DRMenu00003938','DRMenu00003939','DRMenu00003940','DRMenu00003941','DRMenu00003942','DRMenu00003943','DRMenu00003944','DRMenu00003945','DRMenu00003946','DRMenu00003947','DRMenu00003948','DRMenu00003949','DRMenu00003950','DRMenu00003951','DRMenu00003952','DRMenu00003953','DRMenu00003954','DRMenu00003955','DRMenu00003956','DRMenu00003966'],
-
-['ActInfo-f', 'CharName-f', 'CHT_PR001-f', 'CHT_PR002-f', 'CHT_PR003-f', 'CHT_PR005-f', 'CHT_PR007-f', 'e950_020-f', 'MapName-f', 'Navigation-f', 'sofi_d02-f', 'sysm_d01-f', 'SysString-f', 'TOG_SS_ChatName-f', 'TOG_SS_StringECommerce-f', 'GracesFDump'],
-
-['X00142280', 'X00142288', 'X00142296', 'X00142304', 'X00142312', 'X00142320', 'X00142328', 'X00142336', 'X00142344', 'X00142352', 'X00142360', 'X00142368', 'X00142376', 'X00142384', 'X00142392', 'X00142400', 'X00142408', 'X00142416', 'X00142424', 'X00142432', 'X00142440', 'X00142448', 'X00142456', 'X00142464', 'X00142472', 'X00142480', 'X00142488', 'X00142496', 'X00142504', 'X00142512', 'X00142520', 'X00142528', 'X00142536', 'X00142544', 'X00142552', 'X00142560', 'X00142568', 'X00142576', 'X00142584', 'X00142592', 'X00142600', 'X00142608', 'X00142616', 'X00142624', 'X00142632', 'X00142640', 'X00142648', 'X00142656', 'X00142664', 'X00142672', 'X00142680', 'X00142688', 'X00142696', 'X00142704', 'X00142712', 'X00142720', 'X00142728', 'X00142736', 'X00142744', 'X00142752', 'X00142760', 'X00142768', 'X00142776', 'X00142784', 'X00142792', 'X00142800', 'X00142808', 'X00142816', 'X00142824', 'X00142832', 'X00142840', 'X00142848', 'X00142856', 'X00142864', 'X00142872', 'X00142880', 'X00142888', 'X00142896', 'X00142904', 'X00142912', 'X00142920', 'X00142928', 'X00142936', 'X00142944', 'X00142952', 'X00142960', 'X00142968', 'X00142976', 'X00142984', 'X00142992', 'X00143000', 'X00143008', 'X00143016', 'X00143024', 'X00143032', 'X00143040', 'X00143048', 'X00143056', 'X00143064', 'X00143072', 'X00143080', 'X00143088', 'X00143096', 'X00143104', 'X00143112', 'X00143120', 'X00143128', 'X00143136', 'X00143144', 'X00143152', 'X00143160', 'X00143168', 'X00143176', 'X00143184', 'X00143192', 'X00143200', 'X00143208', 'X00143216', 'X00143224', 'X00143232', 'X00143240', 'X00143248', 'X00143256', 'X00143264', 'X00143272', 'X00143280', 'X00143288', 'X00143296', 'X00143304', 'X00143312', 'X00143320', 'X00143328', 'X00143336', 'X00143344', 'X00143352', 'X00143360', 'X00143368', 'X00143376', 'X00143384', 'X00143392', 'X00143400', 'X00143408', 'X00143416', 'X00143424', 'X00143432', 'X00143440', 'X00143448', 'X00143456', 'X00143464', 'X00143472', 'X00143480', 'X00143488', 'X00143496', 'X00143504', 'X00143512', 'X00143520', 'X00143528', 'X00143536', 'X00143544', 'X00143552', 'X00143560', 'X00143568', 'X00143576', 'X00143584', 'X00143592', 'X00143600', 'X00143608', 'X00143616', 'X00143624', 'X00143632', 'X00143640', 'X00143648', 'X00143656', 'X00143664', 'X00143672', 'X00143680', 'X00143688', 'X00143696', 'X00143704', 'X00143712', 'X00143720', 'X00143728', 'X00143736', 'X00143744', 'X00143752', 'X00143760', 'X00143768', 'X00143776', 'X00143784', 'X00143792', 'X00143800', 'X00143808', 'X00143816', 'X00143824', 'X00143832', 'X00143840', 'X00143848', 'X00143856', 'X00143864', 'X00143872', 'X00143880', 'X00143888', 'X00143896', 'X00143904', 'X00143912', 'X00143920', 'X00143928', 'X00143936', 'X00143944', 'X00143952', 'X00143960', 'X00143968', 'X00143976', 'X00143984', 'X00143992', 'X00144000', 'X00144008', 'X00144016', 'X00144024', 'X00144032', 'X00144040', 'X00144048', 'X00144056', 'X00144064', 'X00144072', 'X00144080', 'X00144088', 'X00144096', 'X00144104', 'X00144112', 'X00144120', 'X00144128', 'X00144136', 'X00144144', 'X00144152', 'X00144160', 'X00144168', 'X00144176', 'X00144184', 'X00144192', 'X00144200', 'X00144208', 'X00144216', 'X00144224', 'X00144232', 'X00144240', 'X00144248', 'X00144256', 'X00144264', 'X00144272', 'X00144280', 'X00144288', 'X00144296', 'X00144304', 'X00144312', 'X00144320', 'X00144328', 'X00144336', 'X00144344', 'X00144352', 'X00144360', 'X00144368', 'X00144376', 'X00144384', 'X00144392', 'X00144400', 'X00144408', 'X00144416', 'X00144424', 'X00144432', 'X00144440', 'X00144448', 'X00144456', 'X00144464', 'X00144472', 'X00144480', 'X00144488', 'X00144496', 'X00144504', 'X00144512', 'X00144520', 'X00144528', 'X00144536', 'X00144544', 'X00144552', 'X00144560', 'X00144568', 'X00144576', 'X00144584', 'X00144592', 'X00144600', 'X00144608', 'X00144616', 'X00144624', 'X00144632', 'X00144640', 'X00144648', 'X00144656', 'X00144664', 'X00144672', 'X00144680', 'X00144688', 'X00144696', 'X00144704', 'X00144712', 'X00144720', 'X00144728', 'X00144736', 'X00144744', 'X00144752', 'X00144760', 'X00144768', 'X00144776', 'X00144784', 'X00144792', 'X00144800', 'X00144808', 'X00144816', 'X00144824', 'X00144832', 'X00144840', 'X00144848', 'X00144856', 'X00144864', 'X00144872', 'X00144880', 'X00144888', 'X00144896', 'X00144904', 'X00144912', 'X00144920', 'X00144928', 'X00144936', 'X00144944', 'X00144952', 'X00144960', 'X00144968', 'X00144976', 'X00144984', 'X00144992', 'X00145000', 'X00145008', 'X00145016', 'X00145024', 'X00145032', 'X00145040', 'X00145048', 'X00145056', 'X00145064', 'X00145072', 'X00145080', 'X00145088', 'X00145096', 'X00145104', 'X00145112', 'X00145120', 'X00145128', 'X00145136', 'X00145144', 'X00145152', 'X00145160', 'X00145168', 'X00145176', 'X00145184', 'X00145192', 'X00145200', 'X00145208', 'X00145216', 'X00145224', 'X00145232', 'X00145240', 'X00145248', 'X00145256', 'X00145264', 'X00145272', 'X00145280', 'X00145288', 'X00145296', 'X00145304', 'X00145312', 'X00145320', 'X00145328', 'X00145336', 'X00145344', 'X00145352', 'X00145360', 'X00145368', 'X00145376', 'X00145384', 'X00145392', 'X00145400', 'X00145408', 'X00145416', 'X00145424', 'X00145432', 'X00145440', 'X00145448', 'X00145456', 'X00145464', 'X00145472', 'X00145480', 'X00145488', 'X00145496', 'X00145504', 'X00145512', 'X00145520', 'X00145528', 'X00145536', 'X00145544', 'X00145552', 'X00145560', 'X00145568', 'X00145576', 'X00145584', 'X00145592', 'X00145600', 'X00145608', 'X00145616', 'X00145624', 'X00145632', 'X00145640', 'X00145648', 'X00145656', 'X00145664', 'X00145672', 'X00145680', 'X00145688', 'X00145696', 'X00145704', 'X00145712', 'X00145720', 'X00145728', 'X00145736', 'X00145744', 'X00145752', 'X00145760', 'X00145768', 'X00145776', 'X00145784', 'X00145792', 'X00145800', 'X00145808', 'X00145816', 'X00145824', 'X00145832', 'X00145840', 'X00145848', 'X00145856', 'X00145864', 'X00145872', 'X00145880', 'X00145888', 'X00145896', 'X00145904', 'X00145912', 'X00145920', 'X00145928', 'X00145936', 'X00145944', 'X00145952', 'X00145960', 'X00145968', 'X00145976', 'X00145984', 'X00145992', 'X00146000', 'X00146008', 'X00146016', 'X00146024', 'X00146032', 'X00146040', 'X00146048', 'X00146056', 'X00146064', 'X00146072', 'X00146080', 'X00146088', 'X00146096', 'X00146104', 'X00146112', 'X00146120', 'X00146128', 'X00146136', 'X00146144', 'X00146152', 'X00146160', 'X00146168', 'X00146176', 'X00146184', 'X00146192', 'X00146200', 'X00146208', 'X00146216', 'X00146224', 'X00146232', 'X00146240', 'X00146248', 'X00146256', 'X00146264', 'X00146272', 'X00146280', 'X00146288', 'X00146296', 'X00146304', 'X00146312', 'X00146320', 'X00146328', 'X00146336', 'X00146344', 'X00146352', 'X00146360', 'X00146368', 'X00146376', 'X00146384', 'X00146392', 'X00146400', 'X00146408', 'X00146416', 'X00146424', 'X00146432', 'X00146440', 'X00146448', 'X00146456', 'X00146464', 'X00146472', 'X00146480', 'X00146488', 'X00146496', 'X00146504', 'X00146512', 'X00146520', 'X00146528', 'X00146536', 'X00146544', 'X00146552', 'X00146560', 'X00146568', 'X00146576', 'X00146584', 'X00146592', 'X00146600', 'X00146608', 'X00146616', 'X00146624', 'X00146632', 'X00146640', 'X00146648', 'X00146656', 'X00146664', 'X00146672', 'X00146680', 'X00146688', 'X00146696', 'X00146704', 'X00146712', 'X00146720', 'X00146728', 'X00146736', 'X00146744', 'X00146752', 'X00146760', 'X00146768', 'X00146776', 'X00146784', 'X00146792', 'X00146800', 'X00146808', 'X00146816', 'X00146824', 'X00146832', 'X00146840', 'X00146848', 'X00146856', 'X00146864', 'X00146872', 'X00146880', 'X00146888', 'X00146896', 'X00146904', 'X00146912', 'X00146920', 'X00146928', 'X00146936', 'X00146944', 'X00146952', 'X00146960', 'X00146968', 'X00146976', 'X00146984', 'X00146992', 'X00147000', 'X00147008', 'X00147016', 'X00147024', 'X00147032', 'X00147040', 'X00147048', 'X00147056', 'X00147064', 'X00147072', 'X00147080', 'X00147088', 'X00147096', 'X00147104', 'X00147112', 'X00147120', 'X00147128', 'X00147136', 'X00147144', 'X00147152', 'X00147160', 'X00147168', 'X00147176', 'X00147184', 'X00147192', 'X00147200', 'X00147208', 'X00147216', 'X00147224', 'X00147232', 'X00147240', 'X00147248', 'X00147256', 'X00147264', 'X00147272', 'X00147280', 'X00147288', 'X00147296', 'X00147304', 'X00147312', 'X00147320', 'X00147328', 'X00147336', 'X00147344', 'X00147352', 'X00147360', 'X00147368', 'X00147376', 'X00147384', 'X00147392', 'X00147400', 'X00147408', 'X00147416', 'X00147424', 'X00147432', 'X00147440', 'X00147448', 'X00147456', 'X00147464', 'X00147472', 'X00147480', 'X00147488', 'X00147496', 'X00147504', 'X00147512', 'X00147520', 'X00147528', 'X00147536', 'X00147544', 'X00147552', 'X00147560', 'X00147568', 'X00147576', 'X00147584', 'X00147592', 'X00147600', 'X00147608', 'X00147616', 'X00147624', 'X00147632', 'X00147640', 'X00147648', 'X00147656', 'X00147664', 'X00147672', 'X00147680', 'X00147688', 'X00147696', 'X00147704', 'X00147712', 'X00147720', 'X00147728', 'X00147736', 'X00147744', 'X00147752', 'X00147760', 'X00147768', 'X00147776', 'X00147784', 'X00147792', 'X00147800', 'X00147808', 'X00147816', 'X00147824', 'X00147832', 'X00147840', 'X00147848', 'X00147856', 'X00147864', 'X00147872', 'X00147880', 'X00147888', 'X00147896', 'X00147904', 'X00147912', 'X00147920', 'X00147928', 'X00147936', 'X00147944', 'X00147952', 'X00147960', 'X00147968', 'X00147976', 'X00147984', 'X00147992', 'X00148000', 'X00148008', 'X00148016', 'X00148024', 'X00148032', 'X00148040', 'X00148048', 'X00148056', 'X00148064', 'X00148072', 'X00148080', 'X00148088', 'X00148096', 'X00148104', 'X00148112', 'X00148120', 'X00148128', 'X00148136', 'X00148144', 'X00148152', 'X00148160', 'X00148168', 'X00148176', 'X00148184', 'X00148192', 'X00148200', 'X00148208', 'X00148216', 'X00148224', 'X00148232', 'X00148240', 'X00148248', 'X00148256', 'X00148264', 'X00148272', 'X00148280', 'X00148288', 'X00148296', 'X00148304', 'X00148312', 'X00148320', 'X00148328', 'X00148336', 'X00148344', 'X00148352', 'X00148360', 'X00148368', 'X00148376', 'X00148384', 'X00148392', 'X00148400', 'X00148408', 'X00148416', 'X00148424', 'X00148432', 'X00148440', 'X00148448', 'X00148456', 'X00148464', 'X00148472', 'X00148480', 'X00148488', 'X00148496', 'X00148504', 'X00148512', 'X00148520', 'X00148528', 'X00148536', 'X00148544', 'X00148552', 'X00148560', 'X00148568', 'X00148576', 'X00148584', 'X00148592', 'X00148600', 'X00148608', 'X00148616', 'X00148624', 'X00148632', 'X00148640', 'X00148648', 'X00148656', 'X00148664', 'X00148672', 'X00148680', 'X00148688', 'X00148696', 'X00148704', 'X00148712', 'X00148720', 'X00148728', 'X00148736', 'X00148744', 'X00148752', 'X00148760', 'X00148768', 'X00148776', 'X00148784', 'X00148792', 'X00148800', 'X00148808', 'X00148816', 'X00148824', 'X00148832', 'X00148840', 'X00148848', 'X00148856', 'X00148864', 'X00148872', 'X00148880', 'X00148888', 'X00148896', 'X00148904', 'X00148912', 'X00148920', 'X00148928', 'X00148936', 'X00148944', 'X00148952', 'X00148960', 'X00148968', 'X00148976', 'X00148984', 'X00148992', 'X00149000', 'X00149008', 'X00149016', 'X00149024', 'X00149032', 'X00149040', 'X00149048', 'X00149056', 'X00149064', 'X00149072', 'X00149080', 'X00149088', 'X00149096', 'X00149104', 'X00149112', 'X00149120', 'X00149128', 'X00149136', 'X00149144', 'X00149152', 'X00149160', 'X00149168', 'X00149176', 'X00149184', 'X00149192', 'X00149200', 'X00149208', 'X00149216', 'X00149224', 'X00149232', 'X00149240', 'X00149248', 'X00149256', 'X00149264', 'X00149272', 'X00149280', 'X00149288', 'X00149296', 'X00149304', 'X00149312', 'X00149320', 'X00149328', 'X00149336', 'X00149344', 'X00149352', 'X00149360', 'X00149368', 'X00149376', 'X00149384', 'X00149392', 'X00149400', 'X00149408', 'X00149416', 'X00149424', 'X00149432', 'X00149440', 'X00149448', 'X00149456', 'X00149464', 'X00149472', 'X00149480', 'X00149488', 'X00149496', 'X00149504', 'X00149512', 'X00149520', 'X00149528', 'X00149536', 'X00149544', 'X00149552', 'X00149560', 'X00149568', 'X00149576', 'X00149584', 'X00149592', 'X00149600']
-
-]
-
