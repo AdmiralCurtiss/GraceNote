@@ -72,7 +72,6 @@ if not os.path.exists(configData.LocalDatabasePath + '/CompletionPercentage'):
     CreateCursor = CreateConnection.cursor()
     CreateCursor.execute("CREATE TABLE Percentages (Database TEXT PRIMARY KEY, entries INT, translation INT, editing1 INT, editing2 INT, editing3 INT, comments INT)")
     CreateConnection.commit()
-    
 
 try:
     import enchant
@@ -860,6 +859,7 @@ class Scripts2(QtGui.QWidget):
 
         # List View of Entries
         self.entry = QtGui.QListView()
+        self.entry.setWrapping(False)
         self.entrymodel = QtGui.QStandardItemModel()
 
         self.entry.setFixedWidth(180)
@@ -2063,19 +2063,30 @@ class Scripts2(QtGui.QWidget):
 
     def UpdateDebug(self):
         index = self.entry.currentIndex()
+        
+        if self.entrymodel.item(index.row()).checkState() == 0:
+            DebugState = False
+        else:
+            DebugState = True
+        
         rowPresent = int(self.entrysort.data(index)[6:11])-1
         databasefilename = self.treemodel.itemFromIndex(self.tree.currentIndex()).statusTip()
         SaveCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(databasefilename))
         SaveCur = SaveCon.cursor()
+        SaveCur.execute("select StringID from Text where ID={0}".format(rowPresent+1))
+        NextID = SaveCur.fetchall()[0][0]
+        if DebugState == True:
+            CursorGracesJapanese.execute("UPDATE Japanese SET debug = 1 WHERE ID = {0} AND debug != 1".format(NextID))
+            SaveCur.execute("UPDATE Text SET status = -1 WHERE ID = {0} AND status != -1".format(rowPresent+1))
+        else:
+            CursorGracesJapanese.execute("UPDATE Japanese SET debug = 0 WHERE ID = {0} AND debug != 0".format(NextID))
+            SaveCur.execute("UPDATE Text SET status =  0 WHERE ID = {0} AND status  = -1".format(rowPresent+1))
+        SaveCon.commit()
+        ConnectionGracesJapanese.commit()
+        
 
-        if self.entrymodel.item(index.row()).checkState() == 0:
-            SaveCur.execute("select StringID from Text where ID={0}".format(rowPresent+1))
-            NextID = SaveCur.fetchall()[0][0]
-            CursorGracesJapanese.execute("update Japanese set debug=0 where ID={0}".format(NextID))
-            SaveCur.execute("update Text set status=0 where ID={0} AND status=-1".format(rowPresent+1))
-            SaveCon.commit()
-            ConnectionGracesJapanese.commit()
-            
+        # color
+        if DebugState == False:
             SaveCur.execute("select status from Text where ID={0}".format(rowPresent+1))
             status = SaveCur.fetchall()[0][0]
             if status >= self.role:
@@ -2088,13 +2099,6 @@ class Scripts2(QtGui.QWidget):
                 self.entrymodel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(255, 255, 255)))
                 
         else:
-            SaveCur.execute("select StringID from Text where ID={0}".format(rowPresent+1))
-            NextID = SaveCur.fetchall()[0][0]
-            CursorGracesJapanese.execute("update Japanese set debug=1 where ID={0}".format(NextID))
-            SaveCur.execute("update Text set status=-1 where ID={0}".format(rowPresent+1))
-            SaveCon.commit()
-            ConnectionGracesJapanese.commit()
-            
             self.entrymodel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(255, 220, 220)))
             if self.author == 'ruta':
                 self.entrymodel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(255,225,180)))             
