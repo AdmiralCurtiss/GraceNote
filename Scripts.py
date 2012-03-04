@@ -253,12 +253,10 @@ class XTextBox(QtGui.QTextEdit):
                         
     def lookupAudioHash(self, name):
         
-        if VesperiaFlag == True:
+        if configData.UseGracesVoiceHash == False:
             if EnglishVoiceLanguageFlag == True:
-                #print 'Clips/US_' + name + '.mp3'
-                return 'Clips/US_' + name + '.mp3'
-            #print 'Clips/' + name + '.mp3'
-            return 'Clips/' + name + '.mp3'
+                return configData.VoicePathEnPrefix + name + configData.VoicePathEnPostfix
+            return configData.VoicePathJpPrefix + name + configData.VoicePathJpPostfix
         
         if HashTableExists == False:
             return ''
@@ -269,13 +267,15 @@ class XTextBox(QtGui.QTextEdit):
         
         if name[:2] == 'VS':
             index = hashtable[int(name[2])-1].index(temphash)
-            filename = 'VOSCE0' + name[2] + '_' + str(index+1).zfill(5) + '.mp3'
+            filename = 'VOSCE0' + name[2] + '_' + str(index+1).zfill(5)
         
         elif name[:2] == 'VA':
             index = hashtable[8].index(temphash)
-            filename = 'VOSCE16' + '_' + str(index+1).zfill(5) + '.mp3'
+            filename = 'VOSCE16' + '_' + str(index+1).zfill(5)
         
-        return 'Clips/' + filename
+        if EnglishVoiceLanguageFlag == True:
+            return configData.VoicePathEnPrefix + filename + configData.VoicePathEnPostfix
+        return configData.VoicePathJpPrefix + filename + configData.VoicePathJpPostfix
         
 
     def playAudio(self):
