@@ -48,22 +48,17 @@ except:
     configDataGracesFolders = [[]]
 
 
-if os.path.exists('Clips'):
-    try:
-        sys.path.append('Clips')
-        from PyQt4.phonon import Phonon
-    except ImportError:
-        print "Your Qt installation does not have Phonon support.\nPhonon is required to play audio clips."
+try:
+    Audio = True
+    sys.path.append('Clips')
+    from PyQt4.phonon import Phonon
     if os.path.exists('Clips/hashtable.py'):
         from hashtable import hashtable
         HashTableExists = True
     else:
         HashTableExists = False
-    Audio = True
-
-
-else:
-    print "No folder named 'Clips' found. Audio playback disabled."
+except ImportError:
+    print "Your Qt installation does not have Phonon support.\nPhonon is required to play audio clips."
     Audio = False
 
 
@@ -92,6 +87,7 @@ LogCur = LogCon.cursor()
 EnglishVoiceLanguageFlag = False
 UpdateLowerStatusFlag = False
 ModeFlag = 'Semi-Auto'
+AmountEditingWindows = 5
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -121,7 +117,9 @@ class MainWindow(QtGui.QMainWindow):
 
 class XTextBox(QtGui.QTextEdit):
 
-    manualEdit = QtCore.pyqtSignal(int)
+    #should be: manualEdit = QtCore.pyqtSignal(int, XTextBox) but I haven't figured out how to give the current class as parameter
+    manualEdit = QtCore.pyqtSignal(int, object)
+    currentEntry = -1
 
 
     def __init__(self, HUD=None):
@@ -291,7 +289,7 @@ class XTextBox(QtGui.QTextEdit):
 
     def textChangedSignal(self):
         if self.modified == True:
-            self.manualEdit.emit(5)
+            self.manualEdit.emit(5, self)
             
     def modifyTrue(self, set):
         self.modified = set
@@ -501,44 +499,44 @@ class XTextBox(QtGui.QTextEdit):
         if self.one == False:
             self.translate.setIcon(QtGui.QIcon('icons/tlon.png'))
             self.one = True
-            self.manualEdit.emit(1)
+            self.manualEdit.emit(1, self)
         else:
             self.translate.setIcon(QtGui.QIcon('icons/tloff.png'))
             self.one = False
-            self.manualEdit.emit(0)
+            self.manualEdit.emit(0, self)
 
             
     def checkTogglem(self):
         if self.two == False:
             self.tlCheck.setIcon(QtGui.QIcon('icons/oneon.png'))
             self.two = True
-            self.manualEdit.emit(2)
+            self.manualEdit.emit(2, self)
         else:
             self.tlCheck.setIcon(QtGui.QIcon('icons/oneoff.png'))
             self.two = False
-            self.manualEdit.emit(1)
+            self.manualEdit.emit(1, self)
 
 
     def rewriteTogglem(self):
         if self.three == False:
             self.rewrite.setIcon(QtGui.QIcon('icons/twoon.png'))
             self.three = True
-            self.manualEdit.emit(3)
+            self.manualEdit.emit(3, self)
         else:
             self.rewrite.setIcon(QtGui.QIcon('icons/twooff.png'))
             self.three = False
-            self.manualEdit.emit(2)
+            self.manualEdit.emit(2, self)
 
 
     def grammarTogglem(self):
         if self.four == False:
             self.grammar.setIcon(QtGui.QIcon('icons/threeon.png'))
             self.four = True
-            self.manualEdit.emit(4)
+            self.manualEdit.emit(4, self)
         else:
             self.grammar.setIcon(QtGui.QIcon('icons/threeoff.png'))
             self.four = False
-            self.manualEdit.emit(3)
+            self.manualEdit.emit(3, self)
 
 
 
@@ -870,65 +868,37 @@ class Scripts2(QtGui.QWidget):
 
 
         # Text Edits
-        self.editpast = XTextBox()
-        self.editpresent = XTextBox()
-        self.editfuture = XTextBox()
-        
-        self.Beditpast = XTextBox('jp')
-        self.Beditpresent = XTextBox('jp')
-        self.Beditfuture = XTextBox('jp')
-
-        self.Beditpast.hide()
-        self.Beditpresent.hide()
-        self.Beditfuture.hide()
-
-        self.Beditpast.setReadOnly(True)
-        self.Beditpresent.setReadOnly(True)
-        self.Beditfuture.setReadOnly(True)
-        
-        MyHighlighter(self.Beditpast, 'something')
-        MyHighlighter(self.Beditpresent, 'something')
-        MyHighlighter(self.Beditfuture, 'something')
-
-        if self.settings.contains('font'):
-            size = int(self.settings.value('font'))
-
-            self.editpast.setFontPointSize(size)
-            self.editpresent.setFontPointSize(size)
-            self.editfuture.setFontPointSize(size)
+        global AmountEditingWindows
+        self.regularEditingTextBoxes = []
+        self.twoupEditingTextBoxes = []
+        self.textEditingBoxes = []
+        for i in range(AmountEditingWindows):
+            # create text boxes, set defaults
+            tb1 = XTextBox()
+            tb2 = XTextBox('jp')
+            tb2.hide()
+            tb2.setReadOnly(True)
+            MyHighlighter(tb2, 'something')
+            if self.settings.contains('font'):
+                size = int(self.settings.value('font'))
+                tb1.setFontPointSize(size)
+                tb2.setFontPointSize(size)
+            self.regularEditingTextBoxes.append(tb1)
+            self.twoupEditingTextBoxes.append(tb2)
             
-            self.Beditpast.setFontPointSize(size)
-            self.Beditpresent.setFontPointSize(size)
-            self.Beditfuture.setFontPointSize(size)
+            # create layout
+            tmplayout = QtGui.QHBoxLayout()
+            tmplayout.addWidget(tb1)
+            tmplayout.addWidget(tb2)
+            
+            # create QGroupBox
+            tmpqgrpbox = QtGui.QGroupBox()
+            tmpqgrpbox.setLayout(tmplayout)
+            tmpqgrpbox.setTitle("Entry -:")
+            self.textEditingBoxes.append(tmpqgrpbox)
+            
+        # ------------------------------------------------------ #
 
-
-        
-        LayoutPast = QtGui.QHBoxLayout()
-        LayoutPresent = QtGui.QHBoxLayout()
-        LayoutFuture = QtGui.QHBoxLayout()
-
-        LayoutPast.addWidget(self.editpast)
-        LayoutPresent.addWidget(self.editpresent)
-        LayoutFuture.addWidget(self.editfuture)
-
-        LayoutPast.addWidget(self.Beditpast)
-        LayoutPresent.addWidget(self.Beditpresent)
-        LayoutFuture.addWidget(self.Beditfuture)
-
-        self.PastBox = QtGui.QGroupBox()
-        self.PresentBox = QtGui.QGroupBox()
-        self.FutureBox = QtGui.QGroupBox()
-
-        self.PastBox.setLayout(LayoutPast)
-        self.PresentBox.setLayout(LayoutPresent)
-        self.FutureBox.setLayout(LayoutFuture)
-
-        self.PastBox.setTitle("Entry -:")
-        self.PresentBox.setTitle("Entry -:")
-        self.FutureBox.setTitle("Entry -:")
-
-
-                
         # Filter Input
         self.filter = QtGui.QLineEdit()
         self.filter.setFixedWidth(200)
@@ -942,9 +912,8 @@ class Scripts2(QtGui.QWidget):
         self.entry.selectionModel().selectionChanged.connect(self.PopulateTextEdit)
         self.entry.clicked.connect(self.UpdateDebug)
         #self.entry.pressed.connect(self.UpdateDebug)
-        self.editpast.manualEdit.connect(self.UpdatePast)
-        self.editpresent.manualEdit.connect(self.UpdatePresent)
-        self.editfuture.manualEdit.connect(self.UpdateFuture)
+        for editbox in self.regularEditingTextBoxes:
+            editbox.manualEdit.connect(self.UpdateTextGenericFunc)
         self.debug.toggled.connect(self.DebugFilter)
         self.filter.returnPressed.connect(self.LiveSearch)
         #self.sortByType.toggled.connect(self.SortToggle)
@@ -1250,11 +1219,12 @@ class Scripts2(QtGui.QWidget):
         subLayout.addWidget(commentsAvailableLabel)
         subLayout.addWidget(self.tree)
         
-        layout.addLayout(subLayout, 0, 0, 3, 1)
-        layout.addWidget(self.PastBox, 0, 1, 1, 2)
-        layout.addWidget(self.PresentBox, 1, 1, 1, 2)
-        layout.addWidget(self.FutureBox, 2, 1, 1, 2)
-        layout.addWidget(self.entry, 0, 3, 3, 1)
+        layout.addLayout(subLayout, 0, 0, len(self.textEditingBoxes), 1)
+        
+        for i in range(len(self.textEditingBoxes)):
+            layout.addWidget(self.textEditingBoxes[i], i, 1, 1, 2)
+        
+        layout.addWidget(self.entry, 0, 3, len(self.textEditingBoxes), 1)
         layout.setColumnStretch(1,1)
         self.setLayout(layout)
 
@@ -1307,13 +1277,10 @@ class Scripts2(QtGui.QWidget):
     def fontChange(self, action):
         size = int(action.iconText())
 
-        self.editpast.setFontPointSize(size)
-        self.editpresent.setFontPointSize(size)
-        self.editfuture.setFontPointSize(size)
-        
-        self.Beditpast.setFontPointSize(size)
-        self.Beditpresent.setFontPointSize(size)
-        self.Beditfuture.setFontPointSize(size)
+        for box in self.regularEditingTextBoxes:
+            box.setFontPointSize(size)
+        for box in self.twoupEditingTextBoxes:
+            box.setFontPointSize(size)
 
         self.PopulateTextEdit()
         self.settings.setValue('font', size)
@@ -1417,9 +1384,8 @@ class Scripts2(QtGui.QWidget):
             self.twoupAct.setIcon(QtGui.QIcon('icons/oneup.png'))
             self.twoupAct.setText('One up')
 
-            self.Beditpast.show()
-            self.Beditpresent.show()
-            self.Beditfuture.show()
+            for box in self.twoupEditingTextBoxes:
+                box.show()
             
             self.PopulateTextEdit()
 
@@ -1427,9 +1393,8 @@ class Scripts2(QtGui.QWidget):
             self.twoupAct.setIcon(QtGui.QIcon('icons/twoup.png'))
             self.twoupAct.setText('Two up')
 
-            self.Beditpast.hide()
-            self.Beditpresent.hide()
-            self.Beditfuture.hide()
+            for box in self.twoupEditingTextBoxes:
+                box.hide()
 
         
 #    def SortToggle(self):
@@ -1724,17 +1689,15 @@ class Scripts2(QtGui.QWidget):
         global commentsAvailableLabel
         containsComments = False
     
-        self.editpast.iconToggle(0)
-        self.editpresent.iconToggle(0)
-        self.editfuture.iconToggle(0)
+        for editbox in self.regularEditingTextBoxes:
+            editbox.iconToggle(0)
 
         self.entrymodel.clear()
         
         self.text = []
 
-        self.editpast.setText('')
-        self.editpresent.setText('')
-        self.editfuture.setText('')
+        for editbox in self.regularEditingTextBoxes:
+            editbox.setText('')
 
         index = self.tree.currentIndex()
         parent = self.treemodel.data(self.tree.currentIndex().parent())
@@ -2050,7 +2013,7 @@ class Scripts2(QtGui.QWidget):
         CalculateAllCompletionPercentagesForDatabase()
 
     def PlayCentralAudio(self):
-        self.editpresent.playAudio()
+        self.regularEditingTextBoxes[1].playAudio()
         
     def ShowDuplicateText(self):
         self.dupeDialog = DuplicateText()
@@ -2069,25 +2032,25 @@ class Scripts2(QtGui.QWidget):
         else:
             DebugState = True
         
-        rowPresent = int(self.entrysort.data(index)[6:11])-1
+        selectedRow = int(self.entrysort.data(index)[6:11])-1
         databasefilename = self.treemodel.itemFromIndex(self.tree.currentIndex()).statusTip()
         SaveCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(databasefilename))
         SaveCur = SaveCon.cursor()
-        SaveCur.execute("select StringID from Text where ID={0}".format(rowPresent+1))
+        SaveCur.execute("select StringID from Text where ID={0}".format(selectedRow+1))
         NextID = SaveCur.fetchall()[0][0]
         if DebugState == True:
             CursorGracesJapanese.execute("UPDATE Japanese SET debug = 1 WHERE ID = {0} AND debug != 1".format(NextID))
-            SaveCur.execute("UPDATE Text SET status = -1 WHERE ID = {0} AND status != -1".format(rowPresent+1))
+            SaveCur.execute("UPDATE Text SET status = -1 WHERE ID = {0} AND status != -1".format(selectedRow+1))
         else:
             CursorGracesJapanese.execute("UPDATE Japanese SET debug = 0 WHERE ID = {0} AND debug != 0".format(NextID))
-            SaveCur.execute("UPDATE Text SET status =  0 WHERE ID = {0} AND status  = -1".format(rowPresent+1))
+            SaveCur.execute("UPDATE Text SET status =  0 WHERE ID = {0} AND status  = -1".format(selectedRow+1))
         SaveCon.commit()
         ConnectionGracesJapanese.commit()
         
 
         # color
         if DebugState == False:
-            SaveCur.execute("select status from Text where ID={0}".format(rowPresent+1))
+            SaveCur.execute("select status from Text where ID={0}".format(selectedRow+1))
             status = SaveCur.fetchall()[0][0]
             if status >= self.role:
                 self.entrymodel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(220, 255, 220)))
@@ -2103,38 +2066,35 @@ class Scripts2(QtGui.QWidget):
             if self.author == 'ruta':
                 self.entrymodel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(255,225,180)))             
         
-
-    def UpdatePast(self, role):
+    def UpdateTextGenericFunc(self, role, textBox):
+        if textBox.currentEntry < 0:
+            return
+            
         treeindex = self.tree.currentIndex()
         if self.treemodel.hasChildren(treeindex):
             return
         
         index = self.entry.currentIndex()
         row = index.row()
-
+        
         databasefilename = self.treemodel.itemFromIndex(self.tree.currentIndex()).statusTip()
         SaveCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(databasefilename))
         SaveCur = SaveCon.cursor()
-        
-        if row == 0 or row == None:
-            return
 
         self.update.add(str(databasefilename))
                         
-        rowPast = int(self.entrysort.data(index.sibling(index.row()-1, index.column()))[6:11])-1
-        
-        self.entrymodel.item(index.sibling(index.row()-1, 0).row()).setBackground(QtGui.QBrush(QtGui.QColor(220, 255, 220)))
-        if self.author == 'ruta':
-            self.entrymodel.item(index.sibling(index.row()-1, 0).row()).setBackground(QtGui.QBrush(QtGui.QColor(255, 235, 245)))
+        #self.entrymodel.item(index.sibling(index.row()-1, 0).row()).setBackground(QtGui.QBrush(QtGui.QColor(220, 255, 220)))
+        #if self.author == 'ruta':
+        #    self.entrymodel.item(index.sibling(index.row()-1, 0).row()).setBackground(QtGui.QBrush(QtGui.QColor(255, 235, 245)))
             
-        GoodString = VariableRemove(self.editpast.toPlainText())
+        GoodString = VariableRemove(textBox.toPlainText())
 
         if role == 5:
             role = self.role
             
         global UpdateLowerStatusFlag
         if UpdateLowerStatusFlag == False:
-            SaveCur.execute("SELECT status FROM Text WHERE ID={0}".format(rowPast+1))
+            SaveCur.execute("SELECT status FROM Text WHERE ID={0}".format(textBox.currentEntry))
             statuscheck = SaveCur.fetchall()[0][0]
             if statuscheck > role:
                 updateStatusValue = statuscheck
@@ -2145,147 +2105,26 @@ class Scripts2(QtGui.QWidget):
         
         global ModeFlag
         if ModeFlag != 'Manual':
-            self.text[rowPast][4] = updateStatusValue
-            self.editpast.iconToggle(updateStatusValue)
+            self.text[textBox.currentEntry - 1][4] = updateStatusValue
+            textBox.iconToggle(updateStatusValue)
                 
         if self.state == 'ENG':
             if ModeFlag == 'Manual':
-                SaveCur.execute(u"update Text set english=?, updated=1 where ID=?", (GoodString, rowPast+1))
+                SaveCur.execute(u"update Text set english=?, updated=1 where ID=?", (GoodString, textBox.currentEntry))
             else:
-                SaveCur.execute(u"update Text set english=?, updated=1, status=? where ID=?", (GoodString, updateStatusValue, rowPast+1))
+                SaveCur.execute(u"update Text set english=?, updated=1, status=? where ID=?", (GoodString, updateStatusValue, textBox.currentEntry))
             SaveCon.commit()
-            self.text[rowPast][0] = GoodString
+            self.text[textBox.currentEntry - 1][0] = GoodString
 
         elif self.state == "COM":
             if ModeFlag == 'Manual':
-                SaveCur.execute(u"update Text set comment=?, updated=1 where ID=?", (GoodString, rowPast+1))
+                SaveCur.execute(u"update Text set comment=?, updated=1 where ID=?", (GoodString, textBox.currentEntry))
             else:
-                SaveCur.execute(u"update Text set comment=?, updated=1, status=? where ID=?", (GoodString, updateStatusValue, rowPast+1))
+                SaveCur.execute(u"update Text set comment=?, updated=1, status=? where ID=?", (GoodString, updateStatusValue, textBox.currentEntry))
             SaveCon.commit()
-            self.text[rowPast][2] = GoodString
+            self.text[textBox.currentEntry - 1][2] = GoodString
+        return
 
-        
-    def UpdatePresent(self, role):
-        treeindex = self.tree.currentIndex()
-        if self.treemodel.hasChildren(treeindex):
-            return
-
-        index = self.entry.currentIndex()
-        row = index.row()
-
-        databasefilename = self.treemodel.itemFromIndex(self.tree.currentIndex()).statusTip()
-        SaveCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(databasefilename))
-        SaveCur = SaveCon.cursor()
-
-        self.update.add(str(databasefilename))
-                        
-        rowPresent = int(self.entrysort.data(index)[6:11])-1
-
-        self.entrymodel.item(index.row(), 0).setBackground(QtGui.QBrush(QtGui.QColor(220, 255, 220)))
-        if self.author == 'ruta':
-            self.entrymodel.item(index.row(), 0).setBackground(QtGui.QBrush(QtGui.QColor(255, 235, 245)))
-
-        GoodString = VariableRemove(self.editpresent.toPlainText())
-
-        if role == 5:
-            role = self.role
-        
-        global UpdateLowerStatusFlag
-        if UpdateLowerStatusFlag == False:
-            SaveCur.execute("SELECT status FROM Text WHERE ID={0}".format(rowPresent+1))
-            statuscheck = SaveCur.fetchall()[0][0]
-          #  print '{0} statuscheck'.format(statuscheck)
-         #   print '{0} role'.format(role)
-            if statuscheck > role:
-                updateStatusValue = statuscheck
-            else:
-                updateStatusValue = role
-        else:
-            updateStatusValue = role
-        
-        #print '{0} updateStatusValue'.format(updateStatusValue)
-        
-        global ModeFlag
-        if ModeFlag != 'Manual':
-            self.text[rowPresent][4] = updateStatusValue
-            self.editpresent.iconToggle(updateStatusValue)
-
-        if self.state == 'ENG':
-            if ModeFlag == 'Manual':
-                SaveCur.execute(u"update Text set english=?, updated=1 where ID=?", (GoodString, rowPresent+1))
-            else:
-                SaveCur.execute(u"update Text set english=?, updated=1, status=? where ID=?", (GoodString, updateStatusValue, rowPresent+1))
-            SaveCon.commit()
-            self.text[rowPresent][0] = GoodString
-
-        elif self.state == "COM":
-            if ModeFlag == 'Manual':
-                SaveCur.execute(u"update Text set comment=?, updated=1 where ID=?", (GoodString, rowPresent+1))
-            else:
-                SaveCur.execute(u"update Text set comment=?, updated=1, status=? where ID=?", (GoodString, updateStatusValue, rowPresent+1))
-            SaveCon.commit()
-            self.text[rowPresent][2] = GoodString
-
-        
-    def UpdateFuture(self, role):
-        treeindex = self.tree.currentIndex()
-        if self.treemodel.hasChildren(treeindex):
-            return
-
-        index = self.entry.currentIndex()
-        row = index.row()
-
-        databasefilename = self.treemodel.itemFromIndex(self.tree.currentIndex()).statusTip()
-        SaveCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(databasefilename))
-        SaveCur = SaveCon.cursor()
-        
-        if row == self.entrymodel.rowCount()-1:
-            return
-            
-        self.update.add(str(databasefilename))
-                        
-        rowFuture = int(self.entrysort.data(index.sibling(index.row()+1, index.column()))[6:11])-1
-        
-        self.entrymodel.item(index.sibling(index.row()+1, 0).row()).setBackground(QtGui.QBrush(QtGui.QColor(220, 255, 220)))
-        if self.author == 'ruta':
-            self.entrymodel.item(index.sibling(index.row()+1, 0).row()).setBackground(QtGui.QBrush(QtGui.QColor(255, 235, 245)))
-
-        GoodString = VariableRemove(self.editfuture.toPlainText())
-
-        if role == 5:
-            role = self.role
-
-        global UpdateLowerStatusFlag
-        if UpdateLowerStatusFlag == False:
-            SaveCur.execute("SELECT status FROM Text WHERE ID={0}".format(rowFuture+1))
-            statuscheck = SaveCur.fetchall()[0][0]
-            if statuscheck > role:
-                updateStatusValue = statuscheck
-            else:
-                updateStatusValue = role
-        else:
-            updateStatusValue = role
-        
-        global ModeFlag
-        if ModeFlag != 'Manual':
-            self.text[rowFuture][4] = updateStatusValue
-            self.editfuture.iconToggle(updateStatusValue)
-
-        if self.state == 'ENG':
-            if ModeFlag == 'Manual':
-                SaveCur.execute(u"update Text set english=?, updated=1 where ID=?", (GoodString, rowFuture+1))
-            else:
-                SaveCur.execute(u"update Text set english=?, updated=1, status=? where ID=?", (GoodString, updateStatusValue, rowFuture+1))
-            SaveCon.commit()
-            self.text[rowFuture][0] = GoodString
-
-        elif self.state == "COM":
-            if ModeFlag == 'Manual':
-                SaveCur.execute(u"update Text set comment=?, updated=1 where ID=?", (GoodString, rowFuture+1))
-            else:
-                SaveCur.execute(u"update Text set comment=?, updated=1, status=? where ID=?", (GoodString, updateStatusValue, rowFuture+1))
-            SaveCon.commit()
-            self.text[rowFuture][2] = GoodString
         
 
     def PopulateTextEdit(self):
@@ -2303,148 +2142,60 @@ class Scripts2(QtGui.QWidget):
         elif self.state == 'COM':
             t = 2
         
-        commentPast = ''
-        commentPresent = ''
-        commentFuture = ''
+        commentTexts = []
+        for i in range(len(self.textEditingBoxes)):
+            commentTexts.append('')
 
-        # Past Boxes
-        if not row == 0:
-            rowPast = int(self.entrysort.data(index.sibling(index.row()-1, index.column()))[6:11])-1
-            TextPast = VariableReplace(self.text[rowPast][t])
-            BTextPast = VariableReplace(self.text[rowPast][self.Beditpast.role])
-            if self.text[rowPast][2] != '':
-                commentPast = 'Comment Available'
-            
-            self.editpast.iconToggle(self.text[rowPast][4])
-            AudioClips = re.findall('<Audio: (.*?)>', TextPast, re.DOTALL)
-            if Audio == True:
-                self.editpast.makePlaybackButtons(AudioClips)
-            if AudioClips == []:
-                self.editpast.clearPlaybackButtons()
-
-        else:
-            self.editpast.iconToggle(0)
-
-
-        # Present Boxes
-        rowPresent = int(self.entrysort.data(index)[6:11])-1
-        TextPresent = VariableReplace(self.text[rowPresent][t])
-        BTextPresent = VariableReplace(self.text[rowPresent][self.Beditpresent.role])
-
-        if self.text[rowPresent][2] != '':
-            commentPresent = 'Comment Available'
-            
-        self.editpresent.iconToggle(self.text[rowPresent][4])
-
-        AudioClips = re.findall('<Audio: (.*?)>', TextPresent, re.DOTALL)
-        if Audio == True:
-            self.editpresent.makePlaybackButtons(AudioClips)
-        if AudioClips == []:
-            self.editpresent.clearPlaybackButtons()
-
-
-        # Future Boxes
-        if not row == self.entrymodel.rowCount()-1:
-            rowFuture = int(self.entrysort.data(index.sibling(index.row()+1, index.column()))[6:11])-1
-            TextFuture = VariableReplace(self.text[rowFuture][t])
-            BTextFuture = VariableReplace(self.text[rowFuture][self.Beditfuture.role])
-
-            if self.text[rowFuture][2] != '':
-                commentFuture = 'Comment Available'
-
-            self.editfuture.iconToggle(self.text[rowFuture][4])
-
-            AudioClips = re.findall('<Audio: (.*?)>', TextFuture, re.DOTALL)
-            if Audio == True:
-                self.editfuture.makePlaybackButtons(AudioClips)
-            if AudioClips == []:
-                self.editfuture.clearPlaybackButtons()
-        else:
-            self.editfuture.iconToggle(0)
-
-
-
-
-        # The good stuff
-        if self.entrymodel.rowCount() == 0:
-            return
-
-        elif self.entrymodel.rowCount() == 1:
-            self.editpast.setText('')
-            self.editpresent.setText(TextPresent)
-            self.editfuture.setText('')
-
-            if self.twoupAct.isChecked() == True:
-                self.Beditpast.setText('')
-                self.Beditpresent.setText(BTextPresent)
-                self.Beditfuture.setText('')
-
-            self.PastBox.setTitle("Entry -:      {0}".format(commentPast))
-            self.PresentBox.setTitle("Entry {0}:      {1}".format(rowPresent+1, commentPresent))
-            self.FutureBox.setTitle("Entry -:      {0}".format(commentFuture))
-
-        elif row == 0:
-            self.editpast.setText('')
-            self.editpresent.setText(TextPresent)
-            self.editfuture.setText(TextFuture)
-    
-            if self.twoupAct.isChecked() == True:
-                self.Beditpast.setText('')
-                self.Beditpresent.setText(BTextPresent)
-                self.Beditfuture.setText(BTextFuture)
-
-            self.PastBox.setTitle("Entry -:      {0}".format(commentPast))
-            self.PresentBox.setTitle("Entry {1}:      {0}".format(commentPresent, rowPresent+1))
-            self.FutureBox.setTitle("Entry {1}:      {0}".format(commentFuture, rowFuture+1))
-
-        elif row == self.entrymodel.rowCount()-1:
-            self.editpast.setText(TextPast)
-            self.editpresent.setText(TextPresent)
-            self.editfuture.setText('')
-
-            if self.twoupAct.isChecked() == True:
-                self.Beditpast.setText(BTextPast)
-                self.Beditpresent.setText(BTextPresent)
-                self.Beditfuture.setText('')
-
-            self.PastBox.setTitle("Entry {0}:      {1}".format(rowPast+1, commentPast))
-            self.PresentBox.setTitle("Entry {0}:      {1}".format(rowPresent+1, commentPresent))
-            self.FutureBox.setTitle("Entry -:      {0}".format(commentFuture))
-
-        elif row == -1 or row == None:
-            self.editpast.setText('')
-            self.editpresent.setText('')
-            self.editfuture.setText('')
-
-            if self.twoupAct.isChecked() == True:
-                self.Beditpast.setText('')
-                self.Beditpresent.setText('')
-                self.Beditfuture.setText('')
-
-            self.PastBox.setTitle("Entry -:")
-            self.PresentBox.setTitle("Entry -:")
-            self.FutureBox.setTitle("Entry -:")
-
-        else:
-            self.editpast.setText(TextPast)
-            self.editpresent.setText(TextPresent)
-            self.editfuture.setText(TextFuture)
-
-            if self.twoupAct.isChecked() == True:
-                self.Beditpast.setText(BTextPast)
-                self.Beditpresent.setText(BTextPresent)
-                self.Beditfuture.setText(BTextFuture)
-
-            self.PastBox.setTitle("Entry {0}:      {1}".format(rowPast+1, commentPast))
-            self.PresentBox.setTitle("Entry {0}:      {1}".format(rowPresent+1, commentPresent))
-            self.FutureBox.setTitle("Entry {0}:      {1}".format(rowFuture+1, commentFuture))
-
+        # boxes here
+        rowBoxes = []
+        for i in range(len(self.textEditingBoxes)):
+            try:
+                rowBoxes.append( int(self.entrysort.data(index.sibling(index.row()+(i-1), index.column()))[6:11])-1 )
+            except:
+                rowBoxes.append( -2 )
         
+        textEntries1 = []
+        textEntries2 = []
+        for i in range(len(self.textEditingBoxes)):
+            if rowBoxes[i] >= 0:
+                textEntries1.append( VariableReplace(self.text[rowBoxes[i]][t]) )
+                textEntries2.append( VariableReplace(self.text[rowBoxes[i]][self.twoupEditingTextBoxes[i].role]) )
+                if self.text[rowBoxes[i]][2] != '':
+                    commentTexts[i] = 'Comment Available'
+                self.regularEditingTextBoxes[i].iconToggle(self.text[rowBoxes[i]][4])
+                self.regularEditingTextBoxes[i].currentEntry = rowBoxes[i] + 1
+                self.regularEditingTextBoxes[i].setReadOnly(False)
+            else:
+                textEntries1.append( '' )
+                textEntries2.append( '' )
+                self.regularEditingTextBoxes[i].iconToggle(0)
+                self.regularEditingTextBoxes[i].currentEntry = -1
+                self.regularEditingTextBoxes[i].setReadOnly(True)
+
+        # audio clip check
+        if Audio == True:
+            for i in range(len(self.textEditingBoxes)):
+                AudioClips = re.findall('<Audio: (.*?)>', textEntries1[i], re.DOTALL)
+                if AudioClips == []:
+                    self.regularEditingTextBoxes[i].clearPlaybackButtons()
+                else:
+                    self.regularEditingTextBoxes[i].makePlaybackButtons(AudioClips)
+
+        # put text into textboxes, display entry number
+        for i in range(len(self.textEditingBoxes)):
+            self.regularEditingTextBoxes[i].setText(textEntries1[i])
+            if self.twoupAct.isChecked() == True:
+                self.twoupEditingTextBoxes[i].setText(textEntries2[i])
+            if self.regularEditingTextBoxes[i].currentEntry >= 0:
+                self.textEditingBoxes[i].setTitle("Entry {0}:      {1}".format(rowBoxes[i]+1, commentTexts[i]))
+            else:
+                self.textEditingBoxes[i].setTitle("Entry ---".format(rowBoxes[i]+1, commentTexts[i]))
+
+        # auto-update in Auto mode
         global ModeFlag
         if ModeFlag == 'Auto':
-            self.editpast.manualEdit.emit(self.role)
-            self.editpresent.manualEdit.emit(self.role)
-            self.editfuture.manualEdit.emit(self.role)
+            for i in range(len(self.textEditingBoxes)):
+                self.regularEditingTextBoxes[i].manualEdit.emit(self.role, self.regularEditingTextBoxes[i])
 
         
     def SwapEnglish(self):
@@ -2452,9 +2203,8 @@ class Scripts2(QtGui.QWidget):
         if self.state == 'ENG':
             return
 
-        self.editpast.setReadOnly(False)
-        self.editpresent.setReadOnly(False)
-        self.editfuture.setReadOnly(False)
+        for box in self.regularEditingTextBoxes:
+            box.setReadOnly(False)
         
         self.state = 'ENG'
         self.PopulateTextEdit()
@@ -2465,9 +2215,8 @@ class Scripts2(QtGui.QWidget):
         if self.state == 'JPN':
             return
 
-        self.editpast.setReadOnly(True)
-        self.editpresent.setReadOnly(True)
-        self.editfuture.setReadOnly(True)
+        for box in self.regularEditingTextBoxes:
+            box.setReadOnly(False)
         
         self.state = 'JPN'
         self.PopulateTextEdit()
@@ -2478,9 +2227,8 @@ class Scripts2(QtGui.QWidget):
         if self.state == 'COM':
             return
 
-        self.editpast.setReadOnly(False)
-        self.editpresent.setReadOnly(False)
-        self.editfuture.setReadOnly(False)
+        for box in self.regularEditingTextBoxes:
+            box.setReadOnly(False)
         
         self.state = 'COM'
         self.PopulateTextEdit()
@@ -5527,3 +5275,4 @@ SubstitutionTable = [
 ]
 
 ]
+
