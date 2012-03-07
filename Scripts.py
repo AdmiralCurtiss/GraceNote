@@ -838,7 +838,7 @@ class Scripts2(QtGui.QWidget):
         self.tree.setAnimated(True)
         self.tree.setIndentation(10)
         self.tree.setSortingEnabled(False)
-        self.tree.setFixedWidth(190)
+        #self.tree.setFixedWidth(190)
         self.tree.sortByColumn(1, 0)
         self.tree.setHeaderHidden(True)
         
@@ -870,7 +870,7 @@ class Scripts2(QtGui.QWidget):
         self.entry.setWrapping(False)
         self.entrymodel = QtGui.QStandardItemModel()
 
-        self.entry.setFixedWidth(180)
+        #self.entry.setFixedWidth(180)
  
         self.entrysort = QtGui.QSortFilterProxyModel()
         self.entrysort.setSourceModel(self.entrymodel)
@@ -1219,8 +1219,6 @@ class Scripts2(QtGui.QWidget):
 
 
         # Layout
-        layout = QtGui.QGridLayout()
-
         global commentsAvailableLabel
         commentsAvailableLabel = QtGui.QLabel("-")
         
@@ -1228,16 +1226,26 @@ class Scripts2(QtGui.QWidget):
         FileListSubLayout.addWidget(commentsAvailableLabel)
         FileListSubLayout.addWidget(self.tree)
         
-        #FileListSubLayout = QtGui.QVBoxLayout()
-        
-        layout.addLayout(FileListSubLayout, 0, 0, len(self.textEditingBoxes), 1)
-        
+        EditingWindowSubLayout = QtGui.QVBoxLayout()
         for i in range(len(self.textEditingBoxes)):
-            layout.addWidget(self.textEditingBoxes[i], i, 1, 1, 2)
+            EditingWindowSubLayout.addWidget(self.textEditingBoxes[i])
         
-        layout.addWidget(self.entry, 0, 3, len(self.textEditingBoxes), 1)
-        layout.setColumnStretch(1,1)
-        self.setLayout(layout)
+        layout = QtGui.QSplitter()
+        FileListSubLayoutWidget = QtGui.QWidget()
+        FileListSubLayoutWidget.setLayout(FileListSubLayout)
+        layout.addWidget(FileListSubLayoutWidget)
+        EditingWindowSubLayoutWidget = QtGui.QWidget()
+        EditingWindowSubLayoutWidget.setLayout(EditingWindowSubLayout)
+        layout.addWidget(EditingWindowSubLayoutWidget)
+        layout.addWidget(self.entry)
+        #layout.setColumnStretch(1,1)
+        
+        layout.setSizes( [200, 400, 200] )
+        
+        # fffff
+        aaaa = QtGui.QVBoxLayout()
+        aaaa.addWidget(layout)
+        self.setLayout(aaaa)
 
 
     def quit(self):
