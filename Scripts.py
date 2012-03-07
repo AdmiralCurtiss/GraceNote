@@ -808,6 +808,16 @@ class Scripts2(QtGui.QWidget):
             ModeFlag = self.settings.value('mode')
         else:
             self.settings.setValue('mode', 'Semi-Auto')
+            ModeFlag = 'Semi-Auto'
+        
+        global AmountEditingWindows
+        if self.settings.contains('editpane_amount'):
+            AmountEditingWindows = int(self.settings.value('editpane_amount'))
+        else:
+            self.settings.setValue('editpane_amount', '5')
+            AmountEditingWindows = 5
+        if AmountEditingWindows < 3 or AmountEditingWindows > 25:
+            AmountEditingWindows = 5
 
         self.roletext = ['', 'Translating', 'Reviewing Translations', 'Reviewing Context', 'Editing']
 
@@ -868,7 +878,6 @@ class Scripts2(QtGui.QWidget):
 
 
         # Text Edits
-        global AmountEditingWindows
         self.regularEditingTextBoxes = []
         self.twoupEditingTextBoxes = []
         self.textEditingBoxes = []
@@ -1058,10 +1067,10 @@ class Scripts2(QtGui.QWidget):
         self.voiceLangAct = QtGui.QAction('Japanese Voices', None)
         self.voiceLangAct.triggered.connect(self.VoiceLanguageSwap)
         self.voiceLangAct.setShortcut(QtGui.QKeySequence('Ctrl-Shift-Alt-E'))
-        
-        
         self.updateLowerStatusAct = QtGui.QAction('Not updating lower status', None)
         self.updateLowerStatusAct.triggered.connect(self.UpdateLowerStatusSwap)
+        self.changeEditingWindowAmountAct = QtGui.QAction('Change Editing Window Amount', None)
+        self.changeEditingWindowAmountAct.triggered.connect(self.ChangeEditingWindowAmountDisplay)
         
         
         self.autoAct = QtGui.QAction('Auto', None)
@@ -1198,6 +1207,7 @@ class Scripts2(QtGui.QWidget):
         optionsMenu.addAction(self.reloadConfigAct)
         optionsMenu.addAction(self.voiceLangAct)
         optionsMenu.addAction(self.updateLowerStatusAct)
+        optionsMenu.addAction(self.changeEditingWindowAmountAct)
 
         parent.menuBar().addMenu(fileMenu)
         parent.menuBar().addMenu(parent.editMenu)
@@ -1211,15 +1221,16 @@ class Scripts2(QtGui.QWidget):
         # Layout
         layout = QtGui.QGridLayout()
 
-        subLayout = QtGui.QVBoxLayout()
-        
-        #subLayout.addWidget(self.sortSwapGroup)
         global commentsAvailableLabel
         commentsAvailableLabel = QtGui.QLabel("-")
-        subLayout.addWidget(commentsAvailableLabel)
-        subLayout.addWidget(self.tree)
         
-        layout.addLayout(subLayout, 0, 0, len(self.textEditingBoxes), 1)
+        FileListSubLayout = QtGui.QVBoxLayout()
+        FileListSubLayout.addWidget(commentsAvailableLabel)
+        FileListSubLayout.addWidget(self.tree)
+        
+        #FileListSubLayout = QtGui.QVBoxLayout()
+        
+        layout.addLayout(FileListSubLayout, 0, 0, len(self.textEditingBoxes), 1)
         
         for i in range(len(self.textEditingBoxes)):
             layout.addWidget(self.textEditingBoxes[i], i, 1, 1, 2)
@@ -1348,6 +1359,15 @@ class Scripts2(QtGui.QWidget):
         else:
             self.updateLowerStatusAct.setText('Updating lower status')
             UpdateLowerStatusFlag = True
+
+    def ChangeEditingWindowAmountDisplay(self):
+        global AmountEditingWindows
+        text, ok = QtGui.QInputDialog.getText(self, "Enter new window amount", "New amount: (restart GN after entering!)", QtGui.QLineEdit.Normal)
+        if ok and text != '':
+            tmp = int(text)
+            if tmp >= 3 and tmp <= 25:
+                self.settings.setValue('editpane_amount', text)
+                AmountEditingWindows = tmp
 
     def setToolbariconsize(self, action):
         i = 0
