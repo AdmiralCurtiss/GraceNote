@@ -1226,17 +1226,18 @@ class Scripts2(QtGui.QWidget):
         FileListSubLayout.addWidget(commentsAvailableLabel)
         FileListSubLayout.addWidget(self.tree)
         
-        EditingWindowSubLayout = QtGui.QVBoxLayout()
+        EditingWindowSubLayoutSplitter = QtGui.QSplitter()
+        EditingWindowSubLayoutSplitter.setOrientation(QtCore.Qt.Vertical)
         for i in range(len(self.textEditingBoxes)):
-            EditingWindowSubLayout.addWidget(self.textEditingBoxes[i])
+            EditingWindowSubLayoutSplitter.addWidget(self.textEditingBoxes[i])
         
         layout = QtGui.QSplitter()
         FileListSubLayoutWidget = QtGui.QWidget()
         FileListSubLayoutWidget.setLayout(FileListSubLayout)
         layout.addWidget(FileListSubLayoutWidget)
-        EditingWindowSubLayoutWidget = QtGui.QWidget()
-        EditingWindowSubLayoutWidget.setLayout(EditingWindowSubLayout)
-        layout.addWidget(EditingWindowSubLayoutWidget)
+        #EditingWindowSubLayoutWidget = QtGui.QWidget()
+        #EditingWindowSubLayoutWidget.setLayout(EditingWindowSubLayout)
+        layout.addWidget(EditingWindowSubLayoutSplitter)
         layout.addWidget(self.entry)
         #layout.setColumnStretch(1,1)
         
