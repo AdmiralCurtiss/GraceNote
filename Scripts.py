@@ -2120,13 +2120,14 @@ class Scripts2(QtGui.QWidget):
 
         if role == 5:
             role = self.role
-            
-        global UpdateLowerStatusFlag
-        if UpdateLowerStatusFlag == False:
-            SaveCur.execute("SELECT status FROM Text WHERE ID={0}".format(textBox.currentEntry))
-            statuscheck = SaveCur.fetchall()[0][0]
-            if statuscheck > role:
-                updateStatusValue = statuscheck
+            global UpdateLowerStatusFlag
+            if UpdateLowerStatusFlag == False:
+                SaveCur.execute("SELECT status FROM Text WHERE ID={0}".format(textBox.currentEntry))
+                statuscheck = SaveCur.fetchall()[0][0]
+                if statuscheck > role:
+                    updateStatusValue = statuscheck
+                else:
+                    updateStatusValue = role
             else:
                 updateStatusValue = role
         else:
