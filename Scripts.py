@@ -273,7 +273,6 @@ class XTextBox(QtGui.QTextEdit):
         if EnglishVoiceLanguageFlag == True:
             return configData.VoicePathEnPrefix + filename + configData.VoicePathEnPostfix
         return configData.VoicePathJpPrefix + filename + configData.VoicePathJpPostfix
-        
 
     def playAudio(self):
     
@@ -903,7 +902,7 @@ class Scripts2(QtGui.QWidget):
             # create QGroupBox
             tmpqgrpbox = QtGui.QGroupBox()
             tmpqgrpbox.setLayout(tmplayout)
-            tmpqgrpbox.setTitle("Entry -:")
+            tmpqgrpbox.setTitle("-----")
             self.textEditingBoxes.append(tmpqgrpbox)
             
         # ------------------------------------------------------ #
@@ -1727,6 +1726,8 @@ class Scripts2(QtGui.QWidget):
 
         for editbox in self.regularEditingTextBoxes:
             editbox.setText('')
+        for txtbox in self.textEditingBoxes:
+            txtbox.setTitle('-----')
 
         index = self.tree.currentIndex()
         parent = self.treemodel.data(self.tree.currentIndex().parent())
@@ -2231,7 +2232,7 @@ class Scripts2(QtGui.QWidget):
             if self.regularEditingTextBoxes[i].currentEntry >= 0:
                 self.textEditingBoxes[i].setTitle("Entry {0}:      {1}".format(rowBoxes[i]+1, commentTexts[i]))
             else:
-                self.textEditingBoxes[i].setTitle("Entry ---".format(rowBoxes[i]+1, commentTexts[i]))
+                self.textEditingBoxes[i].setTitle("-----")
 
         # auto-update in Auto mode
         global ModeFlag
