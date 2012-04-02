@@ -2119,40 +2119,52 @@ class Scripts2(QtGui.QWidget):
         GoodString = VariableRemove(textBox.toPlainText())
 
         if role == 5:
+            CommandOriginButton = False
             role = self.role
-            global UpdateLowerStatusFlag
-            if UpdateLowerStatusFlag == False:
-                SaveCur.execute("SELECT status FROM Text WHERE ID={0}".format(textBox.currentEntry))
-                statuscheck = SaveCur.fetchall()[0][0]
-                if statuscheck > role:
-                    updateStatusValue = statuscheck
-                else:
-                    updateStatusValue = role
-            else:
-                updateStatusValue = role
         else:
-            updateStatusValue = role
+            CommandOriginButton = True
+        
         
         global ModeFlag
-        if ModeFlag != 'Manual':
-            self.text[textBox.currentEntry - 1][4] = updateStatusValue
-            textBox.iconToggle(updateStatusValue)
+        if CommandOriginButton == True:
+            # if origin a button: always set to argument
+            updateStatusValue = role
+        else:
+            # if origin by typing or automatic:
+            if ModeFlag == 'Manual':
+                # in manual mode: leave status alone, do not change, just fetch the existing one
+                SaveCur.execute("SELECT status FROM Text WHERE ID={0}".format(textBox.currentEntry))
+                updateStatusValue = SaveCur.fetchall()[0][0]
+            else:
+                # in (semi)auto mode: change to current role, except when disabled by option and current role is lower than existing status
+                global UpdateLowerStatusFlag
+                if UpdateLowerStatusFlag == False:
+                    SaveCur.execute("SELECT status FROM Text WHERE ID={0}".format(textBox.currentEntry))
+                    statuscheck = SaveCur.fetchall()[0][0]
+                    if statuscheck > role:
+                        updateStatusValue = statuscheck
+                    else:
+                        updateStatusValue = role
+                else:
+                    updateStatusValue = role
+                # endif UpdateLowerStatusFlag
+            # endif ModeFlag
+        # endif CommandOriginButton
+
+
+        self.text[textBox.currentEntry - 1][4] = updateStatusValue
+        textBox.iconToggle(updateStatusValue)
                 
         if self.state == 'ENG':
-            if ModeFlag == 'Manual':
-                SaveCur.execute(u"update Text set english=?, updated=1 where ID=?", (GoodString, textBox.currentEntry))
-            else:
-                SaveCur.execute(u"update Text set english=?, updated=1, status=? where ID=?", (GoodString, updateStatusValue, textBox.currentEntry))
+            SaveCur.execute(u"update Text set english=?, updated=1, status=? where ID=?", (GoodString, updateStatusValue, textBox.currentEntry))
             SaveCon.commit()
             self.text[textBox.currentEntry - 1][0] = GoodString
 
         elif self.state == "COM":
-            if ModeFlag == 'Manual':
-                SaveCur.execute(u"update Text set comment=?, updated=1 where ID=?", (GoodString, textBox.currentEntry))
-            else:
-                SaveCur.execute(u"update Text set comment=?, updated=1, status=? where ID=?", (GoodString, updateStatusValue, textBox.currentEntry))
+            SaveCur.execute(u"update Text set comment=?, updated=1, status=? where ID=?", (GoodString, updateStatusValue, textBox.currentEntry))
             SaveCon.commit()
             self.text[textBox.currentEntry - 1][2] = GoodString
+            
         return
 
         
