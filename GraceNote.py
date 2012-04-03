@@ -5,7 +5,7 @@ from Scripts import *
 
 if __name__ == '__main__':
 
-    print "Grace Note v9.6 - Coded by Tempus for the Tales of Graces Translation Project\n    - http://www.talesofgraces.com\n    - irc.freenode.net  #Graces"
+    print "Grace Note v10.0 - Coded by Tempus for the Tales of Graces Translation Project\n    - http://www.talesofgraces.com\n    - irc.freenode.net  #Graces"
 
     app = QtGui.QApplication(sys.argv)
     app.setApplicationName('Grace Note')

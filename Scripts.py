@@ -715,10 +715,8 @@ class SplashScreen(QtGui.QWidget):
 
         painter.drawPixmap(0, 0, QtGui.QPixmap('icons/Splash.png'))
 
-        painter.drawText(350, 185, 'v9.6')
+        painter.drawText(350, 185, 'v10.0')
         painter.drawText(92, 185, self.text)
-        
-        
         
         if enchanted == False and self.offline == True:
             painter.setPen(QtGui.QColor(255, 0, 0, 255))
@@ -741,7 +739,6 @@ class SplashScreen(QtGui.QWidget):
         if self.complete == True:
             self.close()
             self.destroy(True)
-
 
     def destroyScreen(self):
         self.close()
