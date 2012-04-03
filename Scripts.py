@@ -910,6 +910,8 @@ class Scripts2(QtGui.QWidget):
         # Filter Input
         self.filter = QtGui.QLineEdit()
         self.filter.setFixedWidth(200)
+        self.jumptobox = QtGui.QLineEdit()
+        self.jumptobox.setFixedWidth(120)
         
         self.debug = QtGui.QAction(QtGui.QIcon('icons/debugoff.png'), 'Display Debug', None)
         self.debug.setCheckable(True)
@@ -924,6 +926,7 @@ class Scripts2(QtGui.QWidget):
             editbox.manualEdit.connect(self.UpdateTextGenericFunc)
         self.debug.toggled.connect(self.DebugFilter)
         self.filter.returnPressed.connect(self.LiveSearch)
+        self.jumptobox.returnPressed.connect(self.JumpToDatabase)
         #self.sortByType.toggled.connect(self.SortToggle)
         #self.sortByLocation.toggled.connect(self.SortToggle)
 
@@ -1081,9 +1084,17 @@ class Scripts2(QtGui.QWidget):
         self.scrollUpAct.triggered.connect(self.scrollUp)
         self.scrollUpAct.setShortcut(QtGui.QKeySequence('Alt+Up'))
 
+        self.scrollUpAct2 = QtGui.QAction('Scroll Up 2', None)
+        self.scrollUpAct2.triggered.connect(self.scrollUp)
+        self.scrollUpAct2.setShortcut(QtGui.QKeySequence('Ctrl+Up'))
+
         self.scrollDownAct = QtGui.QAction('Scroll Down', None)
         self.scrollDownAct.triggered.connect(self.scrollDown)
         self.scrollDownAct.setShortcut(QtGui.QKeySequence('Alt+Down'))
+        
+        self.scrollDownAct2 = QtGui.QAction('Scroll Down 2', None)
+        self.scrollDownAct2.triggered.connect(self.scrollDown)
+        self.scrollDownAct2.setShortcut(QtGui.QKeySequence('Ctrl+Down'))
 
 
         roleMenu = QtGui.QMenu('Role', self)
@@ -1109,8 +1120,21 @@ class Scripts2(QtGui.QWidget):
         self.Toolbar.addAction(self.dupeAct)
         self.Toolbar.addWidget(FlexibleSpace)
         self.Toolbar.addSeparator()
-        self.Toolbar.addWidget(QtGui.QLabel('Search'))
-        self.Toolbar.addWidget(self.filter)
+        
+        tmp1 = QtGui.QVBoxLayout()
+        tmp2 = QtGui.QVBoxLayout()
+        tmp1.addWidget( QtGui.QLabel('Jump To') )
+        tmp1.addWidget( QtGui.QLabel('Search') )
+        tmp2.addWidget( self.jumptobox )
+        tmp2.addWidget( self.filter )
+        tmp1b = QtGui.QGroupBox()
+        tmp1b.setLayout(tmp1)
+        tmp2b = QtGui.QGroupBox()
+        tmp2b.setLayout(tmp2)
+        self.Toolbar.addWidget(tmp1b)
+        self.Toolbar.addWidget(tmp2b)
+        
+        
         self.Toolbar.addAction(self.debug)
         self.Toolbar.setToolButtonStyle(3)
         
@@ -1866,6 +1890,10 @@ class Scripts2(QtGui.QWidget):
         os.startfile('text.png')
         return
 
+    def JumpToDatabase(self):
+        jumpto = self.jumptobox.text()
+        self.JumpToEntry(jumpto, 0)
+    
     def LiveSearch(self):
 
         matchString = self.filter.text()
