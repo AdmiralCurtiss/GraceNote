@@ -4618,21 +4618,11 @@ class MassReplace(QtGui.QDialog):
         self.role = parent.role
         self.parent = parent
 
-        self.setWindowModality(False)        
-        self.treewidget = QtGui.QTreeWidget()
+        self.setWindowModality(False)
         
-        self.treewidget.setColumnCount(5)
-        self.treewidget.setHeaderLabels(['File', 'Entry', 'Replace', 'E String', 'J String'])
-        self.treewidget.setSortingEnabled(True)
+        self.searches = []
+        self.tabwidget = QtGui.QTabWidget()
         
-        self.treewidget.setColumnWidth(0, 120)
-        self.treewidget.setColumnWidth(1, 30)
-        self.treewidget.setColumnWidth(2, 20)
-        self.treewidget.setColumnWidth(3, 300)
-        self.treewidget.setColumnWidth(4, 300)
-        
-        self.treewidget.setMinimumSize(780, 400)
-        self.treewidget.sortItems(0, QtCore.Qt.AscendingOrder)
         
         font = QtGui.QLabel().font()
         font.setPointSize(10)
@@ -4643,7 +4633,7 @@ class MassReplace(QtGui.QDialog):
         self.matchExact = QtGui.QRadioButton('Any Match')
         self.matchEnglish = QtGui.QRadioButton('Any: English Only')
         self.matchEntry = QtGui.QRadioButton('Complete Entry')
-        self.matchEntry.setChecked(True)
+        self.matchEnglish.setChecked(True)
         self.fileFilter.setToolTip('Wildcards implicit. eg CHT will match all skits')
         
         self.matchEnglish.setFont(font)
@@ -4666,10 +4656,13 @@ class MassReplace(QtGui.QDialog):
         self.checkAll.setText('Check All')
         self.checkNone = QtGui.QToolButton()
         self.checkNone.setText('Check None')
+        self.removeTabButton = QtGui.QToolButton()
+        self.removeTabButton.setText('Remove Tab')
         
         checkLayout = QtGui.QHBoxLayout()
         checkLayout.addWidget(self.checkAll)
         checkLayout.addWidget(self.checkNone)
+        checkLayout.addWidget(self.removeTabButton)
 
         buttonLayout = QtGui.QHBoxLayout()
         buttonLayout.addLayout(checkLayout)
@@ -4693,38 +4686,60 @@ class MassReplace(QtGui.QDialog):
         self.replace.released.connect(self.Replace)
         self.checkAll.released.connect(self.checkingAll)
         self.checkNone.released.connect(self.checkingNone)
-        
-        self.treewidget.itemDoubleClicked.connect(self.JumpToFile)
-        
+        self.removeTabButton.released.connect(self.closeCurrentTab)
+                
         layout = QtGui.QVBoxLayout()
         layout.addWidget(QtGui.QLabel('Replace:'))
         layout.addLayout(inputLayout)
-        layout.addWidget(self.treewidget)
+        layout.addWidget(self.tabwidget)
         layout.addLayout(buttonLayout, QtCore.Qt.AlignRight)
         self.setLayout(layout)
+        self.setMinimumSize(800, 600)
 
-
+    def generateSearchTab(self):
+        treewidget = QtGui.QTreeWidget()
+        
+        treewidget.setColumnCount(6)
+        treewidget.setHeaderLabels(['File', 'Entry', 'Info', 'Replace', 'E String', 'J String'])
+        treewidget.setSortingEnabled(True)
+        
+        treewidget.setColumnWidth(0, 120)
+        treewidget.setColumnWidth(1, 30)
+        treewidget.setColumnWidth(2, 50)
+        treewidget.setColumnWidth(3, 20)
+        treewidget.setColumnWidth(4, 275)
+        treewidget.setColumnWidth(5, 275)
+        
+        #treewidget.setMinimumSize(780, 400)
+        treewidget.sortItems(0, QtCore.Qt.AscendingOrder)
+        
+        treewidget.itemDoubleClicked.connect(self.JumpToFile)
+        
+        return treewidget
 
     def checkingAll(self):
     
-        Iterator = QtGui.QTreeWidgetItemIterator(self.treewidget)
+        Iterator = QtGui.QTreeWidgetItemIterator(self.tabwidget.currentWidget())
         while Iterator.value():
 
-            Iterator.value().setCheckState(2, 2)
+            Iterator.value().setCheckState(3, 2)
             Iterator += 1 
         
     def checkingNone(self):
     
-        Iterator = QtGui.QTreeWidgetItemIterator(self.treewidget)
+        Iterator = QtGui.QTreeWidgetItemIterator(self.tabwidget.currentWidget())
         while Iterator.value():
 
-            Iterator.value().setCheckState(2, 0)
+            Iterator.value().setCheckState(3, 0)
             Iterator += 1 
 
+    def closeCurrentTab(self):
+        self.tabwidget.removeTab( self.tabwidget.currentIndex() )
+            
     def Search(self):
         # Place all matching strings to the search into the tree widget
         
-        self.treewidget.clear()
+        newSearchTab = self.generateSearchTab()
 
 
         matchString = unicode(self.original.text())
@@ -4765,22 +4780,22 @@ class MassReplace(QtGui.QDialog):
                         for match in JPmatches:
                             ORIDString = ORIDString + " OR StringID='" + str(match[0]) + "'"
                             
-                        FilterCur.execute(u"select ID, English, StringID from Text where english LIKE ? {0}".format(ORIDString), ('%' + unicode(matchString) + '%', ))
+                        FilterCur.execute(u"select ID, English, StringID, IdentifyString from Text where english LIKE ? {0}".format(ORIDString), ('%' + unicode(matchString) + '%', ))
                         TempList = FilterCur.fetchall()
                                                 
                         for item in TempList:
                             ENString = item[1]
                             CursorGracesJapanese.execute('select string from Japanese where ID={0}'.format(item[2]))
                             JPString = CursorGracesJapanese.fetchall()[0][0]
-                            MatchedEntries.append([File, item[0], ENString, JPString])
+                            MatchedEntries.append([File, item[0], ENString, JPString, item[3]])
             
             if len(MatchedEntries) == 0:
                 return
 
             for item in MatchedEntries:
-                treeItem = QtGui.QTreeWidgetItem([item[0], str(item[1]), "", VariableReplace(item[2]), VariableReplace(item[3])])
-                treeItem.setCheckState(2, QtCore.Qt.Checked)
-                self.treewidget.addTopLevelItem(treeItem)
+                treeItem = QtGui.QTreeWidgetItem([item[0], str(item[1]), item[4], "", VariableReplace(item[2]), VariableReplace(item[3])])
+                treeItem.setCheckState(3, QtCore.Qt.Checked)
+                newSearchTab.addTopLevelItem(treeItem)
 
         # if searching in English strings only
         if self.matchEnglish.isChecked():
@@ -4795,22 +4810,22 @@ class MassReplace(QtGui.QDialog):
                         FilterCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(File))
                         FilterCur = FilterCon.cursor()
                         
-                        FilterCur.execute(u"select ID, English, StringID from Text where english LIKE ?", ('%' + unicode(matchString) + '%', ))
+                        FilterCur.execute(u"select ID, English, StringID, IdentifyString from Text where english LIKE ?", ('%' + unicode(matchString) + '%', ))
                         TempList = FilterCur.fetchall()
                                                 
                         for item in TempList:
                             ENString = item[1]
                             CursorGracesJapanese.execute('select string from Japanese where ID={0}'.format(item[2]))
                             JPString = CursorGracesJapanese.fetchall()[0][0]
-                            MatchedEntries.append([File, item[0], ENString, JPString])
+                            MatchedEntries.append([File, item[0], ENString, JPString, item[3]])
             
             if len(MatchedEntries) == 0:
                 return
 
             for item in MatchedEntries:
-                treeItem = QtGui.QTreeWidgetItem([item[0], str(item[1]), "", VariableReplace(item[2]), VariableReplace(item[3])])
-                treeItem.setCheckState(2, QtCore.Qt.Checked)
-                self.treewidget.addTopLevelItem(treeItem)
+                treeItem = QtGui.QTreeWidgetItem([item[0], str(item[1]), item[4], "", VariableReplace(item[2]), VariableReplace(item[3])])
+                treeItem.setCheckState(3, QtCore.Qt.Checked)
+                newSearchTab.addTopLevelItem(treeItem)
     
         # For an exact match to the entry
         elif self.matchEntry.isChecked():
@@ -4834,27 +4849,29 @@ class MassReplace(QtGui.QDialog):
                             for match in JPmatches:
                                 ORIDString = ORIDString + " OR StringID='" + str(match[0]) + "'"
                         
-                        FilterCur.execute(u"select ID, English, StringID from Text where english=? {0}".format(ORIDString), (unicode(matchString),))
+                        FilterCur.execute(u"select ID, English, StringID, IdentifyString from Text where english=? {0}".format(ORIDString), (unicode(matchString),))
                         TempList = FilterCur.fetchall()
                                                 
                         for item in TempList:
                             ENString = item[1]
                             CursorGracesJapanese.execute('select string from Japanese where ID={0}'.format(item[2]))
                             JPString = CursorGracesJapanese.fetchall()[0][0]
-                            MatchedEntries.append([File, item[0], ENString, JPString])
+                            MatchedEntries.append([File, item[0], ENString, JPString, item[3]])
             
             if len(MatchedEntries) == 0:
                 return
 
             for item in MatchedEntries:
-                treeItem = QtGui.QTreeWidgetItem([item[0], str(item[1]), "", VariableReplace(item[2]), VariableReplace(item[3])])
-                treeItem.setCheckState(2, QtCore.Qt.Checked)
-                self.treewidget.addTopLevelItem(treeItem)
+                treeItem = QtGui.QTreeWidgetItem([item[0], str(item[1]), item[4], "", VariableReplace(item[2]), VariableReplace(item[3])])
+                treeItem.setCheckState(3, QtCore.Qt.Checked)
+                newSearchTab.addTopLevelItem(treeItem)
         
+        self.tabwidget.addTab(newSearchTab, matchString)
+        self.tabwidget.setCurrentIndex(self.tabwidget.count()-1)
         
     def Replace(self):
 
-        Iterator = QtGui.QTreeWidgetItemIterator(self.treewidget)
+        Iterator = QtGui.QTreeWidgetItemIterator(self.tabwidget.currentWidget())
 
         if len(self.replacement.text()) == 0:
             reply = QtGui.QMessageBox.information(self, "Incorrect Search Usage", "Warning:\n\nYour replacement can not be empty. Please enter text in the search bar.")
@@ -4862,16 +4879,13 @@ class MassReplace(QtGui.QDialog):
                 
         while Iterator.value():
         
-            if Iterator.value().checkState(2) == 2:
+            if Iterator.value().checkState(3) == 2:
                         
                 IterCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(Iterator.value().data(0, 0)))
                 IterCur = IterCon.cursor()
                 
-                string = unicode(Iterator.value().data(3, 0))
-                if self.matchEntry.isChecked():
-                    string = unicode(self.replacement.text())
-                else:
-                    string = string.replace(unicode(self.original.text()), unicode(self.replacement.text()))
+                string = unicode(Iterator.value().data(4, 0))
+                string = string.replace(unicode( self.tabwidget.tabText(self.tabwidget.currentIndex()) ), unicode(self.replacement.text()))
                 string = VariableRemove(string)
                                 
                 IterCur.execute(u"update Text set english=?, updated=1, status=? where ID=?", (unicode(string), self.role, int(Iterator.value().data(1, 0))))
@@ -4880,9 +4894,9 @@ class MassReplace(QtGui.QDialog):
                 IterCon.commit()
 
             Iterator += 1 
+            
+        self.tabwidget.removeTab( self.tabwidget.currentIndex() )
         
-        self.treewidget.clear()
-    
     def JumpToFile(self, item, column):
         if item.childCount() > 0:
             return
