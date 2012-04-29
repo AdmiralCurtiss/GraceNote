@@ -4780,14 +4780,20 @@ class MassReplace(QtGui.QDialog):
                         for match in JPmatches:
                             ORIDString = ORIDString + " OR StringID='" + str(match[0]) + "'"
                             
-                        FilterCur.execute(u"select ID, English, StringID, IdentifyString from Text where english LIKE ? {0}".format(ORIDString), ('%' + unicode(matchString) + '%', ))
+                        try:
+                            FilterCur.execute(u"select ID, English, StringID, IdentifyString from Text where english LIKE ? {0}".format(ORIDString), ('%' + unicode(matchString) + '%', ))
+                        except:
+                            FilterCur.execute(u"select ID, English, StringID from Text where english LIKE ? {0}".format(ORIDString), ('%' + unicode(matchString) + '%', ))
                         TempList = FilterCur.fetchall()
                                                 
                         for item in TempList:
                             ENString = item[1]
                             CursorGracesJapanese.execute('select string from Japanese where ID={0}'.format(item[2]))
                             JPString = CursorGracesJapanese.fetchall()[0][0]
-                            MatchedEntries.append([File, item[0], ENString, JPString, item[3]])
+                            try:
+                                MatchedEntries.append([File, item[0], ENString, JPString, item[3]])
+                            except:
+                                MatchedEntries.append([File, item[0], ENString, JPString, ""])
             
             if len(MatchedEntries) == 0:
                 return
@@ -4810,14 +4816,20 @@ class MassReplace(QtGui.QDialog):
                         FilterCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(File))
                         FilterCur = FilterCon.cursor()
                         
-                        FilterCur.execute(u"select ID, English, StringID, IdentifyString from Text where english LIKE ?", ('%' + unicode(matchString) + '%', ))
+                        try:
+                            FilterCur.execute(u"select ID, English, StringID, IdentifyString from Text where english LIKE ?", ('%' + unicode(matchString) + '%', ))
+                        except:
+                            FilterCur.execute(u"select ID, English, StringID from Text where english LIKE ?", ('%' + unicode(matchString) + '%', ))
                         TempList = FilterCur.fetchall()
                                                 
                         for item in TempList:
                             ENString = item[1]
                             CursorGracesJapanese.execute('select string from Japanese where ID={0}'.format(item[2]))
                             JPString = CursorGracesJapanese.fetchall()[0][0]
-                            MatchedEntries.append([File, item[0], ENString, JPString, item[3]])
+                            try:
+                                MatchedEntries.append([File, item[0], ENString, JPString, item[3]])
+                            except:
+                                MatchedEntries.append([File, item[0], ENString, JPString, ""])
             
             if len(MatchedEntries) == 0:
                 return
@@ -4849,14 +4861,20 @@ class MassReplace(QtGui.QDialog):
                             for match in JPmatches:
                                 ORIDString = ORIDString + " OR StringID='" + str(match[0]) + "'"
                         
-                        FilterCur.execute(u"select ID, English, StringID, IdentifyString from Text where english=? {0}".format(ORIDString), (unicode(matchString),))
+                        try:
+                            FilterCur.execute(u"select ID, English, StringID, IdentifyString from Text where english=? {0}".format(ORIDString), (unicode(matchString),))
+                        except:
+                            FilterCur.execute(u"select ID, English, StringID from Text where english=? {0}".format(ORIDString), (unicode(matchString),))
                         TempList = FilterCur.fetchall()
                                                 
                         for item in TempList:
                             ENString = item[1]
                             CursorGracesJapanese.execute('select string from Japanese where ID={0}'.format(item[2]))
                             JPString = CursorGracesJapanese.fetchall()[0][0]
-                            MatchedEntries.append([File, item[0], ENString, JPString, item[3]])
+                            try:
+                                MatchedEntries.append([File, item[0], ENString, JPString, item[3]])
+                            except:
+                                MatchedEntries.append([File, item[0], ENString, JPString, ""])
             
             if len(MatchedEntries) == 0:
                 return
