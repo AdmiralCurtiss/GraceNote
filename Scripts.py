@@ -4783,25 +4783,25 @@ class MassReplace(QtGui.QDialog):
                         try:
                             FilterCur.execute(u"select ID, English, StringID, IdentifyString from Text where english LIKE ? {0}".format(ORIDString), ('%' + unicode(matchString) + '%', ))
                         except:
-                            FilterCur.execute(u"select ID, English, StringID from Text where english LIKE ? {0}".format(ORIDString), ('%' + unicode(matchString) + '%', ))
+                            FilterCur.execute(u"select ID, English, StringID, '' as IdentifyString from Text where english LIKE ?", ('%' + unicode(matchString) + '%', ))
                         TempList = FilterCur.fetchall()
                                                 
                         for item in TempList:
                             ENString = item[1]
                             CursorGracesJapanese.execute('select string from Japanese where ID={0}'.format(item[2]))
                             JPString = CursorGracesJapanese.fetchall()[0][0]
-                            try:
-                                MatchedEntries.append([File, item[0], ENString, JPString, item[3]])
-                            except:
-                                MatchedEntries.append([File, item[0], ENString, JPString, ""])
+                            MatchedEntries.append([File, item[0], ENString, JPString, item[3]])
             
             if len(MatchedEntries) == 0:
                 return
 
             for item in MatchedEntries:
-                treeItem = QtGui.QTreeWidgetItem([item[0], str(item[1]), item[4], "", VariableReplace(item[2]), VariableReplace(item[3])])
-                treeItem.setCheckState(3, QtCore.Qt.Checked)
-                newSearchTab.addTopLevelItem(treeItem)
+                try:
+                    treeItem = QtGui.QTreeWidgetItem([item[0], str(item[1]), item[4], "", VariableReplace(item[2]), VariableReplace(item[3])])
+                    treeItem.setCheckState(3, QtCore.Qt.Checked)
+                    newSearchTab.addTopLevelItem(treeItem)
+                except:
+                    print("Mass Replace: Failed adding file [" + item[0] + "], entry [" + str(item[1]) + "]")
 
         # if searching in English strings only
         if self.matchEnglish.isChecked():
@@ -4819,25 +4819,25 @@ class MassReplace(QtGui.QDialog):
                         try:
                             FilterCur.execute(u"select ID, English, StringID, IdentifyString from Text where english LIKE ?", ('%' + unicode(matchString) + '%', ))
                         except:
-                            FilterCur.execute(u"select ID, English, StringID from Text where english LIKE ?", ('%' + unicode(matchString) + '%', ))
+                            FilterCur.execute(u"select ID, English, StringID, '' as IdentifyString from Text where english LIKE ?", ('%' + unicode(matchString) + '%', ))
                         TempList = FilterCur.fetchall()
                                                 
                         for item in TempList:
                             ENString = item[1]
                             CursorGracesJapanese.execute('select string from Japanese where ID={0}'.format(item[2]))
                             JPString = CursorGracesJapanese.fetchall()[0][0]
-                            try:
-                                MatchedEntries.append([File, item[0], ENString, JPString, item[3]])
-                            except:
-                                MatchedEntries.append([File, item[0], ENString, JPString, ""])
+                            MatchedEntries.append([File, item[0], ENString, JPString, item[3]])
             
             if len(MatchedEntries) == 0:
                 return
 
             for item in MatchedEntries:
-                treeItem = QtGui.QTreeWidgetItem([item[0], str(item[1]), item[4], "", VariableReplace(item[2]), VariableReplace(item[3])])
-                treeItem.setCheckState(3, QtCore.Qt.Checked)
-                newSearchTab.addTopLevelItem(treeItem)
+                try:
+                    treeItem = QtGui.QTreeWidgetItem([item[0], str(item[1]), item[4], "", VariableReplace(item[2]), VariableReplace(item[3])])
+                    treeItem.setCheckState(3, QtCore.Qt.Checked)
+                    newSearchTab.addTopLevelItem(treeItem)
+                except:
+                    print("Mass Replace: Failed adding file [" + item[0] + "], entry [" + str(item[1]) + "]")
     
         # For an exact match to the entry
         elif self.matchEntry.isChecked():
@@ -4864,25 +4864,25 @@ class MassReplace(QtGui.QDialog):
                         try:
                             FilterCur.execute(u"select ID, English, StringID, IdentifyString from Text where english=? {0}".format(ORIDString), (unicode(matchString),))
                         except:
-                            FilterCur.execute(u"select ID, English, StringID from Text where english=? {0}".format(ORIDString), (unicode(matchString),))
+                            FilterCur.execute(u"select ID, English, StringID, '' as IdentifyString from Text where english LIKE ?", ('%' + unicode(matchString) + '%', ))
                         TempList = FilterCur.fetchall()
                                                 
                         for item in TempList:
                             ENString = item[1]
                             CursorGracesJapanese.execute('select string from Japanese where ID={0}'.format(item[2]))
                             JPString = CursorGracesJapanese.fetchall()[0][0]
-                            try:
-                                MatchedEntries.append([File, item[0], ENString, JPString, item[3]])
-                            except:
-                                MatchedEntries.append([File, item[0], ENString, JPString, ""])
+                            MatchedEntries.append([File, item[0], ENString, JPString, item[3]])
             
             if len(MatchedEntries) == 0:
                 return
 
             for item in MatchedEntries:
-                treeItem = QtGui.QTreeWidgetItem([item[0], str(item[1]), item[4], "", VariableReplace(item[2]), VariableReplace(item[3])])
-                treeItem.setCheckState(3, QtCore.Qt.Checked)
-                newSearchTab.addTopLevelItem(treeItem)
+                try:
+                    treeItem = QtGui.QTreeWidgetItem([item[0], str(item[1]), item[4], "", VariableReplace(item[2]), VariableReplace(item[3])])
+                    treeItem.setCheckState(3, QtCore.Qt.Checked)
+                    newSearchTab.addTopLevelItem(treeItem)
+                except:
+                    print("Mass Replace: Failed adding file [" + item[0] + "], entry [" + str(item[1]) + "]")
         
         self.tabwidget.addTab(newSearchTab, matchString)
         self.tabwidget.setCurrentIndex(self.tabwidget.count()-1)
