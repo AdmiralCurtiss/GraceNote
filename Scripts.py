@@ -89,6 +89,7 @@ EnglishVoiceLanguageFlag = False
 UpdateLowerStatusFlag = False
 ModeFlag = 'Semi-Auto'
 AmountEditingWindows = 5
+WriteDatabaseStorageToHddOnEntryChange = False
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -1087,6 +1088,10 @@ class Scripts2(QtGui.QWidget):
         self.changeEditingWindowAmountAct = QtGui.QAction('Change Editing Window Amount', None)
         self.changeEditingWindowAmountAct.triggered.connect(self.ChangeEditingWindowAmountDisplay)
         
+        self.writeDatabaseStorageToHddAct = QtGui.QAction('Not writing on Entry change', None)
+        self.writeDatabaseStorageToHddAct.triggered.connect(self.ChangeWriteDatabaseStorageToHddBehavior)
+        
+        
         
         self.autoAct = QtGui.QAction('Auto', None)
         self.semiAct = QtGui.QAction('Semi-Auto', None)
@@ -1244,6 +1249,7 @@ class Scripts2(QtGui.QWidget):
         optionsMenu.addAction(self.voiceLangAct)
         optionsMenu.addAction(self.updateLowerStatusAct)
         optionsMenu.addAction(self.changeEditingWindowAmountAct)
+        optionsMenu.addAction(self.writeDatabaseStorageToHddAct)
 
         parent.menuBar().addMenu(fileMenu)
         parent.menuBar().addMenu(parent.editMenu)
@@ -1408,6 +1414,15 @@ class Scripts2(QtGui.QWidget):
             self.updateLowerStatusAct.setText('Updating lower status')
             UpdateLowerStatusFlag = True
 
+    def ChangeWriteDatabaseStorageToHddBehavior(self):
+        global WriteDatabaseStorageToHddOnEntryChange
+        if WriteDatabaseStorageToHddOnEntryChange == True:
+            self.writeDatabaseStorageToHddAct.setText('Not writing on Entry change')
+            WriteDatabaseStorageToHddOnEntryChange = False
+        else:
+            self.writeDatabaseStorageToHddAct.setText('Writing on Entry change')
+            WriteDatabaseStorageToHddOnEntryChange = True
+            
     def ChangeEditingWindowAmountDisplay(self):
         global AmountEditingWindows
         text, ok = QtGui.QInputDialog.getText(self, "Enter new window amount", "New amount: (restart GN after entering!)", QtGui.QLineEdit.Normal)
@@ -1841,9 +1856,11 @@ class Scripts2(QtGui.QWidget):
             if (TempDebug == 1) and (self.debug.isChecked() == False):
                 pass
             elif (TempDebug == 1) and (self.debug.isChecked() == True):
-                additem.setCheckState(QtCore.Qt.Checked)                
+                additem.setCheckState(QtCore.Qt.Checked)
+                additem.setWhatsThis("d") #debug
                 self.entrymodel.appendRow(additem)
-            else:            
+            else:
+                additem.setWhatsThis("n") #not debug
                 self.entrymodel.appendRow(additem)
             
             if TempStatus != -1 and TempDebug == 1:
@@ -2118,14 +2135,18 @@ class Scripts2(QtGui.QWidget):
 
 
     def UpdateDebug(self):
-        self.WriteDatabaseStorageToHdd()
-        
         index = self.entry.currentIndex()
-        
         if self.entrymodel.item(index.row()).checkState() == 0:
+            if self.entrymodel.item(index.row()).whatsThis() == "n":
+                return # no change, was already not debug
             DebugState = False
         else:
+            if self.entrymodel.item(index.row()).whatsThis() == "d":
+                return # no change, was already debug
             DebugState = True
+        
+        #print("updateDebug")
+        self.WriteDatabaseStorageToHdd()
         
         selectedRow = int(self.entrysort.data(index)[6:11])-1
         databasefilename = self.treemodel.itemFromIndex(self.tree.currentIndex()).statusTip()
@@ -2136,9 +2157,11 @@ class Scripts2(QtGui.QWidget):
         if DebugState == True:
             CursorGracesJapanese.execute("UPDATE Japanese SET debug = 1 WHERE ID = {0} AND debug != 1".format(NextID))
             SaveCur.execute("UPDATE Text SET status = -1 WHERE ID = {0} AND status != -1".format(selectedRow+1))
+            self.entrymodel.item(index.row()).setWhatsThis("d")
         else:
             CursorGracesJapanese.execute("UPDATE Japanese SET debug = 0 WHERE ID = {0} AND debug != 0".format(NextID))
             SaveCur.execute("UPDATE Text SET status =  0 WHERE ID = {0} AND status  = -1".format(selectedRow+1))
+            self.entrymodel.item(index.row()).setWhatsThis("n")
         SaveCon.commit()
         ConnectionGracesJapanese.commit()
         
@@ -2250,7 +2273,7 @@ class Scripts2(QtGui.QWidget):
 
     def WriteDatabaseStorageToHdd(self):
         if not self.databaseWriteStorage:
-            print("Database storage empty, no need to write.")
+            #print("Database storage empty, no need to write.")
             return
     
         lastDatabase = ""
@@ -2273,7 +2296,9 @@ class Scripts2(QtGui.QWidget):
         self.databaseWriteStorage.clear()
 
     def PopulateTextEdit(self):
-        self.WriteDatabaseStorageToHdd()
+        global WriteDatabaseStorageToHddOnEntryChange
+        if WriteDatabaseStorageToHddOnEntryChange == True:
+            self.WriteDatabaseStorageToHdd()
                 
         index = self.entry.currentIndex()
         row = index.row()
