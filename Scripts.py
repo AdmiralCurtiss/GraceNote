@@ -745,6 +745,26 @@ class SplashScreen(QtGui.QWidget):
         self.destroy(True)
 
 
+class DatabaseEntryStruct():
+    def __init__(self, dirtyString, databaseName, entry, role, commandOriginButton, modeFlag, updateLowerStatusFlag, state):
+        #string dirtyString; // this is the actual entry text, but still with GN variables, call VariableRemove() before inserting into DB
+        self.dirtyString = dirtyString
+        #string database;
+        self.databaseName = databaseName
+        #int entry;
+        self.entry = entry
+        #int role;
+        self.role = role
+        #bool commandOriginButton;
+        self.commandOriginButton = commandOriginButton
+        #string modeFlag;
+        self.modeFlag = modeFlag
+        #bool updateLowerStatusFlag;
+        self.updateLowerStatusFlag = updateLowerStatusFlag
+        #string state; // "ENG" or "COM", defines which column in the database to update
+        self.state = state
+        
+
 class Scripts2(QtGui.QWidget):
 
     def __init__(self, parent=None):
@@ -776,6 +796,7 @@ class Scripts2(QtGui.QWidget):
 
         self.author = self.settings.value('author')
         self.update = self.settings.value('update')
+        self.databaseWriteStorage = []
 
         if self.update == None:
             self.update = set()
@@ -2121,6 +2142,23 @@ class Scripts2(QtGui.QWidget):
             if self.author == 'ruta':
                 self.entrymodel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(255,225,180)))             
         
+    def DebugPrintDatabaseWriteStorage(self):
+        for d in self.databaseWriteStorage:
+            print("current contents: " + d.databaseName + "/" + str(d.entry) + ": " + d.dirtyString)
+    
+    def InsertOrUpdateEntryToWrite(self, entryStruct):
+        #DatabaseEntryStruct(dirtyString, databaseName, entry, role, commandOriginButton, modeFlag, updateLowerStatusFlag, state)
+        for i, d in enumerate(self.databaseWriteStorage):
+            if d.entry == entryStruct.entry and d.state == entryStruct.state and d.databaseName == entryStruct.databaseName:
+                self.databaseWriteStorage[i] = entryStruct # overwrite existing with new
+                #print("modified: " + self.databaseWriteStorage[i].databaseName + "/" + str(self.databaseWriteStorage[i].entry) + ": " + self.databaseWriteStorage[i].dirtyString)
+                #self.DebugPrintDatabaseWriteStorage()
+                return
+        self.databaseWriteStorage.append(entryStruct) # doesn't exist in list yet, just add new
+        #print("added new: " + entryStruct.databaseName + "/" + str(entryStruct.entry) + ": " + entryStruct.dirtyString)
+        #self.DebugPrintDatabaseWriteStorage()
+        return
+    
     def UpdateTextGenericFunc(self, role, textBox):
         if textBox.currentEntry < 0:
             return
@@ -2129,15 +2167,10 @@ class Scripts2(QtGui.QWidget):
         if self.treemodel.hasChildren(treeindex):
             return
         
-        index = self.entry.currentIndex()
-        row = index.row()
         
-        databasefilename = self.treemodel.itemFromIndex(self.tree.currentIndex()).statusTip()
-        SaveCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(databasefilename))
-        SaveCur = SaveCon.cursor()
-
-        self.update.add(str(databasefilename))
                         
+        #index = self.entry.currentIndex()
+        #row = index.row()
         #self.entrymodel.item(index.sibling(index.row()-1, 0).row()).setBackground(QtGui.QBrush(QtGui.QColor(220, 255, 220)))
         #if self.author == 'ruta':
         #    self.entrymodel.item(index.sibling(index.row()-1, 0).row()).setBackground(QtGui.QBrush(QtGui.QColor(255, 235, 245)))
@@ -2159,14 +2192,12 @@ class Scripts2(QtGui.QWidget):
             # if origin by typing or automatic:
             if ModeFlag == 'Manual':
                 # in manual mode: leave status alone, do not change, just fetch the existing one
-                SaveCur.execute("SELECT status FROM Text WHERE ID={0}".format(textBox.currentEntry))
-                updateStatusValue = SaveCur.fetchall()[0][0]
+                updateStatusValue = self.text[textBox.currentEntry - 1][4]
             else:
                 # in (semi)auto mode: change to current role, except when disabled by option and current role is lower than existing status
                 global UpdateLowerStatusFlag
                 if UpdateLowerStatusFlag == False:
-                    SaveCur.execute("SELECT status FROM Text WHERE ID={0}".format(textBox.currentEntry))
-                    statuscheck = SaveCur.fetchall()[0][0]
+                    statuscheck = self.text[textBox.currentEntry - 1][4]
                     if statuscheck > role:
                         updateStatusValue = statuscheck
                     else:
@@ -2180,7 +2211,17 @@ class Scripts2(QtGui.QWidget):
 
         self.text[textBox.currentEntry - 1][4] = updateStatusValue
         textBox.iconToggle(updateStatusValue)
-                
+        
+        databasefilename = self.treemodel.itemFromIndex(self.tree.currentIndex()).statusTip()
+        
+        #DatabaseEntryStruct(dirtyString, databaseName, entry, role, commandOriginButton, modeFlag, updateLowerStatusFlag, state)
+        # keep for later write to HDD
+        self.InsertOrUpdateEntryToWrite(DatabaseEntryStruct(textBox.toPlainText(), databasefilename, textBox.currentEntry, role, CommandOriginButton, ModeFlag, UpdateLowerStatusFlag, self.state))
+        
+        SaveCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(databasefilename))
+        SaveCur = SaveCon.cursor()
+        self.update.add(str(databasefilename))
+        
         if self.state == 'ENG':
             SaveCur.execute(u"update Text set english=?, updated=1, status=? where ID=?", (GoodString, updateStatusValue, textBox.currentEntry))
             SaveCon.commit()
