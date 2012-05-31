@@ -31,6 +31,7 @@ from binascii import hexlify, unhexlify
 import subprocess
 import codecs
 from Config import *
+from collections import deque
 
 
 # load config
@@ -746,21 +747,15 @@ class SplashScreen(QtGui.QWidget):
 
 
 class DatabaseEntryStruct():
-    def __init__(self, dirtyString, databaseName, entry, role, commandOriginButton, modeFlag, updateLowerStatusFlag, state):
-        #string dirtyString; // this is the actual entry text, but still with GN variables, call VariableRemove() before inserting into DB
-        self.dirtyString = dirtyString
+    def __init__(self, cleanString, databaseName, entry, role, state):
+        #string cleanString; // this is the actual entry text
+        self.cleanString = cleanString
         #string database;
         self.databaseName = databaseName
         #int entry;
         self.entry = entry
         #int role;
         self.role = role
-        #bool commandOriginButton;
-        self.commandOriginButton = commandOriginButton
-        #string modeFlag;
-        self.modeFlag = modeFlag
-        #bool updateLowerStatusFlag;
-        self.updateLowerStatusFlag = updateLowerStatusFlag
         #string state; // "ENG" or "COM", defines which column in the database to update
         self.state = state
         
@@ -796,7 +791,7 @@ class Scripts2(QtGui.QWidget):
 
         self.author = self.settings.value('author')
         self.update = self.settings.value('update')
-        self.databaseWriteStorage = []
+        self.databaseWriteStorage = deque()
 
         if self.update == None:
             self.update = set()
@@ -1291,6 +1286,7 @@ class Scripts2(QtGui.QWidget):
 
 
     def quit(self):
+        self.WriteDatabaseStorageToHdd()
         self.settings.setValue('update', set(self.update))
         print 'These files retained for next session: ', ''.join(["%s, " % (k) for k in self.update])[:-2]
         self.settings.sync()
@@ -1382,6 +1378,8 @@ class Scripts2(QtGui.QWidget):
 
 
     def ReloadConfiguration(self):
+        self.WriteDatabaseStorageToHdd()
+        
         global configfile
         global configData
         
@@ -1480,7 +1478,8 @@ class Scripts2(QtGui.QWidget):
 
 
     def ConsolidateDebug(self):
-    
+        self.WriteDatabaseStorageToHdd()
+            
         i = 1
         aList = configData.FileList
             
@@ -1512,6 +1511,8 @@ class Scripts2(QtGui.QWidget):
             i += 1
 
     def RetrieveModifiedFiles(self, splash):
+        self.WriteDatabaseStorageToHdd()
+        
         # Nab the online changelog
         try:
             splash.text = 'Downloading updated files...'
@@ -1620,7 +1621,8 @@ class Scripts2(QtGui.QWidget):
 
 
     def DownloadFile(self, ftp, source, dest):
-        
+        self.WriteDatabaseStorageToHdd()
+                
         save = open(configData.LocalDatabasePath + '/{0}'.format(dest), 'wb')
         ftp.retrbinary('RETR {0}'.format(source), save.write)
         save.close()
@@ -1656,7 +1658,8 @@ class Scripts2(QtGui.QWidget):
         
 
     def UploadFile(self, ftp, source, dest):
-    
+        self.WriteDatabaseStorageToHdd()
+        
         source = str(source)
         dest = str(dest)
     
@@ -1694,6 +1697,8 @@ class Scripts2(QtGui.QWidget):
         return True
 
     def PopulateModel(self, FileList):
+        self.WriteDatabaseStorageToHdd()
+        
         self.treemodel.clear()
         
         PercentageConnection = sqlite3.connect(configData.LocalDatabasePath + "/CompletionPercentage")
@@ -1756,6 +1761,8 @@ class Scripts2(QtGui.QWidget):
 
                 
     def PopulateEntryList(self):
+        self.WriteDatabaseStorageToHdd()
+        
         global commentsAvailableLabel
         containsComments = False
     
@@ -1913,7 +1920,8 @@ class Scripts2(QtGui.QWidget):
         self.JumpToEntry(jumpto, 0)
     
     def LiveSearch(self):
-
+        self.WriteDatabaseStorageToHdd()
+        
         matchString = self.filter.text()
 
         # Check to make sure people aren't idiots
@@ -2008,7 +2016,8 @@ class Scripts2(QtGui.QWidget):
 
 
     def JumpToEntry(self, file, entry):
-    
+        self.WriteDatabaseStorageToHdd()
+        
         self.tree.collapseAll()
         for i in xrange(self.treemodel.rowCount()):
             category = self.treemodel.item(i)
@@ -2071,6 +2080,8 @@ class Scripts2(QtGui.QWidget):
 
 
     def ShowMassReplace(self):
+        self.WriteDatabaseStorageToHdd()
+        
         self.massDialog = MassReplace(self)
 
         self.massDialog.show()
@@ -2079,6 +2090,8 @@ class Scripts2(QtGui.QWidget):
 
 
     def ShowCompletionTable(self):
+        self.WriteDatabaseStorageToHdd()
+        
         self.comDialog = CompletionTable(self)
 
         self.comDialog.show()
@@ -2086,12 +2099,16 @@ class Scripts2(QtGui.QWidget):
         self.comDialog.activateWindow()
 
     def RefreshCompletion(self):
+        self.WriteDatabaseStorageToHdd()
+        
         CalculateAllCompletionPercentagesForDatabase()
 
     def PlayCentralAudio(self):
         self.regularEditingTextBoxes[1].playAudio()
         
     def ShowDuplicateText(self):
+        self.WriteDatabaseStorageToHdd()
+        
         self.dupeDialog = DuplicateText()
 
         self.dupeDialog.show()
@@ -2101,6 +2118,8 @@ class Scripts2(QtGui.QWidget):
 
 
     def UpdateDebug(self):
+        self.WriteDatabaseStorageToHdd()
+        
         index = self.entry.currentIndex()
         
         if self.entrymodel.item(index.row()).checkState() == 0:
@@ -2144,18 +2163,21 @@ class Scripts2(QtGui.QWidget):
         
     def DebugPrintDatabaseWriteStorage(self):
         for d in self.databaseWriteStorage:
-            print("current contents: " + d.databaseName + "/" + str(d.entry) + ": " + d.dirtyString)
+            print("current contents: " + d.databaseName + "/" + str(d.entry) + ": " + d.cleanString)
     
     def InsertOrUpdateEntryToWrite(self, entryStruct):
-        #DatabaseEntryStruct(dirtyString, databaseName, entry, role, commandOriginButton, modeFlag, updateLowerStatusFlag, state)
+        #DatabaseEntryStruct(cleanString, databaseName, entry, role, state)
         for i, d in enumerate(self.databaseWriteStorage):
             if d.entry == entryStruct.entry and d.state == entryStruct.state and d.databaseName == entryStruct.databaseName:
-                self.databaseWriteStorage[i] = entryStruct # overwrite existing with new
-                #print("modified: " + self.databaseWriteStorage[i].databaseName + "/" + str(self.databaseWriteStorage[i].entry) + ": " + self.databaseWriteStorage[i].dirtyString)
-                #self.DebugPrintDatabaseWriteStorage()
-                return
-        self.databaseWriteStorage.append(entryStruct) # doesn't exist in list yet, just add new
-        #print("added new: " + entryStruct.databaseName + "/" + str(entryStruct.entry) + ": " + entryStruct.dirtyString)
+                if i != 0:
+                #    print("found existing, rotating & removing old")
+                    self.databaseWriteStorage.rotate(-i)
+                #else:
+                #    print("found existing, removing old")
+                self.databaseWriteStorage.popleft()
+                break
+        self.databaseWriteStorage.appendleft(entryStruct) # doesn't exist in list yet, just add new
+        #print("added new: " + entryStruct.databaseName + "/" + str(entryStruct.entry) + ": " + entryStruct.cleanString)
         #self.DebugPrintDatabaseWriteStorage()
         return
     
@@ -2214,30 +2236,45 @@ class Scripts2(QtGui.QWidget):
         
         databasefilename = self.treemodel.itemFromIndex(self.tree.currentIndex()).statusTip()
         
-        #DatabaseEntryStruct(dirtyString, databaseName, entry, role, commandOriginButton, modeFlag, updateLowerStatusFlag, state)
+        #DatabaseEntryStruct(cleanString, databaseName, entry, role, state)
         # keep for later write to HDD
-        self.InsertOrUpdateEntryToWrite(DatabaseEntryStruct(textBox.toPlainText(), databasefilename, textBox.currentEntry, role, CommandOriginButton, ModeFlag, UpdateLowerStatusFlag, self.state))
+        self.InsertOrUpdateEntryToWrite(DatabaseEntryStruct(GoodString, databasefilename, textBox.currentEntry, updateStatusValue, self.state))
         
-        SaveCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(databasefilename))
-        SaveCur = SaveCon.cursor()
-        self.update.add(str(databasefilename))
-        
+        # write the new string back into the main window, this is neccessary or else the new string isn't there when the displayed entry is changed!
         if self.state == 'ENG':
-            SaveCur.execute(u"update Text set english=?, updated=1, status=? where ID=?", (GoodString, updateStatusValue, textBox.currentEntry))
-            SaveCon.commit()
             self.text[textBox.currentEntry - 1][0] = GoodString
-
         elif self.state == "COM":
-            SaveCur.execute(u"update Text set comment=?, updated=1, status=? where ID=?", (GoodString, updateStatusValue, textBox.currentEntry))
-            SaveCon.commit()
             self.text[textBox.currentEntry - 1][2] = GoodString
             
         return
 
+    def WriteDatabaseStorageToHdd(self):
+        if not self.databaseWriteStorage:
+            print("Database storage empty, no need to write.")
+            return
+    
+        lastDatabase = ""
         
+        print("Writing database storage in memory to HDD...")
+        
+        #DatabaseEntryStruct(cleanString, databaseName, entry, role, state)
+        for d in self.databaseWriteStorage:
+            if lastDatabase != d.databaseName: # open up new DB connectin if neccesary, otherwise just reuse the old one
+                self.update.add(str(d.databaseName))
+                SaveCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(d.databaseName))
+                SaveCur = SaveCon.cursor()
+                
+            if d.state == 'ENG':
+                SaveCur.execute(u"update Text set english=?, updated=1, status=? where ID=?", (d.cleanString, d.role, d.entry))
+            elif d.state == "COM":
+                SaveCur.execute(u"update Text set comment=?, updated=1, status=? where ID=?", (d.cleanString, d.role, d.entry))
+            SaveCon.commit()
+        
+        self.databaseWriteStorage.clear()
 
     def PopulateTextEdit(self):
-        
+        self.WriteDatabaseStorageToHdd()
+                
         index = self.entry.currentIndex()
         row = index.row()
 
@@ -2345,6 +2382,8 @@ class Scripts2(QtGui.QWidget):
                     
        
     def SavetoServer(self):
+        self.WriteDatabaseStorageToHdd()
+        
         if len(self.update) == 0:
             print 'Nothing to save!'
             return
@@ -2493,6 +2532,8 @@ class Scripts2(QtGui.QWidget):
                 continue
 
     def SavetoPatch(self):
+        self.WriteDatabaseStorageToHdd()
+        
 
 
         # Make some output directories
@@ -2576,6 +2617,8 @@ class Scripts2(QtGui.QWidget):
 
 
     def MakeSCS(self, allFiles, progress, path, BIN=None):
+        self.WriteDatabaseStorageToHdd()
+        
 
 
         # Create the .scs files
@@ -2754,6 +2797,8 @@ class Scripts2(QtGui.QWidget):
 
 
     def SavetoXML(self):
+        self.WriteDatabaseStorageToHdd()
+        
 
 
         # Make some output directories
@@ -3159,6 +3204,8 @@ class Scripts2(QtGui.QWidget):
 
 
     def SavetoBugfixXML(self):
+        self.WriteDatabaseStorageToHdd()
+        
 
 
         # Make some output directories
@@ -3557,6 +3604,8 @@ class Scripts2(QtGui.QWidget):
 
 
     def SavetoGracesfDemoXML(self):
+        self.WriteDatabaseStorageToHdd()
+        
 
 
         if os.name != 'posix':
@@ -3937,6 +3986,8 @@ class Scripts2(QtGui.QWidget):
 
 
     def PatchDol(self):
+        self.WriteDatabaseStorageToHdd()
+        
     
         # Make some output directories
         if not os.path.exists('riivolution'):
