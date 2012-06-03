@@ -1100,19 +1100,19 @@ class Scripts2(QtGui.QWidget):
 
         self.scrollUpAct = QtGui.QAction('Scroll Up', None)
         self.scrollUpAct.triggered.connect(self.scrollUp)
-        self.scrollUpAct.setShortcut(QtGui.QKeySequence('Alt+Up'))
+        self.scrollUpAct.setShortcut(QtGui.QKeySequence('Ctrl+Up'))
 
-        self.scrollUpAct2 = QtGui.QAction('Scroll Up 2', None)
+        self.scrollUpAct2 = QtGui.QAction('Scroll Up', None)
         self.scrollUpAct2.triggered.connect(self.scrollUp)
-        self.scrollUpAct2.setShortcut(QtGui.QKeySequence('Ctrl+Up'))
+        self.scrollUpAct2.setShortcut(QtGui.QKeySequence('Alt+Up'))
 
         self.scrollDownAct = QtGui.QAction('Scroll Down', None)
         self.scrollDownAct.triggered.connect(self.scrollDown)
-        self.scrollDownAct.setShortcut(QtGui.QKeySequence('Alt+Down'))
+        self.scrollDownAct.setShortcut(QtGui.QKeySequence('Ctrl+Down'))
         
-        self.scrollDownAct2 = QtGui.QAction('Scroll Down 2', None)
+        self.scrollDownAct2 = QtGui.QAction('Scroll Down', None)
         self.scrollDownAct2.triggered.connect(self.scrollDown)
-        self.scrollDownAct2.setShortcut(QtGui.QKeySequence('Ctrl+Down'))
+        self.scrollDownAct2.setShortcut(QtGui.QKeySequence('Alt+Down'))
 
 
         roleMenu = QtGui.QMenu('Role', self)
@@ -1199,6 +1199,8 @@ class Scripts2(QtGui.QWidget):
         viewMenu.addSeparator()
         viewMenu.addAction(self.scrollUpAct)
         viewMenu.addAction(self.scrollDownAct)
+        viewMenu.addAction(self.scrollUpAct2)
+        viewMenu.addAction(self.scrollDownAct2)
         viewMenu.addSeparator()
         iconSizeMenu = QtGui.QMenu("Toolbar Icon Size", self)
         for action in self.iconSizeActs:
