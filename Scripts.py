@@ -1285,10 +1285,9 @@ class Scripts2(QtGui.QWidget):
         
         layout.setSizes( [200, 400, 200] )
         
-        # fffff
-        aaaa = QtGui.QVBoxLayout()
-        aaaa.addWidget(layout)
-        self.setLayout(aaaa)
+        layoutWidgetAdapter = QtGui.QVBoxLayout()
+        layoutWidgetAdapter.addWidget(layout)
+        self.setLayout(layoutWidgetAdapter)
 
 
     def quit(self):
