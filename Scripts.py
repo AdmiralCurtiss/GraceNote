@@ -2366,7 +2366,7 @@ class Scripts2(QtGui.QWidget):
         global ModeFlag
         if ModeFlag == 'Auto':
             for i in range(len(self.textEditingBoxes)):
-                self.regularEditingTextBoxes[i].manualEdit.emit(self.role, self.regularEditingTextBoxes[i])
+                self.regularEditingTextBoxes[i].manualEdit.emit(5, self.regularEditingTextBoxes[i])
 
         
     def SwapEnglish(self):
