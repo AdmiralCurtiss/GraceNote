@@ -1584,6 +1584,7 @@ class Scripts2(QtGui.QWidget):
                     for subitem in itemList:
                         if subitem in self.update:
                             print '{0} was skipped because you have local save data which needs uploading.'.format(subitem)
+                            continue
                         Downloader.append(subitem)
                 
                 # by pika: remove possible duplicates from list, so it doesn't download the same file multiple times
