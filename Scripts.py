@@ -283,10 +283,12 @@ class XTextBox(QtGui.QTextEdit):
     
         for clip in self.audioClips:
             filename = self.lookupAudioHash(clip)
-            playerQueue.append(Phonon.MediaSource(filename))
+            if os.path.exists(filename):
+                playerQueue.append(Phonon.MediaSource(filename))
                 
-        self.player.enqueue(playerQueue)
-        self.player.play()
+        if playerQueue:
+            self.player.enqueue(playerQueue)
+            self.player.play()
 
     def textChangedSignal(self):
         if self.modified == True:
