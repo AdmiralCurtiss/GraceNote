@@ -4881,129 +4881,81 @@ class MassReplace(QtGui.QDialog):
             reply = QtGui.QMessageBox.information(self, "Incorrect Search Usage", "Warning:\n\nYour search can not be empty. Please enter text in the search bar.")
             return
 
+        MatchedEntries = []
+        aList = configData.FileList
 
-        # For an Exact match to the string at any point
+        # any match within a string
         if self.matchExact.isChecked():
-                        
             CursorGracesJapanese.execute(u"select ID from Japanese where string LIKE ?", ('%' + unicode(matchString) + '%', ))
             JPmatches = set(CursorGracesJapanese.fetchall())
-            MatchedEntries = []
-
-            aList = configData.FileList
-    
-            for i in range(1, len(aList)):
-                for File in aList[i]:
-                    if File.find(self.fileFilter.text()) >= 0:
-                        FilterCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(File))
-                        FilterCur = FilterCon.cursor()
-                        
-                        ORIDString = ''
-                        for match in JPmatches:
-                            ORIDString = ORIDString + " OR StringID='" + str(match[0]) + "'"
-                            
-                        try:
-                            FilterCur.execute(u"select ID, English, StringID, IdentifyString from Text where english LIKE ? {0}".format(ORIDString), ('%' + unicode(matchString) + '%', ))
-                        except:
-                            FilterCur.execute(u"select ID, English, StringID, '' as IdentifyString from Text where english LIKE ?", ('%' + unicode(matchString) + '%', ))
-                        TempList = FilterCur.fetchall()
-                                                
-                        for item in TempList:
-                            ENString = item[1]
-                            CursorGracesJapanese.execute('select string from Japanese where ID={0}'.format(item[2]))
-                            JPString = CursorGracesJapanese.fetchall()[0][0]
-                            MatchedEntries.append([File, item[0], ENString, JPString, item[3]])
-            
-            if len(MatchedEntries) == 0:
-                return
-
-            for item in MatchedEntries:
-                try:
-                    treeItem = QtGui.QTreeWidgetItem([item[0], str(item[1]), item[4], "", VariableReplace(item[2]), VariableReplace(item[3])])
-                    treeItem.setCheckState(3, QtCore.Qt.Checked)
-                    newSearchTab.addTopLevelItem(treeItem)
-                except:
-                    print("Mass Replace: Failed adding file [" + item[0] + "], entry [" + str(item[1]) + "]")
-
-        # if searching in English strings only
-        if self.matchEnglish.isChecked():
-            
-            MatchedEntries = []
-            
-            aList = configData.FileList
-    
-            for i in range(1, len(aList)):
-                for File in aList[i]:
-                    if File.find(self.fileFilter.text()) >= 0:
-                        FilterCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(File))
-                        FilterCur = FilterCon.cursor()
-                        
-                        try:
-                            FilterCur.execute(u"select ID, English, StringID, IdentifyString from Text where english LIKE ?", ('%' + unicode(matchString) + '%', ))
-                        except:
-                            FilterCur.execute(u"select ID, English, StringID, '' as IdentifyString from Text where english LIKE ?", ('%' + unicode(matchString) + '%', ))
-                        TempList = FilterCur.fetchall()
-                                                
-                        for item in TempList:
-                            ENString = item[1]
-                            CursorGracesJapanese.execute('select string from Japanese where ID={0}'.format(item[2]))
-                            JPString = CursorGracesJapanese.fetchall()[0][0]
-                            MatchedEntries.append([File, item[0], ENString, JPString, item[3]])
-            
-            if len(MatchedEntries) == 0:
-                return
-
-            for item in MatchedEntries:
-                try:
-                    treeItem = QtGui.QTreeWidgetItem([item[0], str(item[1]), item[4], "", VariableReplace(item[2]), VariableReplace(item[3])])
-                    treeItem.setCheckState(3, QtCore.Qt.Checked)
-                    newSearchTab.addTopLevelItem(treeItem)
-                except:
-                    print("Mass Replace: Failed adding file [" + item[0] + "], entry [" + str(item[1]) + "]")
-    
-        # For an exact match to the entry
+            SqlExpressionMatchString = '%' + unicode(matchString) + '%'
+        # any match in English strings only
+        elif self.matchEnglish.isChecked():
+            JPmatches = set()
+            SqlExpressionMatchString = '%' + unicode(matchString) + '%'
+        # match the entire entry
         elif self.matchEntry.isChecked():
-
-
             CursorGracesJapanese.execute(u"select ID from Japanese where string=?", (unicode(matchString),))
             JPmatches = set(CursorGracesJapanese.fetchall())
-            MatchedEntries = []
-    
-            aList = configData.FileList
-
-            for i in range(1, len(aList)):
-                for File in aList[i]:
-                    if File.find(self.fileFilter.text()) >= 0:
-                        FilterCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(File))
-                        FilterCur = FilterCon.cursor()
-                        
-                        ORIDString = ''
-                        
-                        if JPmatches != set([]):
-                            for match in JPmatches:
-                                ORIDString = ORIDString + " OR StringID='" + str(match[0]) + "'"
-                        
-                        try:
-                            FilterCur.execute(u"select ID, English, StringID, IdentifyString from Text where english=? {0}".format(ORIDString), (unicode(matchString),))
-                        except:
-                            FilterCur.execute(u"select ID, English, StringID, '' as IdentifyString from Text where english LIKE ?", ('%' + unicode(matchString) + '%', ))
-                        TempList = FilterCur.fetchall()
-                                                
-                        for item in TempList:
-                            ENString = item[1]
-                            CursorGracesJapanese.execute('select string from Japanese where ID={0}'.format(item[2]))
-                            JPString = CursorGracesJapanese.fetchall()[0][0]
-                            MatchedEntries.append([File, item[0], ENString, JPString, item[3]])
+            SqlExpressionMatchString = unicode(matchString)
             
-            if len(MatchedEntries) == 0:
-                return
+        ORIDStringList = []
+        tmp = ''
+        i = 0
+        while JPmatches:
+            i = i + 1
+            if i >= 500: # split up query into multiple queries when it gets too large
+                ORIDStringList = ORIDStringList + [tmp]
+                tmp = ''
+                i = 0
+            tmp = tmp + " OR StringID=" + str(JPmatches.pop()[0])
+        ORIDStringList = ORIDStringList + [tmp]
+            
+        for i in range(1, len(aList)):
+            for File in aList[i]:
+                if File.find(self.fileFilter.text()) >= 0:
+                    FilterCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(File))
+                    FilterCur = FilterCon.cursor()
+                    
+                    TempList = []
+                    try: # fetch the english entires
+                        FilterCur.execute(u"SELECT ID, English, StringID, IdentifyString FROM Text WHERE english LIKE ?", (SqlExpressionMatchString, ))
+                    except:
+                        FilterCur.execute(u"SELECT ID, English, StringID, '' AS IdentifyString FROM Text WHERE english LIKE ?", (SqlExpressionMatchString, ))
+                    TempList = TempList + FilterCur.fetchall()
+                    
+                    for ORIDString in ORIDStringList: # fetch the japanese entries
+                        try:
+                            FilterCur.execute(u"SELECT ID, English, StringID, IdentifyString FROM Text WHERE 1=2 {0}".format(ORIDString))
+                        except:
+                            FilterCur.execute(u"SELECT ID, English, StringID, '' AS IdentifyString FROM Text WHERE 1=2 {0}".format(ORIDString))
+                        # This may fetch entries that were already fetched above in the english ones, make sure it's not already added
+                        JapaneseFetches = FilterCur.fetchall()
+                        for JapaneseFetch in JapaneseFetches:
+                            notYetAdded = True
+                            for EnglishFetch in TempList:
+                                if JapaneseFetch[0] == EnglishFetch[0]:
+                                    notYetAdded = False
+                                    break
+                            if notYetAdded:
+                                TempList = TempList + [JapaneseFetch]
+                    
+                    for item in TempList:
+                        ENString = item[1]
+                        CursorGracesJapanese.execute('SELECT string FROM Japanese WHERE ID={0}'.format(item[2]))
+                        JPString = CursorGracesJapanese.fetchall()[0][0]
+                        MatchedEntries.append([File, item[0], ENString, JPString, item[3]])
 
-            for item in MatchedEntries:
-                try:
-                    treeItem = QtGui.QTreeWidgetItem([item[0], str(item[1]), item[4], "", VariableReplace(item[2]), VariableReplace(item[3])])
-                    treeItem.setCheckState(3, QtCore.Qt.Checked)
-                    newSearchTab.addTopLevelItem(treeItem)
-                except:
-                    print("Mass Replace: Failed adding file [" + item[0] + "], entry [" + str(item[1]) + "]")
+        if len(MatchedEntries) == 0:
+            return
+
+        for item in MatchedEntries:
+            try:
+                treeItem = QtGui.QTreeWidgetItem([item[0], str(item[1]), str(item[4]), "", VariableReplace(item[2]), VariableReplace(item[3])])
+                treeItem.setCheckState(3, QtCore.Qt.Checked)
+                newSearchTab.addTopLevelItem(treeItem)
+            except:
+                print("Mass Replace: Failed adding file [" + item[0] + "], entry [" + str(item[1]) + "]")
         
         self.tabwidget.addTab(newSearchTab, matchString)
         self.tabwidget.setCurrentIndex(self.tabwidget.count()-1)
