@@ -4821,7 +4821,7 @@ class MassReplace(QtGui.QDialog):
         treewidget = QtGui.QTreeWidget()
         
         treewidget.setColumnCount(6)
-        treewidget.setHeaderLabels(['File', 'Entry', 'Info', 'Replace', 'E String', 'J String'])
+        treewidget.setHeaderLabels(['File', 'Entry', 'Info', 'Replace', 'E String', 'J String', 'Replacement Type'])
         treewidget.setSortingEnabled(True)
         
         treewidget.setColumnWidth(0, 120)
@@ -4830,6 +4830,7 @@ class MassReplace(QtGui.QDialog):
         treewidget.setColumnWidth(3, 20)
         treewidget.setColumnWidth(4, 275)
         treewidget.setColumnWidth(5, 275)
+        treewidget.setColumnWidth(6, 30)
         
         #treewidget.setMinimumSize(780, 400)
         treewidget.sortItems(0, QtCore.Qt.AscendingOrder)
@@ -4870,7 +4871,7 @@ class MassReplace(QtGui.QDialog):
             reply = QtGui.QMessageBox.information(self, "Incorrect Search Usage", "Warning:\n\nPart of a variable: Be sure you know what you're doing.")
             #return
 
-
+        tabNameString = matchString
         matchString = VariableRemove(matchString)
 
         if len(matchString) == 1:
@@ -4889,15 +4890,18 @@ class MassReplace(QtGui.QDialog):
             CursorGracesJapanese.execute(u"select ID from Japanese where string LIKE ?", ('%' + unicode(matchString) + '%', ))
             JPmatches = set(CursorGracesJapanese.fetchall())
             SqlExpressionMatchString = '%' + unicode(matchString) + '%'
+            ReplacementType = 'Substr'
         # any match in English strings only
         elif self.matchEnglish.isChecked():
             JPmatches = set()
             SqlExpressionMatchString = '%' + unicode(matchString) + '%'
+            ReplacementType = 'Substr'
         # match the entire entry
         elif self.matchEntry.isChecked():
             CursorGracesJapanese.execute(u"select ID from Japanese where string=?", (unicode(matchString),))
             JPmatches = set(CursorGracesJapanese.fetchall())
             SqlExpressionMatchString = unicode(matchString)
+            ReplacementType = 'Entry'
             
         ORIDStringList = []
         tmp = ''
@@ -4951,13 +4955,13 @@ class MassReplace(QtGui.QDialog):
 
         for item in MatchedEntries:
             try:
-                treeItem = QtGui.QTreeWidgetItem([item[0], str(item[1]), str(item[4]), "", VariableReplace(item[2]), VariableReplace(item[3])])
+                treeItem = QtGui.QTreeWidgetItem([item[0], str(item[1]), str(item[4]), "", VariableReplace(item[2]), VariableReplace(item[3]), ReplacementType])
                 treeItem.setCheckState(3, QtCore.Qt.Checked)
                 newSearchTab.addTopLevelItem(treeItem)
             except:
                 print("Mass Replace: Failed adding file [" + item[0] + "], entry [" + str(item[1]) + "]")
         
-        self.tabwidget.addTab(newSearchTab, matchString)
+        self.tabwidget.addTab(newSearchTab, tabNameString)
         self.tabwidget.setCurrentIndex(self.tabwidget.count()-1)
         
     def Replace(self):
@@ -4975,9 +4979,14 @@ class MassReplace(QtGui.QDialog):
                 IterCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(Iterator.value().data(0, 0)))
                 IterCur = IterCon.cursor()
                 
-                string = unicode(Iterator.value().data(4, 0))
-                string = string.replace(unicode( self.tabwidget.tabText(self.tabwidget.currentIndex()) ), unicode(self.replacement.text()))
-                string = VariableRemove(string)
+                ReplacementType = Iterator.value().data(6, 0)
+                if ReplacementType == 'Substr':
+                    string = unicode(Iterator.value().data(4, 0))
+                    string = string.replace(unicode( self.tabwidget.tabText(self.tabwidget.currentIndex()) ), unicode(self.replacement.text()))
+                    string = VariableRemove(string)
+                elif ReplacementType == 'Entry':
+                    string = unicode(self.replacement.text())
+                    string = VariableRemove(string)
                                 
                 IterCur.execute(u"update Text set english=?, updated=1, status=? where ID=?", (unicode(string), self.role, int(Iterator.value().data(1, 0))))
                 self.parent.update.add(unicode(Iterator.value().data(0, 0)))
