@@ -1000,11 +1000,11 @@ class Scripts2(QtGui.QWidget):
         self.saveAct.triggered.connect(self.SavetoServer)
         self.saveAct.setShortcut(QtGui.QKeySequence('Ctrl+S'))
 
-        self.updateAct = QtGui.QAction(QtGui.QIcon('icons/upload.png'), 'Update', None)
+        self.updateAct = QtGui.QAction(QtGui.QIcon('icons/save.png'), 'Update', None)
         self.updateAct.triggered.connect(self.RetrieveModifiedFiles)
         self.updateAct.setShortcut(QtGui.QKeySequence('Ctrl+U'))
 
-        self.refreshCompleteAct = QtGui.QAction(QtGui.QIcon('icons/upload.png'), 'Refresh Completion Database', None)
+        self.refreshCompleteAct = QtGui.QAction(QtGui.QIcon('icons/refresh.png'), 'Refresh Completion Database', None)
         self.refreshCompleteAct.triggered.connect(self.RefreshCompletion)
         self.refreshCompleteAct.setShortcut(QtGui.QKeySequence('Ctrl+W'))
 
