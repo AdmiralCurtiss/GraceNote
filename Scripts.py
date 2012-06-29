@@ -2160,12 +2160,13 @@ class Scripts2(QtGui.QWidget):
         NextID = SaveCur.fetchall()[0][0]
         if DebugState == True:
             CursorGracesJapanese.execute("UPDATE Japanese SET debug = 1 WHERE ID = {0} AND debug != 1".format(NextID))
-            SaveCur.execute("UPDATE Text SET status = -1 WHERE ID = {0} AND status != -1".format(selectedRow+1))
+            SaveCur.execute("UPDATE Text SET status = -1, updated = 1 WHERE ID = {0} AND status != -1".format(selectedRow+1))
             self.entrymodel.item(index.row()).setWhatsThis("d")
         else:
             CursorGracesJapanese.execute("UPDATE Japanese SET debug = 0 WHERE ID = {0} AND debug != 0".format(NextID))
-            SaveCur.execute("UPDATE Text SET status =  0 WHERE ID = {0} AND status  = -1".format(selectedRow+1))
+            SaveCur.execute("UPDATE Text SET status =  0, updated = 1 WHERE ID = {0} AND status  = -1".format(selectedRow+1))
             self.entrymodel.item(index.row()).setWhatsThis("n")
+        self.update.add(str(databasefilename))
         SaveCon.commit()
         ConnectionGracesJapanese.commit()
         
