@@ -5002,7 +5002,14 @@ class MassReplace(QtGui.QDialog):
                 ReplacementType = Iterator.value().data(6, 0)
                 if ReplacementType == 'Substr':
                     string = unicode(Iterator.value().data(4, 0))
-                    string = string.replace(unicode( self.tabwidget.tabText(self.tabwidget.currentIndex()) ), unicode(self.replacement.text()))
+                    
+                    orig = unicode(self.tabwidget.tabText(self.tabwidget.currentIndex()))
+                    repl = unicode(self.replacement.text())
+                    if self.matchCase.isChecked():
+                        string = string.replace(orig, repl)
+                    else:
+                        string = re.sub('(?i)' + re.escape(orig), repl, string)
+                        
                     string = VariableRemove(string)
                 elif ReplacementType == 'Entry':
                     string = unicode(self.replacement.text())
