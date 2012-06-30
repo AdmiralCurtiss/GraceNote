@@ -4757,6 +4757,7 @@ class MassReplace(QtGui.QDialog):
         self.matchEntry = QtGui.QRadioButton('Complete Entry')
         self.matchEnglish.setChecked(True)
         self.fileFilter.setToolTip('Wildcards implicit. eg CHT will match all skits')
+        self.matchCase = QtGui.QCheckBox('Match case')
         
         self.matchEnglish.setFont(font)
         self.matchExact.setFont(font)
@@ -4792,15 +4793,16 @@ class MassReplace(QtGui.QDialog):
         buttonLayout.addWidget(self.replace)
                 
         inputLayout = QtGui.QGridLayout()
-        inputLayout.addWidget(originalLabel, 0, 0)
-        inputLayout.addWidget(replaceLabel, 2, 0)
-        inputLayout.addWidget(self.original, 1, 0, 1, 2)
-        inputLayout.addWidget(self.replacement, 3, 0, 1, 2)
-        inputLayout.addWidget(filterLabel, 0, 2, 1, 1)
-        inputLayout.addWidget(self.matchEntry, 2, 2, 1, 1)
-        inputLayout.addWidget(self.matchExact, 3, 2, 1, 1)
+        inputLayout.addWidget(originalLabel    , 0, 0)
+        inputLayout.addWidget(self.original    , 1, 0, 1, 2)
+        inputLayout.addWidget(replaceLabel     , 2, 0)
+        inputLayout.addWidget(self.replacement , 3, 0, 1, 2)
+        inputLayout.addWidget(self.matchCase   , 4, 0, 1, 1)
+        inputLayout.addWidget(filterLabel      , 0, 2, 1, 1)
+        inputLayout.addWidget(self.fileFilter  , 1, 2, 1, 1)
+        inputLayout.addWidget(self.matchEntry  , 2, 2, 1, 1)
+        inputLayout.addWidget(self.matchExact  , 3, 2, 1, 1)
         inputLayout.addWidget(self.matchEnglish, 4, 2, 1, 1)
-        inputLayout.addWidget(self.fileFilter, 1, 2, 1, 1)
         
         inputLayout.setColumnStretch(1, 1)
         
@@ -4885,6 +4887,10 @@ class MassReplace(QtGui.QDialog):
 
         MatchedEntries = []
         aList = configData.FileList
+        
+        # turn on case sensitive checking
+        if self.matchCase.isChecked():
+            CursorGracesJapanese.execute(u"PRAGMA case_sensitive_like = ON")
 
         # any match within a string
         if self.matchExact.isChecked():
@@ -4922,6 +4928,9 @@ class MassReplace(QtGui.QDialog):
                     FilterCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(File))
                     FilterCur = FilterCon.cursor()
                     
+                    if self.matchCase.isChecked():
+                        FilterCur.execute(u"PRAGMA case_sensitive_like = ON")
+                        
                     TempList = []
                     try: # fetch the english entires
                         FilterCur.execute(u"SELECT ID, English, StringID, IdentifyString FROM Text WHERE english LIKE ?", (SqlExpressionMatchString, ))
@@ -4951,6 +4960,9 @@ class MassReplace(QtGui.QDialog):
                         JPString = CursorGracesJapanese.fetchall()[0][0]
                         MatchedEntries.append([File, item[0], ENString, JPString, item[3]])
 
+                    if self.matchCase.isChecked():
+                        FilterCur.execute(u"PRAGMA case_sensitive_like = OFF")
+                        
         if len(MatchedEntries) == 0:
             return
 
@@ -4962,6 +4974,10 @@ class MassReplace(QtGui.QDialog):
             except:
                 print("Mass Replace: Failed adding file [" + item[0] + "], entry [" + str(item[1]) + "]")
         
+        # turn case sensitiveness back off
+        if self.matchCase.isChecked():
+            CursorGracesJapanese.execute(u"PRAGMA case_sensitive_like = OFF")
+            
         self.tabwidget.addTab(newSearchTab, tabNameString)
         self.tabwidget.setCurrentIndex(self.tabwidget.count()-1)
         
@@ -4980,6 +4996,9 @@ class MassReplace(QtGui.QDialog):
                 IterCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(Iterator.value().data(0, 0)))
                 IterCur = IterCon.cursor()
                 
+                #if self.matchCase.isChecked():
+                #    IterCur.execute(u"PRAGMA case_sensitive_like = ON")
+
                 ReplacementType = Iterator.value().data(6, 0)
                 if ReplacementType == 'Substr':
                     string = unicode(Iterator.value().data(4, 0))
@@ -4992,6 +5011,9 @@ class MassReplace(QtGui.QDialog):
                 IterCur.execute(u"update Text set english=?, updated=1, status=? where ID=?", (unicode(string), self.role, int(Iterator.value().data(1, 0))))
                 self.parent.update.add(unicode(Iterator.value().data(0, 0)))
             
+                #if self.matchCase.isChecked():
+                #    IterCur.execute(u"PRAGMA case_sensitive_like = OFF")
+                    
                 IterCon.commit()
 
             Iterator += 1 
