@@ -4737,7 +4737,6 @@ class MassReplace(QtGui.QDialog):
     def __init__(self, parent):
         super(MassReplace, self).__init__()
 
-        self.role = parent.role
         self.parent = parent
 
         self.setWindowModality(False)
@@ -4992,13 +4991,42 @@ class MassReplace(QtGui.QDialog):
         while Iterator.value():
         
             if Iterator.value().checkState(3) == 2:
-                        
-                IterCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(Iterator.value().data(0, 0)))
+                
+                databaseName = Iterator.value().data(0, 0)
+                entryID = int(Iterator.value().data(1, 0))
+                
+                IterCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(databaseName))
                 IterCur = IterCon.cursor()
                 
                 #if self.matchCase.isChecked():
                 #    IterCur.execute(u"PRAGMA case_sensitive_like = ON")
+                
+                
+                
+                IterCur.execute("SELECT status FROM Text WHERE ID=?", (entryID,))
+                currentStatus = IterCur.fetchall()[0][0]
 
+                global ModeFlag
+                # if origin by typing or automatic:
+                if ModeFlag == 'Manual':
+                    # in manual mode: leave status alone, do not change, just fetch the existing one
+                    updateStatusValue = currentStatus
+                else:
+                    # in (semi)auto mode: change to current role, except when disabled by option and current role is lower than existing status
+                    global UpdateLowerStatusFlag
+                    if UpdateLowerStatusFlag == False:
+                        statuscheck = currentStatus
+                        if statuscheck > self.parent.role:
+                            updateStatusValue = statuscheck
+                        else:
+                            updateStatusValue = self.parent.role
+                    else:
+                        updateStatusValue = self.parent.role
+                    # endif UpdateLowerStatusFlag
+                # endif ModeFlag
+                
+                
+                
                 ReplacementType = Iterator.value().data(6, 0)
                 if ReplacementType == 'Substr':
                     string = unicode(Iterator.value().data(4, 0))
@@ -5015,8 +5043,8 @@ class MassReplace(QtGui.QDialog):
                     string = unicode(self.replacement.text())
                     string = VariableRemove(string)
                                 
-                IterCur.execute(u"update Text set english=?, updated=1, status=? where ID=?", (unicode(string), self.role, int(Iterator.value().data(1, 0))))
-                self.parent.update.add(unicode(Iterator.value().data(0, 0)))
+                IterCur.execute(u"update Text set english=?, updated=1, status=? where ID=?", (unicode(string), updateStatusValue, entryID))
+                self.parent.update.add(unicode(databaseName))
             
                 #if self.matchCase.isChecked():
                 #    IterCur.execute(u"PRAGMA case_sensitive_like = OFF")
