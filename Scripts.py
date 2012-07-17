@@ -4757,6 +4757,7 @@ class MassReplace(QtGui.QDialog):
         self.matchEnglish.setChecked(True)
         self.fileFilter.setToolTip('Wildcards implicit. eg CHT will match all skits')
         self.matchCase = QtGui.QCheckBox('Match case')
+        self.searchDebug = QtGui.QCheckBox('Search Debug')
         
         self.matchEnglish.setFont(font)
         self.matchExact.setFont(font)
@@ -4797,6 +4798,7 @@ class MassReplace(QtGui.QDialog):
         inputLayout.addWidget(replaceLabel     , 2, 0)
         inputLayout.addWidget(self.replacement , 3, 0, 1, 2)
         inputLayout.addWidget(self.matchCase   , 4, 0, 1, 1)
+        inputLayout.addWidget(self.searchDebug , 4, 1, 1, 1)
         inputLayout.addWidget(filterLabel      , 0, 2, 1, 1)
         inputLayout.addWidget(self.fileFilter  , 1, 2, 1, 1)
         inputLayout.addWidget(self.matchEntry  , 2, 2, 1, 1)
@@ -4823,7 +4825,7 @@ class MassReplace(QtGui.QDialog):
         treewidget = QtGui.QTreeWidget()
         
         treewidget.setColumnCount(6)
-        treewidget.setHeaderLabels(['File', 'Entry', 'Info', 'Replace', 'E String', 'J String', 'Replacement Type'])
+        treewidget.setHeaderLabels(['File', 'Entry', 'Info', 'Replace', 'E String', 'J String', 'Replacement Type', 'Status'])
         treewidget.setSortingEnabled(True)
         
         treewidget.setColumnWidth(0, 120)
@@ -4920,6 +4922,10 @@ class MassReplace(QtGui.QDialog):
                 i = 0
             tmp = tmp + " OR StringID=" + str(JPmatches.pop()[0])
         ORIDStringList = ORIDStringList + [tmp]
+        
+        AdditionalConstraintsString = ""
+        if not self.searchDebug.isChecked():
+            AdditionalConstraintsString = "AND status >= 0"
             
         for i in range(1, len(aList)):
             for File in aList[i]:
@@ -4932,16 +4938,16 @@ class MassReplace(QtGui.QDialog):
                         
                     TempList = []
                     try: # fetch the english entires
-                        FilterCur.execute(u"SELECT ID, English, StringID, IdentifyString FROM Text WHERE english LIKE ?", (SqlExpressionMatchString, ))
+                        FilterCur.execute(u"SELECT ID, English, StringID, IdentifyString, status FROM Text WHERE english LIKE ? {0}".format(AdditionalConstraintsString), (SqlExpressionMatchString, ))
                     except:
-                        FilterCur.execute(u"SELECT ID, English, StringID, '' AS IdentifyString FROM Text WHERE english LIKE ?", (SqlExpressionMatchString, ))
+                        FilterCur.execute(u"SELECT ID, English, StringID, '' AS IdentifyString, status FROM Text WHERE english LIKE ? {0}".format(AdditionalConstraintsString), (SqlExpressionMatchString, ))
                     TempList = TempList + FilterCur.fetchall()
                     
                     for ORIDString in ORIDStringList: # fetch the japanese entries
                         try:
-                            FilterCur.execute(u"SELECT ID, English, StringID, IdentifyString FROM Text WHERE 1=2 {0}".format(ORIDString))
+                            FilterCur.execute(u"SELECT ID, English, StringID, IdentifyString, status FROM Text WHERE ( 1=2 {0} ) {1}".format(ORIDString, AdditionalConstraintsString))
                         except:
-                            FilterCur.execute(u"SELECT ID, English, StringID, '' AS IdentifyString FROM Text WHERE 1=2 {0}".format(ORIDString))
+                            FilterCur.execute(u"SELECT ID, English, StringID, '' AS IdentifyString, status FROM Text WHERE ( 1=2 {0} ) {1}".format(ORIDString, AdditionalConstraintsString))
                         # This may fetch entries that were already fetched above in the english ones, make sure it's not already added
                         JapaneseFetches = FilterCur.fetchall()
                         for JapaneseFetch in JapaneseFetches:
@@ -4957,7 +4963,7 @@ class MassReplace(QtGui.QDialog):
                         ENString = item[1]
                         CursorGracesJapanese.execute('SELECT string FROM Japanese WHERE ID={0}'.format(item[2]))
                         JPString = CursorGracesJapanese.fetchall()[0][0]
-                        MatchedEntries.append([File, item[0], ENString, JPString, item[3]])
+                        MatchedEntries.append([File, item[0], ENString, JPString, item[3], item[4]])
 
                     if self.matchCase.isChecked():
                         FilterCur.execute(u"PRAGMA case_sensitive_like = OFF")
@@ -4967,7 +4973,7 @@ class MassReplace(QtGui.QDialog):
 
         for item in MatchedEntries:
             try:
-                treeItem = QtGui.QTreeWidgetItem([item[0], str(item[1]), str(item[4]), "", VariableReplace(item[2]), VariableReplace(item[3]), ReplacementType])
+                treeItem = QtGui.QTreeWidgetItem([item[0], str(item[1]), str(item[4]), "", VariableReplace(item[2]), VariableReplace(item[3]), ReplacementType, str(int(item[5]))])
                 treeItem.setCheckState(3, QtCore.Qt.Checked)
                 newSearchTab.addTopLevelItem(treeItem)
             except:
