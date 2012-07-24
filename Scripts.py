@@ -2594,6 +2594,7 @@ class Scripts2(QtGui.QWidget):
         Archive.extend(configDataGracesFolders[-2][:]) # Movie Subtitles
         Archive.extend(configDataGracesFolders[-3][:]) # Special Strings
 
+        print 'Creating root (Chat, SysString, Subtitles, Special stuff)'
         self.MakeSCS(Archive, progress, 'Wii', rootFile)
 
         Images = ["Resources/TitleTexture.tex", 
@@ -2620,6 +2621,7 @@ class Scripts2(QtGui.QWidget):
 
         i = 4
 
+        print 'Creating Map0'
         for CPK in Map0RCPK:
             Archive = configDataGracesFolders[i]
             self.MakeSCS(Archive, progress, 'Wii', map0File)
@@ -2632,6 +2634,7 @@ class Scripts2(QtGui.QWidget):
 
         i = 46
 
+        print 'Creating Map1'
         for CPK in Map1RCPK:
             Archive = configDataGracesFolders[i]
             self.MakeSCS(Archive, progress, 'Wii', map1File)
@@ -2642,7 +2645,7 @@ class Scripts2(QtGui.QWidget):
         progress.setValue(1260)
 
 
-        shutil.rmtree('Resources/Wii')
+        #shutil.rmtree('Resources/Wii')
 
 
 
@@ -2656,7 +2659,7 @@ class Scripts2(QtGui.QWidget):
         JPCon = sqlite3.connect(configData.LocalDatabasePath + '/GracesJapanese')
         JPCur = JPCon.cursor()
 
-        fileExceptions = ['GracesJapanese', 'NewChangeLog', 'None', 'ChangeLog', 'temp', '.DS_Store', 'endingData', 'Artes', 'Battle', 'Discovery', 'GradeShop-Missions', 'Item', 'MonsterBook', 'Skills', 'System', 'Tactics', 'Titles', 'Tutorial', 'soundTest', 'ArteNames', 'Skits', 'GracesFDump', 'S']
+        fileExceptions = ['GracesJapanese', 'NewChangeLog', 'None', 'ChangeLog', 'temp', '.DS_Store', 'endingData', 'Artes', 'Battle', 'Discovery', 'GradeShop-Missions', 'Item', 'MonsterBook', 'Skills', 'System', 'Tactics', 'Titles', 'Tutorial', 'soundTest', 'ArteNames', 'Skits', 'GracesFDump', 'S', 'CheckTags.bat', 'System.Data.SQLite.DLL', 'GraceNote_CheckTags.exe', 'sqlite3.exe', 'taglog.txt', 'CompletionPercentage']
 
         i = 0
         p = 0
@@ -3134,7 +3137,7 @@ class Scripts2(QtGui.QWidget):
                         pass
                     shutil.move(Path + "/" + File, "Graces/v0")
                     
-        shutil.rmtree("Resources/Wii")
+        #shutil.rmtree("Resources/Wii")
 
 
         XMLset = set(XML)
@@ -3502,7 +3505,7 @@ class Scripts2(QtGui.QWidget):
         for CPK in Map1RCPK:
             args = ["mono", str(Graceful), "4", "1", str(Map1R), CPK]
             if os.name != 'posix':
-                args = [str(Graceful), "4", "1", str(Map0R), CPK]
+                args = [str(Graceful), "4", "1", str(Map1R), CPK]
             
             Archive = configDataGracesFolders[i]
             i += 1
@@ -3544,7 +3547,7 @@ class Scripts2(QtGui.QWidget):
                         pass
                     shutil.move(Path + "/" + File, "Graces/v2")
                     
-        shutil.rmtree('Resources/Wii')
+        #shutil.rmtree('Resources/Wii')
         
 
         XMLset = set(XML)
