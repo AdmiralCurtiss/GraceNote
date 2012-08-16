@@ -4490,6 +4490,10 @@ class CompletionTable(QtGui.QDialog):
         self.treewidget.setSortingEnabled(True)
         
         self.treewidget.setColumnWidth(0, 200)
+        self.treewidget.setColumnWidth(1, 150)
+        self.treewidget.setColumnWidth(2, 150)
+        self.treewidget.setColumnWidth(3, 150)
+        self.treewidget.setColumnWidth(4, 150)
         
         self.treewidget.setMinimumSize(620, 500)
 
@@ -4552,10 +4556,10 @@ class CompletionTable(QtGui.QDialog):
                 catGrammar += grammar
 
                 if totalDB != 0:
-                    translationPercent = '{0:06.2f}%'.format(float(translated)/float(totalDB)*100)
-                    tlCheckPercent = '{0:06.2f}%'.format(float(tlCheck)/float(totalDB)*100)
-                    rewritePercent = '{0:06.2f}%'.format(float(rewrite)/float(totalDB)*100)
-                    grammarPercent = '{0:06.2f}%'.format(float(grammar)/float(totalDB)*100)
+                    translationPercent = '{0:06.2f}% ({1:04d}/{2:04d})'.format(float(translated)/float(totalDB)*100, translated, totalDB)
+                    tlCheckPercent = '{0:06.2f}% ({1:04d}/{2:04d})'.format(float(tlCheck)/float(totalDB)*100, tlCheck, totalDB)
+                    rewritePercent = '{0:06.2f}% ({1:04d}/{2:04d})'.format(float(rewrite)/float(totalDB)*100, rewrite, totalDB)
+                    grammarPercent = '{0:06.2f}% ({1:04d}/{2:04d})'.format(float(grammar)/float(totalDB)*100, grammar, totalDB)
                 else:
                     translationPercent = 'N/A'
                     tlCheckPercent = 'N/A'
@@ -4566,10 +4570,10 @@ class CompletionTable(QtGui.QDialog):
                     
                 progress.setValue(progress.value() + 1)
     
-            cat.setData(1, 0, '{0:06.2f}%'.format(float(catTrans)/float(catTotalDB)*100))
-            cat.setData(2, 0, '{0:06.2f}%'.format(float(catTlCheck)/float(catTotalDB)*100))
-            cat.setData(3, 0, '{0:06.2f}%'.format(float(catRewrite)/float(catTotalDB)*100)) 
-            cat.setData(4, 0, '{0:06.2f}%'.format(float(catGrammar)/float(catTotalDB)*100))
+            cat.setData(1, 0, '{0:06.2f}% ({1:06d}/{2:06d})'.format(float(catTrans)/float(catTotalDB)*100, catTrans, catTotalDB))
+            cat.setData(2, 0, '{0:06.2f}% ({1:06d}/{2:06d})'.format(float(catTlCheck)/float(catTotalDB)*100, catTlCheck, catTotalDB))
+            cat.setData(3, 0, '{0:06.2f}% ({1:06d}/{2:06d})'.format(float(catRewrite)/float(catTotalDB)*100, catRewrite, catTotalDB)) 
+            cat.setData(4, 0, '{0:06.2f}% ({1:06d}/{2:06d})'.format(float(catGrammar)/float(catTotalDB)*100, catGrammar, catTotalDB))
             cat.setData(5, 0, '{0}'.format(catTotalComments))
             
             bigTotal += catTotalDB
