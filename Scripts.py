@@ -1293,6 +1293,9 @@ class Scripts2(QtGui.QWidget):
         layoutWidgetAdapter.addWidget(layout)
         self.setLayout(layoutWidgetAdapter)
 
+        self.massDialogOpened = False
+
+        
 
     def quit(self):
         self.WriteDatabaseStorageToHdd()
@@ -2103,8 +2106,9 @@ class Scripts2(QtGui.QWidget):
     def ShowMassReplace(self):
         self.WriteDatabaseStorageToHdd()
         
-        self.massDialog = MassReplace(self)
-
+        if self.massDialogOpened == False:
+            self.massDialog = MassReplace(self)
+            self.massDialogOpened = True
         self.massDialog.show()
         self.massDialog.raise_()
         self.massDialog.activateWindow()
@@ -4355,7 +4359,9 @@ class DuplicateText(QtGui.QDialog):
 
         Table =[]
 
-        for i in xrange(50000):
+        CursorGracesJapanese.execute('SELECT MAX(ID) FROM Japanese')
+        
+        for i in xrange( CursorGracesJapanese.fetchall()[0][0] ):
             Table.append([0, set([])])
 
         CursorGracesJapanese.execute('select ID from Japanese where debug=1')
