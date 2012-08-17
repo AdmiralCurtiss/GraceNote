@@ -4243,6 +4243,7 @@ class LocalChangelog(QtGui.QDialog):
             self.listwidget.addItem('{0} on {1}'.format(entry[2], time.strftime('%a, %B %d at %H:%M %p', time.localtime(entry[3]))))
 
         
+        self.setWindowTitle('Changelog: {0}'.format(file))
         layout = QtGui.QVBoxLayout()
         layout.addWidget(QtGui.QLabel('File Modified By:'))
         layout.addWidget(self.listwidget)
@@ -4278,6 +4279,7 @@ class GlobalChangelog(QtGui.QDialog):
         
         self.treewidget.itemDoubleClicked.connect(self.JumpToFile)
 
+        self.setWindowTitle('Global Changelog')
         layout = QtGui.QVBoxLayout()
         layout.addWidget(QtGui.QLabel('Recent Changes:'))
         layout.addWidget(self.treewidget)
@@ -4324,6 +4326,7 @@ class DuplicateText(QtGui.QDialog):
         
         self.exceptions = QtGui.QRadioButton('Inconsistent Translations only')
         self.dupes = QtGui.QRadioButton('All Duplicates')
+        self.exceptions.setChecked(True)
         
         self.go = QtGui.QPushButton('Search')
 
@@ -4831,6 +4834,7 @@ class MassReplace(QtGui.QDialog):
         self.checkNone.released.connect(self.checkingNone)
         self.removeTabButton.released.connect(self.closeCurrentTab)
                 
+        self.setWindowTitle('Mass Replace')
         layout = QtGui.QVBoxLayout()
         layout.addWidget(QtGui.QLabel('Replace:'))
         layout.addLayout(inputLayout)
