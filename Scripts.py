@@ -2134,7 +2134,7 @@ class Scripts2(QtGui.QWidget):
     def ShowDuplicateText(self):
         self.WriteDatabaseStorageToHdd()
         
-        self.dupeDialog = DuplicateText()
+        self.dupeDialog = DuplicateText(self)
 
         self.dupeDialog.show()
         self.dupeDialog.raise_()
@@ -4290,10 +4290,12 @@ class GlobalChangelog(QtGui.QDialog):
 
 class DuplicateText(QtGui.QDialog):
 
-    def __init__(self):
+    def __init__(self, parent):
         super(DuplicateText, self).__init__()
 
         self.setWindowModality(False)        
+        
+        self.parent = parent
 
         self.treewidget = QtGui.QTreeWidget()
         
@@ -4336,6 +4338,8 @@ class DuplicateText(QtGui.QDialog):
         layout.addWidget(self.progressLabel, 4, 1)
         layout.addWidget(self.go, i-1, 1)
         layout.setColumnMinimumWidth(0, 200)
+        
+        self.treewidget.itemDoubleClicked.connect(self.InitiateMassReplaceSearch)
 
         self.setWindowTitle('Duplicate Text Retriever')
         subLayout = QtGui.QVBoxLayout()
@@ -4344,15 +4348,10 @@ class DuplicateText(QtGui.QDialog):
         self.setLayout(subLayout)
 
         self.go.released.connect(self.SearchCategories)
-
-
-
+        
 #     Two options
 #        One: Search for any cloned text with more than one unique translation, and display them
 #        Two: Search for any cloned text at all, and display them
-
-
-
     def SearchCategories(self):
 
         self.treewidget.clear()
@@ -4428,6 +4427,12 @@ class DuplicateText(QtGui.QDialog):
 
 #        self.progressbar.reset
 
+    def InitiateMassReplaceSearch(self, item, column):
+        searchstring = item.data(1, 0)
+        self.parent.ShowMassReplace()
+        self.parent.massDialog.original.setText(searchstring)
+        self.parent.massDialog.matchEntry.setChecked(True)
+        self.parent.massDialog.Search()
 
 def CalculateAllCompletionPercentagesForDatabase():
     aList = configData.FileList
