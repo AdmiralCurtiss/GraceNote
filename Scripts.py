@@ -4775,6 +4775,7 @@ class MassReplace(QtGui.QDialog):
         self.matchExact = QtGui.QRadioButton('Any Match')
         self.matchEnglish = QtGui.QRadioButton('Any: English Only')
         self.matchEntry = QtGui.QRadioButton('Complete Entry')
+        self.matchComments = QtGui.QRadioButton('Comments')
         self.matchEnglish.setChecked(True)
         self.fileFilter.setToolTip('Wildcards implicit. eg CHT will match all skits')
         self.matchCase = QtGui.QCheckBox('Match case')
@@ -4783,6 +4784,7 @@ class MassReplace(QtGui.QDialog):
         self.matchEnglish.setFont(font)
         self.matchExact.setFont(font)
         self.matchEntry.setFont(font)
+        self.matchComments.setFont(font)
                 
         originalLabel = QtGui.QLabel('Original:')
         originalLabel.setFont(font)
@@ -4825,6 +4827,7 @@ class MassReplace(QtGui.QDialog):
         inputLayout.addWidget(self.matchEntry  , 2, 2, 1, 1)
         inputLayout.addWidget(self.matchExact  , 3, 2, 1, 1)
         inputLayout.addWidget(self.matchEnglish, 4, 2, 1, 1)
+        #inputLayout.addWidget(self.matchComments,5, 2, 1, 1)
         
         inputLayout.setColumnStretch(1, 1)
         
@@ -4920,18 +4923,26 @@ class MassReplace(QtGui.QDialog):
             CursorGracesJapanese.execute(u"select ID from Japanese where string LIKE ?", ('%' + unicode(matchString) + '%', ))
             JPmatches = set(CursorGracesJapanese.fetchall())
             SqlExpressionMatchString = '%' + unicode(matchString) + '%'
+            TextSearchColumn = 'English'
             ReplacementType = 'Substr'
         # any match in English strings only
         elif self.matchEnglish.isChecked():
             JPmatches = set()
             SqlExpressionMatchString = '%' + unicode(matchString) + '%'
+            TextSearchColumn = 'English'
             ReplacementType = 'Substr'
         # match the entire entry
         elif self.matchEntry.isChecked():
             CursorGracesJapanese.execute(u"select ID from Japanese where string=?", (unicode(matchString),))
             JPmatches = set(CursorGracesJapanese.fetchall())
             SqlExpressionMatchString = unicode(matchString)
+            TextSearchColumn = 'English'
             ReplacementType = 'Entry'
+        elif self.matchComments.isChecked():
+            JPmatches = set()
+            SqlExpressionMatchString = '%' + unicode(matchString) + '%'
+            TextSearchColumn = 'Comment'
+            ReplacementType = 'CommentSubstr'
             
         ORIDStringList = []
         tmp = ''
@@ -4960,9 +4971,9 @@ class MassReplace(QtGui.QDialog):
                         
                     TempList = []
                     try: # fetch the english entires
-                        FilterCur.execute(u"SELECT ID, English, StringID, IdentifyString, status FROM Text WHERE english LIKE ? {0}".format(AdditionalConstraintsString), (SqlExpressionMatchString, ))
+                        FilterCur.execute(u"SELECT ID, English, StringID, IdentifyString, status FROM Text WHERE {1} LIKE ? {0}".format(AdditionalConstraintsString, TextSearchColumn), (SqlExpressionMatchString, ))
                     except:
-                        FilterCur.execute(u"SELECT ID, English, StringID, '' AS IdentifyString, status FROM Text WHERE english LIKE ? {0}".format(AdditionalConstraintsString), (SqlExpressionMatchString, ))
+                        FilterCur.execute(u"SELECT ID, English, StringID, '' AS IdentifyString, status FROM Text WHERE {1} LIKE ? {0}".format(AdditionalConstraintsString, TextSearchColumn), (SqlExpressionMatchString, ))
                     TempList = TempList + FilterCur.fetchall()
                     
                     for ORIDString in ORIDStringList: # fetch the japanese entries
