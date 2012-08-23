@@ -4771,6 +4771,7 @@ class MassReplace(QtGui.QDialog):
  
         self.original = QtGui.QLineEdit()
         self.replacement = QtGui.QLineEdit()
+        self.exceptions = QtGui.QLineEdit()
         self.fileFilter = QtGui.QLineEdit()
         self.matchExact = QtGui.QRadioButton('Any Match')
         self.matchEnglish = QtGui.QRadioButton('Any: English Only')
@@ -4786,9 +4787,11 @@ class MassReplace(QtGui.QDialog):
         self.matchEntry.setFont(font)
         self.matchComments.setFont(font)
                 
-        originalLabel = QtGui.QLabel('Original:')
+        originalLabel = QtGui.QLabel('Search for:')
         originalLabel.setFont(font)
-        replaceLabel = QtGui.QLabel('Replacement:')
+        exceptionLabel = QtGui.QLabel('Not including:')
+        exceptionLabel.setFont(font)
+        replaceLabel = QtGui.QLabel('Replace with:')
         replaceLabel.setFont(font)
         
         filterLabel = QtGui.QLabel('Filter by File:')
@@ -4816,10 +4819,12 @@ class MassReplace(QtGui.QDialog):
         buttonLayout.addWidget(self.replace)
                 
         inputLayout = QtGui.QGridLayout()
-        inputLayout.addWidget(originalLabel    , 0, 0)
-        inputLayout.addWidget(self.original    , 1, 0, 1, 2)
-        inputLayout.addWidget(replaceLabel     , 2, 0)
-        inputLayout.addWidget(self.replacement , 3, 0, 1, 2)
+        inputLayout.addWidget(originalLabel    , 1, 0, 1, 1)
+        inputLayout.addWidget(exceptionLabel   , 2, 0, 1, 1)
+        inputLayout.addWidget(replaceLabel     , 3, 0, 1, 1)
+        inputLayout.addWidget(self.original    , 1, 1, 1, 1)
+        inputLayout.addWidget(self.exceptions  , 2, 1, 1, 1)
+        inputLayout.addWidget(self.replacement , 3, 1, 1, 1)
         inputLayout.addWidget(self.matchCase   , 4, 0, 1, 1)
         inputLayout.addWidget(self.searchDebug , 4, 1, 1, 1)
         inputLayout.addWidget(filterLabel      , 0, 2, 1, 1)
@@ -4839,7 +4844,7 @@ class MassReplace(QtGui.QDialog):
                 
         self.setWindowTitle('Mass Replace')
         layout = QtGui.QVBoxLayout()
-        layout.addWidget(QtGui.QLabel('Replace:'))
+        #layout.addWidget(QtGui.QLabel('Replace:'))
         layout.addLayout(inputLayout)
         layout.addWidget(self.tabwidget)
         layout.addLayout(buttonLayout, QtCore.Qt.AlignRight)
@@ -4894,6 +4899,7 @@ class MassReplace(QtGui.QDialog):
 
 
         matchString = unicode(self.original.text())
+        exceptString = unicode(self.exceptions.text())
 
         if matchString.count(unicode('<', 'UTF-8')) != matchString.count(unicode('>', 'UTF-8')):
             
@@ -4960,6 +4966,7 @@ class MassReplace(QtGui.QDialog):
         if not self.searchDebug.isChecked():
             AdditionalConstraintsString = "AND status >= 0"
             
+            
         for i in range(1, len(aList)):
             for File in aList[i]:
                 if File.find(self.fileFilter.text()) >= 0:
@@ -5004,9 +5011,21 @@ class MassReplace(QtGui.QDialog):
         if len(MatchedEntries) == 0:
             return
 
+        if len(exceptString) >= 1:
+            checkForExceptions = True
+        else:
+            checkForExceptions = False
+            
         for item in MatchedEntries:
             try:
-                treeItem = QtGui.QTreeWidgetItem([item[0], str(item[1]), str(item[4]), "", VariableReplace(item[2]), VariableReplace(item[3]), ReplacementType, str(int(item[5]))])
+                englishString = VariableReplace(item[2])
+                japaneseString = VariableReplace(item[3])
+                
+                if checkForExceptions:
+                    if exceptString in englishString:
+                        continue
+                    
+                treeItem = QtGui.QTreeWidgetItem([item[0], str(item[1]), str(item[4]), "", englishString, japaneseString, ReplacementType, str(int(item[5]))])
                 treeItem.setCheckState(3, QtCore.Qt.Checked)
                 newSearchTab.addTopLevelItem(treeItem)
             except:
