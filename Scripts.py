@@ -866,19 +866,6 @@ class Scripts2(QtGui.QWidget):
 #        self.treemodel.setSourceModel(self.treemodel)
         self.tree.setModel(self.treemodel)
 
-#        self.sortSwapGroup = QtGui.QGroupBox()
-#        self.sortSwapGroup.setTitle('Sort by:')
-        
-#        self.sortByType = QtGui.QRadioButton('Type')
-#        self.sortByType.setChecked(True)
-#        self.sortByLocation = QtGui.QRadioButton('Location')
-        
-#        boxLayout = QtGui.QHBoxLayout()
-#        boxLayout.addWidget(self.sortByType)
-#        boxLayout.addWidget(self.sortByLocation)
-#        self.sortSwapGroup.setLayout(boxLayout)
-        
-
 
         # List View of Entries
         self.entry = QtGui.QListView()
@@ -943,9 +930,6 @@ class Scripts2(QtGui.QWidget):
         self.debug.toggled.connect(self.DebugFilter)
         self.filter.returnPressed.connect(self.LiveSearch)
         self.jumptobox.returnPressed.connect(self.JumpToDatabase)
-        #self.sortByType.toggled.connect(self.SortToggle)
-        #self.sortByLocation.toggled.connect(self.SortToggle)
-
 
         # Toolbar
         FlexibleSpace = QtGui.QLabel('')
@@ -1294,6 +1278,9 @@ class Scripts2(QtGui.QWidget):
         self.setLayout(layoutWidgetAdapter)
 
         self.massDialogOpened = False
+        self.globalChangelogOpened = False
+        self.statsDialogOpened = False
+        self.duplicateTextDialogOpened = False
 
         
 
@@ -1467,7 +1454,6 @@ class Scripts2(QtGui.QWidget):
             self.Toolbar.setToolButtonStyle(2)
             self.settings.setValue('toolstyle', 2)
         
-
     def toggleIcon(self, bool):
         if bool == True:
             self.twoupAct.setIcon(QtGui.QIcon('icons/oneup.png'))
@@ -1484,19 +1470,6 @@ class Scripts2(QtGui.QWidget):
 
             for box in self.twoupEditingTextBoxes:
                 box.hide()
-
-        
-#    def SortToggle(self):
-#        global VesperiaFlag
-#        if VesperiaFlag == True:
-#            return
-#        if self.sortByType.isChecked():
-#            self.PopulateModel(configData.FileList)
-#        elif self.sortByLocation.isChecked():
-#            self.PopulateModel(configData.FileList)
-#        else:
-#            print 'Unknown Sort Type'
-
 
     def ConsolidateDebug(self):
         self.WriteDatabaseStorageToHdd()
@@ -2085,18 +2058,19 @@ class Scripts2(QtGui.QWidget):
         self.LogDialog.raise_()
         self.LogDialog.activateWindow()
 
-
-
     def ShowGlobalChangelog(self):
+        #if self.globalChangelogOpened == False:
         self.gLogDialog = GlobalChangelog(self)
+        #    self.globalChangelogOpened = True
 
         self.gLogDialog.show()
         self.gLogDialog.raise_()
         self.gLogDialog.activateWindow()
 
-
     def ShowStats(self):
+        #if self.statsDialogOpened == False:
         self.statDialog = Statistics()
+        #    self.statsDialogOpened = True
 
         self.statDialog.show()
         self.statDialog.raise_()
@@ -2134,7 +2108,9 @@ class Scripts2(QtGui.QWidget):
     def ShowDuplicateText(self):
         self.WriteDatabaseStorageToHdd()
         
-        self.dupeDialog = DuplicateText(self)
+        if self.duplicateTextDialogOpened == False:
+            self.dupeDialog = DuplicateText(self)
+            self.duplicateTextDialogOpened = True
 
         self.dupeDialog.show()
         self.dupeDialog.raise_()
@@ -4359,22 +4335,27 @@ class DuplicateText(QtGui.QDialog):
 
         self.treewidget.clear()
 
-        Table =[]
-
+        print 'Initializing container...'
+        Table = []
+        BlackList = []
         CursorGracesJapanese.execute('SELECT MAX(ID) FROM Japanese')
-        
         for i in xrange( CursorGracesJapanese.fetchall()[0][0] ):
             Table.append([0, set([])])
+            BlackList.append(0)
 
+        print 'Fetching debug information...'
         CursorGracesJapanese.execute('select ID from Japanese where debug=1')
-        blacklist = CursorGracesJapanese.fetchall()
+        BlackListDB = CursorGracesJapanese.fetchall()
+        for id in BlackListDB:
+            BlackList[int(id[0])] = 1
         aList = configData.FileList
 
         i = 1
+        print 'Processing databases...'
         for category in self.categories:
             if category.isChecked() == True:
-                
                 for filename in aList[i]:
+                    #print 'Processing ' + filename + '...'
 
                     conC = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(filename))
                     curC = conC.cursor()
@@ -4384,7 +4365,7 @@ class DuplicateText(QtGui.QDialog):
                     results = curC.fetchall()
                     
                     for item in results:
-                        if blacklist.count((item[0],)) == 0:
+                        if BlackList[int(item[0])] == 0:
                             Table[item[0]][0] += 1
                             Table[item[0]][1].add(item[1])
 #                    self.progressbar.setValue(self.progressbar.value() + (6250/len(configData.FileList[i])))
@@ -4393,6 +4374,7 @@ class DuplicateText(QtGui.QDialog):
 #            self.progressbar.setValue(i * 6250)
             i += 1
         
+        print 'Displaying entries...'
         i = 0
         if self.exceptions.isChecked() == True:
             for item in Table:
@@ -5120,6 +5102,9 @@ class MassReplace(QtGui.QDialog):
         file = item.data(0, 0)
         entryno = item.data(1, 0)
         self.parent.JumpToEntry(file, entryno)
+        self.parent.show()
+        self.parent.raise_()
+        self.parent.activateWindow()
 
 class MyHighlighter( QtGui.QSyntaxHighlighter ):
 
