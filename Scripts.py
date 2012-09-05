@@ -32,6 +32,7 @@ import subprocess
 import codecs
 from Config import *
 from collections import deque
+import re
 
 
 # load config
@@ -2356,11 +2357,11 @@ class Scripts2(QtGui.QWidget):
                 
                 # set footer
                 feedCount = textEntries1raw[i].count('\f')
-                splitLines = textEntries1raw[i].replace('\f', '\n').split('\n')
+                splitLines = re.sub('<CLT[ 0-9]+>', '', textEntries1raw[i].replace('\f', '\n').replace("''", "'")).split('\n')
                 longestLineChars = 0
                 for s in splitLines:
                     longestLineChars = max(longestLineChars, len(s))
-                self.textEditingFooters[i].setText('Longest Line: ' + str(longestLineChars))
+                self.textEditingFooters[i].setText('Textboxes: ' + str(feedCount+1) + ' / Longest Line: ' + str(longestLineChars))
                 
             else:
                 self.textEditingBoxes[i].setTitle("-----")
