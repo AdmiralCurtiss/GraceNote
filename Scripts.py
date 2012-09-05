@@ -883,6 +883,7 @@ class Scripts2(QtGui.QWidget):
         self.regularEditingTextBoxes = []
         self.twoupEditingTextBoxes = []
         self.textEditingBoxes = []
+        self.textEditingFooters = []
         for i in range(AmountEditingWindows):
             # create text boxes, set defaults
             tb1 = XTextBox()
@@ -897,15 +898,20 @@ class Scripts2(QtGui.QWidget):
             self.regularEditingTextBoxes.append(tb1)
             self.twoupEditingTextBoxes.append(tb2)
             
+            footer = QtGui.QLabel('')
+            self.textEditingFooters.append(footer)
+            
             # create layout
-            tmplayout = QtGui.QHBoxLayout()
-            tmplayout.addWidget(tb1)
-            tmplayout.addWidget(tb2)
+            tmplayout = QtGui.QGridLayout()
+            tmplayout.addWidget(tb1, 1, 1, 1, 1)
+            tmplayout.addWidget(tb2, 1, 2, 1, 1)
+            tmplayout.addWidget(footer, 2, 1, 2, 1)
             
             # create QGroupBox
             tmpqgrpbox = QtGui.QGroupBox()
             tmpqgrpbox.setLayout(tmplayout)
             tmpqgrpbox.setTitle("-----")
+            tmpqgrpbox.setFlat(True)
             self.textEditingBoxes.append(tmpqgrpbox)
             
         # ------------------------------------------------------ #
@@ -2311,10 +2317,12 @@ class Scripts2(QtGui.QWidget):
                 rowBoxes.append( -2 )
         
         textEntries1 = []
+        textEntries1raw = []
         textEntries2 = []
         for i in range(len(self.textEditingBoxes)):
             if rowBoxes[i] >= 0:
                 textEntries1.append( VariableReplace(self.text[rowBoxes[i]][t]) )
+                textEntries1raw.append( self.text[rowBoxes[i]][t] )
                 textEntries2.append( VariableReplace(self.text[rowBoxes[i]][self.twoupEditingTextBoxes[i].role]) )
                 if self.text[rowBoxes[i]][2] != '':
                     commentTexts[i] = 'Comment Available'
@@ -2323,6 +2331,7 @@ class Scripts2(QtGui.QWidget):
                 self.regularEditingTextBoxes[i].setReadOnly(False)
             else:
                 textEntries1.append( '' )
+                textEntries1raw.append( '' )
                 textEntries2.append( '' )
                 self.regularEditingTextBoxes[i].iconToggle(0)
                 self.regularEditingTextBoxes[i].currentEntry = -1
@@ -2344,8 +2353,19 @@ class Scripts2(QtGui.QWidget):
                 self.twoupEditingTextBoxes[i].setText(textEntries2[i])
             if self.regularEditingTextBoxes[i].currentEntry >= 0:
                 self.textEditingBoxes[i].setTitle("Entry {0}:      {1}".format(rowBoxes[i]+1, commentTexts[i]))
+                
+                # set footer
+                feedCount = textEntries1raw[i].count('\f')
+                splitLines = textEntries1raw[i].replace('\f', '\n').split('\n')
+                longestLineChars = 0
+                for s in splitLines:
+                    longestLineChars = max(longestLineChars, len(s))
+                self.textEditingFooters[i].setText('Longest Line: ' + str(longestLineChars))
+                
             else:
                 self.textEditingBoxes[i].setTitle("-----")
+                self.textEditingFooters[i].setText('')
+            
 
         # auto-update in Auto mode
         global ModeFlag
