@@ -120,8 +120,8 @@ class MainWindow(QtGui.QMainWindow):
 
 class XTextBox(QtGui.QTextEdit):
 
-    #should be: manualEdit = QtCore.pyqtSignal(int, XTextBox) but I haven't figured out how to give the current class as parameter
-    manualEdit = QtCore.pyqtSignal(int, object)
+    #should be: manualEdit = QtCore.pyqtSignal(int, XTextBox, QtGui.QLabel) but I haven't figured out how to give the current class as parameter
+    manualEdit = QtCore.pyqtSignal(int, object, QtGui.QLabel)
     currentEntry = -1
 
 
@@ -208,6 +208,17 @@ class XTextBox(QtGui.QTextEdit):
         self.undoAvailable.connect(self.modifyTrue)
         
         
+    def setFooter(self, footer):
+        self.footer = footer
+        
+    def refreshFooter(self, text):
+        feedCount = text.count('\f')
+        splitLines = re.sub('<CLT[ 0-9]+>', '', text.replace('\f', '\n').replace("''", "'")).split('\n')
+        longestLineChars = 0
+        for s in splitLines:
+            longestLineChars = max(longestLineChars, len(s))
+        self.footer.setText('Textboxes: ' + str(feedCount+1) + ' / Longest Line: ' + str(longestLineChars))
+    
     def makePlaybackButtons(self, clipList):
     
         topLayout = self.layout()
@@ -293,7 +304,7 @@ class XTextBox(QtGui.QTextEdit):
 
     def textChangedSignal(self):
         if self.modified == True:
-            self.manualEdit.emit(5, self)
+            self.manualEdit.emit(5, self, self.footer)
             
     def modifyTrue(self, set):
         self.modified = set
@@ -503,44 +514,44 @@ class XTextBox(QtGui.QTextEdit):
         if self.one == False:
             self.translate.setIcon(QtGui.QIcon('icons/tlon.png'))
             self.one = True
-            self.manualEdit.emit(1, self)
+            self.manualEdit.emit(1, self, self.footer)
         else:
             self.translate.setIcon(QtGui.QIcon('icons/tloff.png'))
             self.one = False
-            self.manualEdit.emit(0, self)
+            self.manualEdit.emit(0, self, self.footer)
 
             
     def checkTogglem(self):
         if self.two == False:
             self.tlCheck.setIcon(QtGui.QIcon('icons/oneon.png'))
             self.two = True
-            self.manualEdit.emit(2, self)
+            self.manualEdit.emit(2, self, self.footer)
         else:
             self.tlCheck.setIcon(QtGui.QIcon('icons/oneoff.png'))
             self.two = False
-            self.manualEdit.emit(1, self)
+            self.manualEdit.emit(1, self, self.footer)
 
 
     def rewriteTogglem(self):
         if self.three == False:
             self.rewrite.setIcon(QtGui.QIcon('icons/twoon.png'))
             self.three = True
-            self.manualEdit.emit(3, self)
+            self.manualEdit.emit(3, self, self.footer)
         else:
             self.rewrite.setIcon(QtGui.QIcon('icons/twooff.png'))
             self.three = False
-            self.manualEdit.emit(2, self)
+            self.manualEdit.emit(2, self, self.footer)
 
 
     def grammarTogglem(self):
         if self.four == False:
             self.grammar.setIcon(QtGui.QIcon('icons/threeon.png'))
             self.four = True
-            self.manualEdit.emit(4, self)
+            self.manualEdit.emit(4, self, self.footer)
         else:
             self.grammar.setIcon(QtGui.QIcon('icons/threeoff.png'))
             self.four = False
-            self.manualEdit.emit(3, self)
+            self.manualEdit.emit(3, self, self.footer)
 
 
 
@@ -901,6 +912,7 @@ class Scripts2(QtGui.QWidget):
             
             footer = QtGui.QLabel('')
             self.textEditingFooters.append(footer)
+            tb1.setFooter(footer)
             
             # create layout
             tmplayout = QtGui.QGridLayout()
@@ -2196,7 +2208,7 @@ class Scripts2(QtGui.QWidget):
         #self.DebugPrintDatabaseWriteStorage()
         return
     
-    def UpdateTextGenericFunc(self, role, textBox):
+    def UpdateTextGenericFunc(self, role, textBox, footer):
         if textBox.currentEntry < 0:
             return
             
@@ -2254,6 +2266,7 @@ class Scripts2(QtGui.QWidget):
         #DatabaseEntryStruct(cleanString, databaseName, entry, role, state)
         # keep for later write to HDD
         self.InsertOrUpdateEntryToWrite(DatabaseEntryStruct(GoodString, databasefilename, textBox.currentEntry, updateStatusValue, self.state))
+        textBox.refreshFooter(GoodString)
         
         # write the new string back into the main window, this is neccessary or else the new string isn't there when the displayed entry is changed!
         if self.state == 'ENG':
@@ -2354,15 +2367,7 @@ class Scripts2(QtGui.QWidget):
                 self.twoupEditingTextBoxes[i].setText(textEntries2[i])
             if self.regularEditingTextBoxes[i].currentEntry >= 0:
                 self.textEditingBoxes[i].setTitle("Entry {0}:      {1}".format(rowBoxes[i]+1, commentTexts[i]))
-                
-                # set footer
-                feedCount = textEntries1raw[i].count('\f')
-                splitLines = re.sub('<CLT[ 0-9]+>', '', textEntries1raw[i].replace('\f', '\n').replace("''", "'")).split('\n')
-                longestLineChars = 0
-                for s in splitLines:
-                    longestLineChars = max(longestLineChars, len(s))
-                self.textEditingFooters[i].setText('Textboxes: ' + str(feedCount+1) + ' / Longest Line: ' + str(longestLineChars))
-                
+                self.regularEditingTextBoxes[i].refreshFooter(textEntries1raw[i])
             else:
                 self.textEditingBoxes[i].setTitle("-----")
                 self.textEditingFooters[i].setText('')
@@ -2372,7 +2377,7 @@ class Scripts2(QtGui.QWidget):
         global ModeFlag
         if ModeFlag == 'Auto':
             for i in range(len(self.textEditingBoxes)):
-                self.regularEditingTextBoxes[i].manualEdit.emit(5, self.regularEditingTextBoxes[i])
+                self.regularEditingTextBoxes[i].manualEdit.emit(5, self.regularEditingTextBoxes[i], self.textEditingFooters[i])
 
         
     def SwapEnglish(self):
