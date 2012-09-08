@@ -4947,7 +4947,7 @@ class MassReplace(QtGui.QDialog):
             ReplacementType = 'Substr'
         # match the entire entry
         elif self.matchEntry.isChecked():
-            CursorGracesJapanese.execute(u"select ID from Japanese where string=?", (unicode(matchString),))
+            CursorGracesJapanese.execute(u"select ID from Japanese where string LIKE ?", (unicode(matchString),))
             JPmatches = set(CursorGracesJapanese.fetchall())
             SqlExpressionMatchString = unicode(matchString)
             TextSearchColumn = 'English'
