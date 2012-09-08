@@ -4797,7 +4797,7 @@ class MassReplace(QtGui.QDialog):
                 
         originalLabel = QtGui.QLabel('Search for:')
         originalLabel.setFont(font)
-        exceptionLabel = QtGui.QLabel('Not including:')
+        exceptionLabel = QtGui.QLabel('Excluding:')
         exceptionLabel.setFont(font)
         replaceLabel = QtGui.QLabel('Replace with:')
         replaceLabel.setFont(font)
