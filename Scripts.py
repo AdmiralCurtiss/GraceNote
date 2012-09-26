@@ -1827,9 +1827,12 @@ class Scripts2(QtGui.QWidget):
 
             entryDisplayString = 'Entry ' + str(i+1).zfill(5) + ' [' + str(TempStatus) + ']'
             
+            identifyString = ''
             if ContainsIDString == True:
                 try:
-                    entryDisplayString = entryDisplayString + ' ' + TempList[i][6]
+                    tmp = str(TempList[i][6])
+                    identifyString = tmp
+                    entryDisplayString = entryDisplayString + ' ' + identifyString
                 except:
                     pass
             
@@ -1839,6 +1842,7 @@ class Scripts2(QtGui.QWidget):
             
             additem = QtGui.QStandardItem(entryDisplayString)
             additem.setCheckable(True)
+            additem.setStatusTip(identifyString)
             
             if TempStatus >= self.role:
                 additem.setBackground(QtGui.QBrush(QtGui.QColor(220, 255, 220)))
@@ -1866,7 +1870,7 @@ class Scripts2(QtGui.QWidget):
                 SaveCur.execute("update Text set status=-1 where ID=?", (TempString[0][0],))
                 SaveCon.commit()
                 
-            self.text.append([TempENG, TempJPN, TempCOM, TempDebug, TempStatus])
+            self.text.append([TempENG, TempJPN, TempCOM, TempDebug, TempStatus, identifyString])
             
         if containsComments == True:
             commentsAvailableLabel.setText(databasefilename + " | Comments exist!")
@@ -2326,7 +2330,8 @@ class Scripts2(QtGui.QWidget):
         rowBoxes = []
         for i in range(len(self.textEditingBoxes)):
             try:
-                rowBoxes.append( int(self.entrysort.data(index.sibling(index.row()+(i-1), index.column()))[6:11])-1 )
+                entrytextdisplay = self.entrysort.data(index.sibling(index.row()+(i-1), index.column()))
+                rowBoxes.append( int(entrytextdisplay[6:11])-1 )
             except:
                 rowBoxes.append( -2 )
         
@@ -2338,8 +2343,9 @@ class Scripts2(QtGui.QWidget):
                 textEntries1.append( VariableReplace(self.text[rowBoxes[i]][t]) )
                 textEntries1raw.append( self.text[rowBoxes[i]][t] )
                 textEntries2.append( VariableReplace(self.text[rowBoxes[i]][self.twoupEditingTextBoxes[i].role]) )
+                commentTexts[i] = self.text[rowBoxes[i]][5] + '     '
                 if self.text[rowBoxes[i]][2] != '':
-                    commentTexts[i] = 'Comment Available'
+                    commentTexts[i] = commentTexts[i] + 'Comment Available'
                 self.regularEditingTextBoxes[i].iconToggle(self.text[rowBoxes[i]][4])
                 self.regularEditingTextBoxes[i].currentEntry = rowBoxes[i] + 1
                 self.regularEditingTextBoxes[i].setReadOnly(False)
@@ -2366,7 +2372,7 @@ class Scripts2(QtGui.QWidget):
             if self.twoupAct.isChecked() == True:
                 self.twoupEditingTextBoxes[i].setText(textEntries2[i])
             if self.regularEditingTextBoxes[i].currentEntry >= 0:
-                self.textEditingBoxes[i].setTitle("Entry {0}:      {1}".format(rowBoxes[i]+1, commentTexts[i]))
+                self.textEditingBoxes[i].setTitle("Entry {0}: {1}".format(rowBoxes[i]+1, commentTexts[i]))
                 self.regularEditingTextBoxes[i].refreshFooter(textEntries1raw[i])
             else:
                 self.textEditingBoxes[i].setTitle("-----")
