@@ -114,8 +114,13 @@ class MainWindow(QtGui.QMainWindow):
         self.addToolBar(self.Toolbar)
         self.setUnifiedTitleAndToolBarOnMac(True)
 
-        self.setCentralWidget(Scripts2(self))
+        self.scripts2 = Scripts2(self)
+        self.setCentralWidget(self.scripts2)
         
+    def closeEvent(self, event):
+        self.scripts2.cleanupAndQuit()
+        return
+
 
 
 class XTextBox(QtGui.QTextEdit):
@@ -784,7 +789,7 @@ class Scripts2(QtGui.QWidget):
 
     def __init__(self, parent=None):
         super(Scripts2, self).__init__(parent)
-
+        
         self.parent = parent
 
         self.splashScreen = SplashScreen()
@@ -1049,7 +1054,7 @@ class Scripts2(QtGui.QWidget):
         self.dupeAct.setShortcut(QtGui.QKeySequence('Ctrl+D'))
 
         self.quitAct = QtGui.QAction('Quit', None)
-        self.quitAct.triggered.connect(self.quit)
+        self.quitAct.triggered.connect(self.cleanupAndQuit)
         self.quitAct.setShortcut(QtGui.QKeySequence('Ctrl-Q'))
 
         self.twoupAct = QtGui.QAction(QtGui.QIcon('icons/twoup.png'), 'Two-up', None)
@@ -1306,9 +1311,7 @@ class Scripts2(QtGui.QWidget):
         self.statsDialogOpened = False
         self.duplicateTextDialogOpened = False
 
-        
-
-    def quit(self):
+    def cleanupAndQuit(self):
         self.WriteDatabaseStorageToHdd()
         self.settings.setValue('update', set(self.update))
         print 'These files retained for next session: ', ''.join(["%s, " % (k) for k in self.update])[:-2]
@@ -1563,7 +1566,7 @@ class Scripts2(QtGui.QWidget):
                 
                 if changes == False:
                     "This isn't going to work, is it? Try again later."
-                    self.quit() 
+                    self.cleanupAndQuit() 
 
 
                 # Get any new entries
