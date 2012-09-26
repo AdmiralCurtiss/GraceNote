@@ -213,11 +213,16 @@ class XTextBox(QtGui.QTextEdit):
         
     def refreshFooter(self, text):
         feedCount = text.count('\f')
-        splitLines = re.sub('<CLT[ 0-9]+>', '', text.replace('\f', '\n').replace("''", "'")).split('\n')
+        sanitizedText = re.sub('<CLT[ 0-9]+>', '', text.replace("''", "'"))
+        splitOnFeeds = sanitizedText.split('\f')
+        splitOnLines = sanitizedText.replace('\f', '\n').split('\n')
         longestLineChars = 0
-        for s in splitLines:
+        for s in splitOnLines:
             longestLineChars = max(longestLineChars, len(s))
-        self.footer.setText('Textboxes: ' + str(feedCount+1) + ' / Longest Line: ' + str(longestLineChars))
+        highestBoxNewlines = 0
+        for s in splitOnFeeds:
+            highestBoxNewlines = max(highestBoxNewlines, s.count('\n')+1)
+        self.footer.setText('Textboxes: ' + str(feedCount+1) + ' / Highest Box: ' + str(highestBoxNewlines) + ' lines / Longest Line: ' + str(longestLineChars) + ' chars')
     
     def makePlaybackButtons(self, clipList):
     
@@ -1791,6 +1796,8 @@ class Scripts2(QtGui.QWidget):
             editbox.setText('')
         for txtbox in self.textEditingBoxes:
             txtbox.setTitle('-----')
+        for footer in self.textEditingFooters:
+            footer.setText('')
 
         index = self.tree.currentIndex()
         parent = self.treemodel.data(self.tree.currentIndex().parent())
