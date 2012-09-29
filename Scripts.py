@@ -928,7 +928,7 @@ class Scripts2(QtGui.QWidget):
             tmplayout = QtGui.QGridLayout()
             tmplayout.addWidget(tb1, 1, 1, 1, 1)
             tmplayout.addWidget(tb2, 1, 2, 1, 1)
-            tmplayout.addWidget(footer, 2, 1, 2, 1)
+            tmplayout.addWidget(footer, 2, 1, 1, 2)
             
             # create QGroupBox
             tmpqgrpbox = QtGui.QGroupBox()
