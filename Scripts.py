@@ -2354,7 +2354,7 @@ class Scripts2(QtGui.QWidget):
         #DatabaseEntryStruct(cleanString, databaseName, entry, role, state)
         # keep for later write to HDD
         self.InsertOrUpdateEntryToWrite(DatabaseEntryStruct(GoodString, databasefilename, textBox.currentEntry, updateStatusValue, self.state))
-        textBox.refreshFooter(GoodString, '1: ')
+        textBox.refreshFooter(GoodString, self.state[0] + ': ')
         
         # write the new string back into the main window, this is neccessary or else the new string isn't there when the displayed entry is changed!
         if self.state == 'ENG':
@@ -2454,6 +2454,10 @@ class Scripts2(QtGui.QWidget):
                     self.regularEditingTextBoxes[i].makePlaybackButtons(AudioClips)
 
         # put text into textboxes, display entry number
+        twoupTypeHelper = []
+        twoupTypeHelper.append('E')
+        twoupTypeHelper.append('J')
+        twoupTypeHelper.append('C')
         for i in range(len(self.textEditingBoxes)):
             self.regularEditingTextBoxes[i].setText(textEntries1[i])
             if self.twoupAct.isChecked() == True:
@@ -2461,8 +2465,8 @@ class Scripts2(QtGui.QWidget):
                 
             if self.regularEditingTextBoxes[i].currentEntry >= 0:
                 self.textEditingBoxes[i].setTitle("Entry {0}: {1}".format(rowBoxes[i]+1, commentTexts[i]))
-                self.regularEditingTextBoxes[i].refreshFooter(textEntries1raw[i], '1: ')
-                self.twoupEditingTextBoxes[i].refreshFooter(textEntries2raw[i], '2: ')
+                self.regularEditingTextBoxes[i].refreshFooter(textEntries1raw[i], self.state[0] + ': ')
+                self.twoupEditingTextBoxes[i].refreshFooter(textEntries2raw[i], twoupTypeHelper[self.twoupEditingTextBoxes[i].role] + ': ')
             else:
                 self.textEditingBoxes[i].setTitle("-----")
                 self.textEditingFooters[i].setText('')
