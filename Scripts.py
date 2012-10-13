@@ -217,7 +217,7 @@ class XTextBox(QtGui.QTextEdit):
     def setFooter(self, footer):
         self.footer = footer
         
-    def refreshFooter(self, text):
+    def refreshFooter(self, text, prepend):
         if FooterVisibleFlag == False:
             return
             
@@ -231,7 +231,7 @@ class XTextBox(QtGui.QTextEdit):
         highestBoxNewlines = 0
         for s in splitOnFeeds:
             highestBoxNewlines = max(highestBoxNewlines, s.count('\n')+1)
-        self.footer.setText('Textboxes: ' + str(feedCount+1) + ' / Highest Box: ' + str(highestBoxNewlines) + ' lines / Longest Line: ' + str(longestLineChars) + ' chars')
+        self.footer.setText(prepend + 'Textboxes: ' + str(feedCount+1) + ' / Highest Box: ' + str(highestBoxNewlines) + ' lines / Longest Line: ' + str(longestLineChars) + ' chars')
     
     def makePlaybackButtons(self, clipList):
     
@@ -937,6 +937,7 @@ class Scripts2(QtGui.QWidget):
         self.twoupEditingTextBoxes = []
         self.textEditingBoxes = []
         self.textEditingFooters = []
+        self.twoupEditingFooters = []
         for i in range(AmountEditingWindows):
             # create text boxes, set defaults
             tb1 = XTextBox()
@@ -954,6 +955,9 @@ class Scripts2(QtGui.QWidget):
             footer = QtGui.QLabel('')
             self.textEditingFooters.append(footer)
             tb1.setFooter(footer)
+            footer2 = QtGui.QLabel('')
+            self.twoupEditingFooters.append(footer2)
+            tb2.setFooter(footer2)
             
             # create layout
             tmplayout = QtGui.QGridLayout()
@@ -961,6 +965,7 @@ class Scripts2(QtGui.QWidget):
             tmplayout.addWidget(tb2, 1, 2, 1, 1)
             if FooterVisibleFlag:
                 tmplayout.addWidget(footer, 2, 1, 1, 2)
+                tmplayout.addWidget(footer2, 3, 1, 1, 2)
             
             # create QGroupBox
             tmpqgrpbox = QtGui.QGroupBox()
@@ -1868,6 +1873,8 @@ class Scripts2(QtGui.QWidget):
             txtbox.setTitle('-----')
         for footer in self.textEditingFooters:
             footer.setText('')
+        for footer in self.twoupEditingFooters:
+            footer.setText('')
 
         index = self.tree.currentIndex()
         parent = self.treemodel.data(self.tree.currentIndex().parent())
@@ -2347,7 +2354,7 @@ class Scripts2(QtGui.QWidget):
         #DatabaseEntryStruct(cleanString, databaseName, entry, role, state)
         # keep for later write to HDD
         self.InsertOrUpdateEntryToWrite(DatabaseEntryStruct(GoodString, databasefilename, textBox.currentEntry, updateStatusValue, self.state))
-        textBox.refreshFooter(GoodString)
+        textBox.refreshFooter(GoodString, '1: ')
         
         # write the new string back into the main window, this is neccessary or else the new string isn't there when the displayed entry is changed!
         if self.state == 'ENG':
@@ -2415,11 +2422,13 @@ class Scripts2(QtGui.QWidget):
         textEntries1 = []
         textEntries1raw = []
         textEntries2 = []
+        textEntries2raw = []
         for i in range(len(self.textEditingBoxes)):
             if rowBoxes[i] >= 0:
                 textEntries1.append( VariableReplace(self.text[rowBoxes[i]][t]) )
                 textEntries1raw.append( self.text[rowBoxes[i]][t] )
                 textEntries2.append( VariableReplace(self.text[rowBoxes[i]][self.twoupEditingTextBoxes[i].role]) )
+                textEntries2raw.append( self.text[rowBoxes[i]][self.twoupEditingTextBoxes[i].role] )
                 commentTexts[i] = self.text[rowBoxes[i]][5] + '     '
                 if self.text[rowBoxes[i]][2] != '':
                     commentTexts[i] = commentTexts[i] + 'Comment Available'
@@ -2430,6 +2439,7 @@ class Scripts2(QtGui.QWidget):
                 textEntries1.append( '' )
                 textEntries1raw.append( '' )
                 textEntries2.append( '' )
+                textEntries2raw.append( '' )
                 self.regularEditingTextBoxes[i].iconToggle(0)
                 self.regularEditingTextBoxes[i].currentEntry = -1
                 self.regularEditingTextBoxes[i].setReadOnly(True)
@@ -2448,12 +2458,15 @@ class Scripts2(QtGui.QWidget):
             self.regularEditingTextBoxes[i].setText(textEntries1[i])
             if self.twoupAct.isChecked() == True:
                 self.twoupEditingTextBoxes[i].setText(textEntries2[i])
+                
             if self.regularEditingTextBoxes[i].currentEntry >= 0:
                 self.textEditingBoxes[i].setTitle("Entry {0}: {1}".format(rowBoxes[i]+1, commentTexts[i]))
-                self.regularEditingTextBoxes[i].refreshFooter(textEntries1raw[i])
+                self.regularEditingTextBoxes[i].refreshFooter(textEntries1raw[i], '1: ')
+                self.twoupEditingTextBoxes[i].refreshFooter(textEntries2raw[i], '2: ')
             else:
                 self.textEditingBoxes[i].setTitle("-----")
                 self.textEditingFooters[i].setText('')
+                self.twoupEditingFooters[i].setText('')
             
 
         # auto-update in Auto mode
