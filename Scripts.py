@@ -91,6 +91,7 @@ UpdateLowerStatusFlag = False
 ModeFlag = 'Semi-Auto'
 AmountEditingWindows = 5
 WriteDatabaseStorageToHddOnEntryChange = False
+FooterVisibleFlag = False
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -217,6 +218,9 @@ class XTextBox(QtGui.QTextEdit):
         self.footer = footer
         
     def refreshFooter(self, text):
+        if FooterVisibleFlag == False:
+            return
+            
         feedCount = text.count('\f')
         sanitizedText = re.sub('<CLT[ 0-9]+>', '', text.replace("''", "'"))
         splitOnFeeds = sanitizedText.split('\f')
@@ -802,7 +806,6 @@ class Scripts2(QtGui.QWidget):
         # Current Variables
         self.state = 'ENG'
         self.text = []
-        EnglishVoiceLanguageFlag = False
 
         # True Entries Translated Count
 #        TrueCount()
@@ -846,6 +849,34 @@ class Scripts2(QtGui.QWidget):
         else:
             self.settings.setValue('mode', 'Semi-Auto')
             ModeFlag = 'Semi-Auto'
+        
+        global EnglishVoiceLanguageFlag
+        if self.settings.contains('voicelanguage'):
+            EnglishVoiceLanguageFlag = self.settings.value('voicelanguage') == 'EN'
+        else:
+            self.settings.setValue('voicelanguage', 'JP')
+            EnglishVoiceLanguageFlag = False
+        
+        global UpdateLowerStatusFlag
+        if self.settings.contains('updatelowerstatus'):
+            UpdateLowerStatusFlag = self.settings.value('updatelowerstatus') == 'True'
+        else:
+            self.settings.setValue('updatelowerstatus', 'False')
+            UpdateLowerStatusFlag = False
+        
+        global WriteDatabaseStorageToHddOnEntryChange
+        if self.settings.contains('writeonentrychange'):
+            WriteDatabaseStorageToHddOnEntryChange = self.settings.value('writeonentrychange') == 'True'
+        else:
+            self.settings.setValue('writeonentrychange', 'False')
+            WriteDatabaseStorageToHddOnEntryChange = False
+        
+        global FooterVisibleFlag
+        if self.settings.contains('footervisible'):
+            FooterVisibleFlag = self.settings.value('footervisible') == 'True'
+        else:
+            self.settings.setValue('footervisible', 'False')
+            FooterVisibleFlag = False
         
         global AmountEditingWindows
         if self.settings.contains('editpane_amount'):
@@ -928,13 +959,15 @@ class Scripts2(QtGui.QWidget):
             tmplayout = QtGui.QGridLayout()
             tmplayout.addWidget(tb1, 1, 1, 1, 1)
             tmplayout.addWidget(tb2, 1, 2, 1, 1)
-            tmplayout.addWidget(footer, 2, 1, 1, 2)
+            if FooterVisibleFlag:
+                tmplayout.addWidget(footer, 2, 1, 1, 2)
             
             # create QGroupBox
             tmpqgrpbox = QtGui.QGroupBox()
             tmpqgrpbox.setLayout(tmplayout)
             tmpqgrpbox.setTitle("-----")
-            tmpqgrpbox.setFlat(True)
+            if FooterVisibleFlag:
+                tmpqgrpbox.setFlat(True)
             self.textEditingBoxes.append(tmpqgrpbox)
             
         # ------------------------------------------------------ #
@@ -1095,15 +1128,33 @@ class Scripts2(QtGui.QWidget):
         self.reloadConfigAct = QtGui.QAction('Reload Config', None)
         self.reloadConfigAct.triggered.connect(self.ReloadConfiguration)
         self.reloadConfigAct.setShortcut(QtGui.QKeySequence('Ctrl-Shift-Alt-R'))
-        self.voiceLangAct = QtGui.QAction('Japanese Voices', None)
+        
+        if EnglishVoiceLanguageFlag:
+            self.voiceLangAct = QtGui.QAction('English Voices', None)
+        else:
+            self.voiceLangAct = QtGui.QAction('Japanese Voices', None)
         self.voiceLangAct.triggered.connect(self.VoiceLanguageSwap)
         self.voiceLangAct.setShortcut(QtGui.QKeySequence('Ctrl-Shift-Alt-E'))
-        self.updateLowerStatusAct = QtGui.QAction('Not updating lower status', None)
+        
+        if UpdateLowerStatusFlag:
+            self.updateLowerStatusAct = QtGui.QAction('Updating lower status', None)
+        else:
+            self.updateLowerStatusAct = QtGui.QAction('Not updating lower status', None)
         self.updateLowerStatusAct.triggered.connect(self.UpdateLowerStatusSwap)
+        
+        if FooterVisibleFlag:
+            self.displayFooterAct = QtGui.QAction('Footer enabled', None)
+        else:
+            self.displayFooterAct = QtGui.QAction('Footer disabled', None)
+        self.displayFooterAct.triggered.connect(self.DisplayFooterSwap)
+        
         self.changeEditingWindowAmountAct = QtGui.QAction('Change Editing Window Amount', None)
         self.changeEditingWindowAmountAct.triggered.connect(self.ChangeEditingWindowAmountDisplay)
         
-        self.writeDatabaseStorageToHddAct = QtGui.QAction('Not writing on Entry change', None)
+        if WriteDatabaseStorageToHddOnEntryChange:
+            self.writeDatabaseStorageToHddAct = QtGui.QAction('Writing on Entry change', None)
+        else:
+            self.writeDatabaseStorageToHddAct = QtGui.QAction('Not writing on Entry change', None)
         self.writeDatabaseStorageToHddAct.triggered.connect(self.ChangeWriteDatabaseStorageToHddBehavior)
         
         
@@ -1263,10 +1314,13 @@ class Scripts2(QtGui.QWidget):
 
         optionsMenu = QtGui.QMenu("Options", self)
         optionsMenu.addAction(self.reloadConfigAct)
+        optionsMenu.addSeparator()
         optionsMenu.addAction(self.voiceLangAct)
         optionsMenu.addAction(self.updateLowerStatusAct)
-        optionsMenu.addAction(self.changeEditingWindowAmountAct)
+        optionsMenu.addAction(self.displayFooterAct)
         optionsMenu.addAction(self.writeDatabaseStorageToHddAct)
+        optionsMenu.addSeparator()
+        optionsMenu.addAction(self.changeEditingWindowAmountAct)
 
         parent.menuBar().addMenu(fileMenu)
         parent.menuBar().addMenu(parent.editMenu)
@@ -1413,35 +1467,48 @@ class Scripts2(QtGui.QWidget):
         self.PopulateModel(configData.FileList)
         
     def VoiceLanguageSwap(self):
-        
         global EnglishVoiceLanguageFlag
-
-        
         if EnglishVoiceLanguageFlag == True:
             self.voiceLangAct.setText('Japanese Voices')
             EnglishVoiceLanguageFlag = False
-
+            self.settings.setValue('voicelanguage', 'JP')
         else:
             self.voiceLangAct.setText('English Voices')
             EnglishVoiceLanguageFlag = True
+            self.settings.setValue('voicelanguage', 'EN')
         
     def UpdateLowerStatusSwap(self):
         global UpdateLowerStatusFlag
         if UpdateLowerStatusFlag == True:
             self.updateLowerStatusAct.setText('Not updating lower status')
             UpdateLowerStatusFlag = False
+            self.settings.setValue('updatelowerstatus', 'False')
         else:
             self.updateLowerStatusAct.setText('Updating lower status')
             UpdateLowerStatusFlag = True
+            self.settings.setValue('updatelowerstatus', 'True')
+            
+    def DisplayFooterSwap(self):
+        global FooterVisibleFlag
+        if FooterVisibleFlag == True:
+            self.displayFooterAct.setText('Footer disabled')
+            FooterVisibleFlag = False
+            self.settings.setValue('footervisible', 'False')
+        else:
+            self.displayFooterAct.setText('Footer enabled')
+            FooterVisibleFlag = True
+            self.settings.setValue('footervisible', 'True')
 
     def ChangeWriteDatabaseStorageToHddBehavior(self):
         global WriteDatabaseStorageToHddOnEntryChange
         if WriteDatabaseStorageToHddOnEntryChange == True:
             self.writeDatabaseStorageToHddAct.setText('Not writing on Entry change')
             WriteDatabaseStorageToHddOnEntryChange = False
+            self.settings.setValue('writeonentrychange', 'False')
         else:
             self.writeDatabaseStorageToHddAct.setText('Writing on Entry change')
             WriteDatabaseStorageToHddOnEntryChange = True
+            self.settings.setValue('writeonentrychange', 'True')
             
     def ChangeEditingWindowAmountDisplay(self):
         global AmountEditingWindows
