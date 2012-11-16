@@ -1572,6 +1572,8 @@ class Scripts2(QtGui.QWidget):
 
     def ConsolidateDebug(self):
         self.WriteDatabaseStorageToHdd()
+        
+        # Applies the debug status in GracesJapanese to all databases
             
         i = 1
         aList = configData.FileList
@@ -1602,6 +1604,32 @@ class Scripts2(QtGui.QWidget):
                 UpdateCon.commit()
                 
             i += 1
+
+    def ReverseConsolidateDebug(self):
+        self.WriteDatabaseStorageToHdd()
+        
+        # Applies the debug status in Databases to GracesJapanese
+        
+        i = 1
+        aList = configData.FileList
+            
+        for item in aList[0]:
+            print item
+            for filename in aList[i]:
+
+                print "Processing: {0}".format(filename)
+            
+                UpdateCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(filename))
+                UpdateCur = UpdateCon.cursor()
+                        
+                UpdateCur.execute("SELECT StringID FROM Text WHERE status = -1")
+                
+                for entry in UpdateCur.fetchall():
+                    CursorGracesJapanese.execute("UPDATE Japanese SET debug = 1 WHERE ID=?", (entry[0],))
+                UpdateCon.rollback()
+                
+            i += 1
+        ConnectionGracesJapanese.commit()
 
     def RetrieveModifiedFiles(self, splash):
         self.WriteDatabaseStorageToHdd()
