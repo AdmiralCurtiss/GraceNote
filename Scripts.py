@@ -1051,6 +1051,9 @@ class Scripts2(QtGui.QWidget):
         self.saveAct.triggered.connect(self.SavetoServer)
         self.saveAct.setShortcut(QtGui.QKeySequence('Ctrl+S'))
 
+        self.revertAct = QtGui.QAction(QtGui.QIcon('icons/save.png'), 'Revert', None)
+        self.revertAct.triggered.connect(self.RevertFromServer)
+        
         self.updateAct = QtGui.QAction(QtGui.QIcon('icons/save.png'), 'Update', None)
         self.updateAct.triggered.connect(self.RetrieveModifiedFiles)
         self.updateAct.setShortcut(QtGui.QKeySequence('Ctrl+U'))
@@ -1252,6 +1255,8 @@ class Scripts2(QtGui.QWidget):
         fileMenu.addAction(self.patchzeroAct)
         fileMenu.addAction(self.patchtwoAct)
         fileMenu.addAction(self.patchfDemoAct)
+        fileMenu.addSeparator()
+        fileMenu.addAction(self.revertAct)
         fileMenu.addSeparator()
         fileMenu.addAction(self.quitAct)
         
@@ -2695,6 +2700,66 @@ class Scripts2(QtGui.QWidget):
                 print 'Error during FTP transfer, retrying...'
                 continue
 
+    def RevertFromServer(self):
+        self.WriteDatabaseStorageToHdd()
+        
+        if len(self.update) == 0:
+            print 'Nothing to revert!'
+            return
+
+        print 'Reverting databases...'
+        
+        
+        for i in range(1, 20):
+            try:        
+                try:
+                    self.ftp = FTP(configData.FTPServer, configData.FTPUsername, configData.FTPPassword, "", 15)
+                except:
+                    if i == 20:
+                        print "FTP connection failed, revert didn't succeed.\nPlease try to revert again at a later date."
+                        self.settings.setValue('update', set(self.update))
+                        return
+                    print 'Error during FTP transfer, retrying...'
+                    continue
+               
+                self.ftp.cwd('/')
+                self.ftp.cwd(configData.RemoteDatabasePath)
+
+                print "Re-getting changed files from server..."
+                for item in self.update:
+                    CursorGracesJapanese.execute("SELECT count(1) FROM descriptions WHERE filename = ?", [item])
+                    exists = CursorGracesJapanese.fetchall()[0][0]
+                    if exists > 0:
+                        CursorGracesJapanese.execute("SELECT shortdesc FROM descriptions WHERE filename = ?", [item])
+                        desc = CursorGracesJapanese.fetchall()[0][0]
+                        print 'Downloading ' + desc + ' [' + item + ']...'
+                    else:
+                        print 'Downloading ' + item + '...'
+                    
+                    
+                    
+                    self.DownloadFile(self.ftp, item, item)
+                    WipeUpdateCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(item))
+                    WipeUpdateCur = WipeUpdateCon.cursor()
+            
+                    WipeUpdateCur.execute(u"update Text set updated=0")
+                    WipeUpdateCon.commit()
+                    
+                    CalculateCompletionForDatabase(item)
+
+                self.ftp.close()
+                self.update.clear()
+                self.settings.setValue('update', self.update)
+                print 'Reverted!'
+                break
+            except ftplib.all_errors:
+                if i == 20:
+                    print '20 errors is enough, this is not gonna work. Try again later.'
+                    break
+                print 'Error during FTP transfer, retrying...'
+                continue
+    
+    
     def SavetoPatch(self):
         self.WriteDatabaseStorageToHdd()
         
