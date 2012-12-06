@@ -4514,10 +4514,16 @@ class DuplicateText(QtGui.QDialog):
         self.categories = []
         
         i = 0
+        x = 0
+        y = 0
         for cat in configData.FileList[0]:
             self.categories.append(QtGui.QCheckBox(cat))
-            layout.addWidget(self.categories[i], i, 0)
+            layout.addWidget(self.categories[i], y, x)
             i += 1
+            x += 1
+            if x > 5:
+                x = 0
+                y += 1
         
         self.exceptions = QtGui.QRadioButton('Inconsistent Translations only')
         self.dupes = QtGui.QRadioButton('All Duplicates')
@@ -4530,17 +4536,19 @@ class DuplicateText(QtGui.QDialog):
         
         self.progressLabel = QtGui.QLabel('Pending')
         
-        layout.addWidget(self.exceptions, 1, 1)
-        layout.addWidget(self.dupes, 0, 1)
-        layout.addWidget(self.progressbar, 3, 1)
-        layout.addWidget(self.progressLabel, 4, 1)
-        layout.addWidget(self.go, i-1, 1)
-        layout.setColumnMinimumWidth(0, 200)
+        layoutSystemButtons = QtGui.QGridLayout()
+        layoutSystemButtons.addWidget(self.exceptions, 0, 0)
+        layoutSystemButtons.addWidget(self.dupes, 0, 1)
+        #layoutSystemButtons.addWidget(self.progressbar, 3, 1)
+        #layoutSystemButtons.addWidget(self.progressLabel, 4, 1)
+        layoutSystemButtons.addWidget(self.go, 0, 2)
+        layoutSystemButtons.setColumnMinimumWidth(0, 200)
         
         self.treewidget.itemDoubleClicked.connect(self.InitiateMassReplaceSearch)
 
         self.setWindowTitle('Duplicate Text Retriever')
         subLayout = QtGui.QVBoxLayout()
+        subLayout.addLayout(layoutSystemButtons)
         subLayout.addLayout(layout)
         subLayout.addWidget(self.treewidget)
         self.setLayout(subLayout)
@@ -4558,7 +4566,8 @@ class DuplicateText(QtGui.QDialog):
         Table = []
         BlackList = []
         CursorGracesJapanese.execute('SELECT MAX(ID) FROM Japanese')
-        for i in xrange( CursorGracesJapanese.fetchall()[0][0] ):
+        maxid = int(CursorGracesJapanese.fetchall()[0][0])
+        for i in xrange( maxid + 1 ):
             Table.append([0, set([])])
             BlackList.append(0)
 
