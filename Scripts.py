@@ -2358,6 +2358,9 @@ class Scripts2(QtGui.QWidget):
         if CommandOriginButton == True:
             # if origin a button: always set to argument
             updateStatusValue = role
+        elif self.state == "COM":
+            # if origin a Comment box, don't update
+            updateStatusValue = self.text[textBox.currentEntry - 1][4]
         else:
             # if origin by typing or automatic:
             if ModeFlag == 'Manual':
