@@ -131,9 +131,10 @@ class XTextBox(QtGui.QTextEdit):
     currentEntry = -1
 
 
-    def __init__(self, HUD=None):
+    def __init__(self, HUD, parent):
         super(XTextBox, self).__init__()
-
+        
+        self.parent = parent
         self.Jpcon = sqlite3.connect('Resources/JPDictionary')
         self.Jpcur = self.Jpcon.cursor()
         self.modified = False
@@ -425,6 +426,27 @@ class XTextBox(QtGui.QTextEdit):
                     if len(spell_menu.actions()) != 0:
                         popup_menu.insertSeparator(popup_menu.actions()[0])
                         popup_menu.insertMenu(popup_menu.actions()[0], spell_menu)
+            
+            # offer a quick jump on [entrynumber] or [databasename] or [databasename/entrynumber]
+            plaintext = self.toPlainText()
+            selstart = cursor.selectionStart()-1
+            selend = cursor.selectionEnd()+1
+            textplus = unicode(plaintext[selstart : selend])
+            if textplus.startswith('/'):
+                while plaintext[selstart] != u'[':
+                    selstart = selstart - 1
+                textplus = unicode(plaintext[selstart : selend])
+            elif textplus.endswith('/'):
+                while plaintext[selend] != u']':
+                    selend = selend + 1
+                selend = selend + 1
+                textplus = unicode(plaintext[selstart : selend])
+            if textplus.startswith('[') and textplus.endswith(']'):
+                popup_menu.insertSeparator(popup_menu.actions()[0])
+                action = SpellAction('Jump to ' + textplus, popup_menu)
+                action.correct.connect(self.jumpToDatabaseFromBracketString)
+                popup_menu.addAction(action)
+                
                                 
             popup_menu.exec_(event.globalPos())
 
@@ -511,6 +533,24 @@ class XTextBox(QtGui.QTextEdit):
             
         return cookielist
     
+    def jumpToDatabaseFromBracketString(self, word):
+        # word is something like: "Jump to [DRBO1234/56]", "Jump to [1]", "Jump to [VItems]"
+        word = unicode(word)
+        word = word[word.index('[') + 1 : word.index(']')]
+        words = word.split('/', 1)
+        if len(words) == 2:
+            db = words[0]
+            entry = words[1]
+        else:
+            try:
+                entry = int(word)
+                db = ''
+            except ValueError:
+                db = word
+                entry = 1
+        
+        self.parent.JumpToEntry(db, entry)
+
     def correctWord(self, word):
         '''
         Replaces the selected text with word.
@@ -608,11 +648,9 @@ class XTextBox(QtGui.QTextEdit):
             self.jpflag.setIcon(QtGui.QIcon('icons/japanflag.png'))
             self.role = 1
 
-        
+
 
 class SpellAction(QtGui.QAction):
- 
- 
     correct = QtCore.pyqtSignal(unicode)
  
     def __init__(self, *args):
@@ -940,8 +978,8 @@ class Scripts2(QtGui.QWidget):
         self.twoupEditingFooters = []
         for i in range(AmountEditingWindows):
             # create text boxes, set defaults
-            tb1 = XTextBox()
-            tb2 = XTextBox('jp')
+            tb1 = XTextBox(None, self)
+            tb2 = XTextBox('jp', self)
             tb2.hide()
             tb2.setReadOnly(True)
             MyHighlighter(tb2, 'something')
@@ -1916,6 +1954,7 @@ class Scripts2(QtGui.QWidget):
             return
 
         databasefilename = self.treemodel.itemFromIndex(index).statusTip()
+        self.currentlyOpenDatabase = databasefilename
         SaveCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(databasefilename))
         SaveCur = SaveCon.cursor()
         
@@ -2155,6 +2194,8 @@ class Scripts2(QtGui.QWidget):
     def JumpToEntry(self, file, entry):
         self.WriteDatabaseStorageToHdd()
         
+        if file == '':
+            file = self.currentlyOpenDatabase
         self.tree.collapseAll()
         for i in xrange(self.treemodel.rowCount()):
             category = self.treemodel.item(i)
