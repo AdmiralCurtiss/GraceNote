@@ -32,7 +32,6 @@ import subprocess
 import codecs
 from Config import *
 from collections import deque
-import re
 
 
 # load config
@@ -825,6 +824,7 @@ class DatabaseEntryStruct():
         self.role = role
         #string state; // "ENG" or "COM", defines which column in the database to update
         self.state = state
+        self.timestamp = time.clock()
         
 
 class Scripts2(QtGui.QWidget):
@@ -2450,8 +2450,11 @@ class Scripts2(QtGui.QWidget):
         
         print("Writing database storage in memory to HDD...")
         
+        # sort by time of entry creation so order of inserts is preserved (necessary eg. if changing both english and comment on same entry
+        sortedStorage = sorted(self.databaseWriteStorage, key=lambda DatabaseEntryStruct: DatabaseEntryStruct.timestamp)
+        
         #DatabaseEntryStruct(cleanString, databaseName, entry, role, state)
-        for d in self.databaseWriteStorage:
+        for d in sortedStorage:
             if lastDatabase != d.databaseName: # open up new DB connectin if neccesary, otherwise just reuse the old one
                 self.update.add(str(d.databaseName))
                 SaveCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(d.databaseName))
