@@ -13,6 +13,7 @@ class Configuration:
     VoicePathJpPostfix = ''
     VoicePathEnPrefix = ''
     VoicePathEnPostfix = ''
+    VoiceEntryOffset = 0
     
     FileList = []
     
@@ -32,6 +33,7 @@ class Configuration:
         self.VoicePathJpPostfix = mainNode.getAttribute('VoicePathJpPostfix')
         self.VoicePathEnPrefix = mainNode.getAttribute('VoicePathEnPrefix')
         self.VoicePathEnPostfix = mainNode.getAttribute('VoicePathEnPostfix')
+        self.VoiceEntryOffset = int(mainNode.getAttribute('VoiceEntryOffset'))
         
         self.FileList = [ [] ]
         categories = mainNode.getElementsByTagName('Categories')[0].getElementsByTagName('Category')

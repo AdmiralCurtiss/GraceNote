@@ -2526,8 +2526,13 @@ class Scripts2(QtGui.QWidget):
 
         # audio clip check
         if Audio == True:
-            for i in range(len(self.textEditingBoxes)):
-                AudioClips = re.findall('<Audio: (.*?)>', textEntries1[i], re.DOTALL)
+            lengthEditingBoxes = len(self.textEditingBoxes)
+            for i in range(lengthEditingBoxes):
+                if self.regularEditingTextBoxes[i].currentEntry == -1:
+                    continue
+                AudioSearchText = VariableReplace(self.text[rowBoxes[i] + configData.VoiceEntryOffset][t])
+                AudioClips = re.findall('<Audio: (.*?)>', AudioSearchText, re.DOTALL)
+                AudioClips = AudioClips + re.findall('<Voice: (.*?)>', AudioSearchText, re.DOTALL)
                 if AudioClips == []:
                     self.regularEditingTextBoxes[i].clearPlaybackButtons()
                 else:
