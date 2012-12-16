@@ -2033,6 +2033,12 @@ class Scripts2(QtGui.QWidget):
         else:
             commentsAvailableLabel.setText(databasefilename)
             
+        if self.entrysort.rowCount() != 1:
+            index = self.entrysort.index(1, 0)
+        else:
+            index = self.entrysort.index(0, 0)
+        self.entry.setCurrentIndex(index)
+        self.entry.selectionModel().select(index, QtGui.QItemSelectionModel.SelectionFlags(3))
         
     def GetFullText(self, replaceVariables):
         string = ''
