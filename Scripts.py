@@ -32,6 +32,7 @@ import subprocess
 import codecs
 from Config import *
 from collections import deque
+import filecmp
 
 
 # load config
@@ -1824,41 +1825,35 @@ class Scripts2(QtGui.QWidget):
         return True
         
 
-    def UploadFile(self, ftp, source, dest):
+    def UploadFile(self, ftp, source, dest, confirmUpload=False):
         self.WriteDatabaseStorageToHdd()
         
         source = str(source)
         dest = str(dest)
     
-        fnew = open(configData.LocalDatabasePath + '/{0}'.format(source), 'rb')
-        UploadString = str('STOR ' + dest)
-        ftp.storbinary(UploadString, fnew)
-        fnew.close()
-
-        size = ftp.size(dest)
-
         check = open(configData.LocalDatabasePath + '/{0}'.format(source), 'rb')
         localsize = len(check.read())
         check.close()
-
-        if size != localsize:
-            success = False
-            for p in range(5):
-                print 'Problem Uploading {0}. Retry #{1}'.format(dest, p+1)
-                
-                fnew = open(configData.LocalDatabasePath + '/{0}'.format(source), 'rb')
-                UploadString = str('STOR ' + dest)
-                ftp.storbinary(UploadString, fnew)
-                size = ftp.size(dest)
-                fnew.close()
         
-                if size == localsize:
+        success = False
+        for i in range(6):
+            fnew = open(configData.LocalDatabasePath + '/{0}'.format(source), 'rb')
+            UploadString = str('STOR ' + dest)
+            ftp.storbinary(UploadString, fnew)
+            fnew.close()
+            size = ftp.size(dest)
+            if size == localsize:
+                if confirmUpload == True:
+                    self.DownloadFile(ftp, dest, 'uploadConfirmTemp')
+                    success = filecmp.cmp(configData.LocalDatabasePath + '/{0}'.format(source), configData.LocalDatabasePath + '/uploadConfirmTemp')
+                else:
                     success = True
                     break
-                    
-            if success == False:
-                "Looks like {0} won't upload. Better talk to Tempus about it.".format(dest)
-                return dest
+            else:
+                print 'Failed uploading {0}, retrying...'.format(dest)
+        if success == False:
+            "Looks like {0} won't upload. Better talk to Tempus about it.".format(dest)
+            return dest
             
         
         return True
@@ -2625,7 +2620,7 @@ class Scripts2(QtGui.QWidget):
                 try:
                     self.ftp = FTP(configData.FTPServer, configData.FTPUsername, configData.FTPPassword, "", 15)
                 except:
-                    if i == 20:
+                    if i >= 20:
                         print "Warning:\n\nYour computer is currently offline, and will not be able to recieve updates or save to the server. Your progress will instead be saved for uploading upon re-establishment of a network connection, and any text you enter will be preserved automatically until such time."
                         self.settings.setValue('update', set(self.update))
                         return
@@ -2735,13 +2730,27 @@ class Scripts2(QtGui.QWidget):
                 LogCon.commit()
 
                 print 'Uploading: ChangeLog'
-                result = self.UploadFile(self.ftp, 'ChangeLog', 'ChangeLog')
-                if result == False:
-                    if i == 20:
-                        print "Warning:\n\nYour internet sucks, and you are ruining it for everyone. Re-upload your changelog via an FTP client immediately, or contact Tempus to whap you on the head."
-                    else:
+                changeLogUploadSuccess = False
+                for changeup in range(1, 20):
+                    try:
+                        result = self.UploadFile(self.ftp, 'ChangeLog', 'NewChangeLog', True)
+                        if result != True:
+                            if changeup >= 20:
+                                print "ERROR:\n\Changelog has not been uploaded, please retry immediately."
+                                break
+                            else:
+                                continue
+                        self.ftp.rename('NewChangeLog', 'ChangeLog')
+                        changeLogUploadSuccess = True
+                    except ftplib.all_errors:
+                        if changeup >= 20:
+                            print 'ERROR:\n\Changelog has not been uploaded, please retry immediately.'
+                            break
+                        print 'Error uploading Changelog, retrying...'
                         continue
-
+                if changeLogUploadSuccess == False:
+                    return
+                
                 # Everything is done.
                 progress.setValue(len(self.update)+1);
 
@@ -2754,7 +2763,7 @@ class Scripts2(QtGui.QWidget):
                 self.settings.setValue('update', self.update)
                 break
             except ftplib.all_errors:
-                if i == 20:
+                if i >= 20:
                     print '20 errors is enough, this is not gonna work. There is probably some fucked up file on the FTP server now, please fix manually or contact someone that knows how to.'
                     break
                 print 'Error during FTP transfer, retrying...'
@@ -4716,7 +4725,7 @@ def CalculateAllCompletionPercentagesForDatabase():
             CalculateCompletionForDatabase(item)
 
 def CalculateCompletionForDatabase(database):
-    print 'Calculating percentages for ' + database + '...'
+    #print 'Calculating percentages for ' + database + '...'
     
     tempCon = sqlite3.connect(configData.LocalDatabasePath + '/' + database)
     tempCur = tempCon.cursor()
