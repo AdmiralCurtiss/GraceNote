@@ -858,6 +858,8 @@ class Scripts2(QtGui.QWidget):
         self.author = self.settings.value('author')
         self.update = self.settings.value('update')
         self.databaseWriteStorage = deque()
+        
+        #self.update = ['DRBO2471', 'DRBO2472', 'DRBO2474', 'DRBO2476', 'DRBO2478', 'DRBO2479', 'DRBO2481', 'DRBO2482', 'DRBO2484', 'DRBO2485', 'DRBO2489', 'DRBO2492', 'DRBO2881', 'DRBO2883', 'DRBO2885', 'DRBO2888', 'DRBO2889', 'DRBO3246', 'DRBO3728', 'DRBO3729', 'DRBO3730', 'DRBO3731']
 
         if self.update == None:
             self.update = set()
