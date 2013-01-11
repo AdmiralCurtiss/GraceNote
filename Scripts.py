@@ -860,7 +860,7 @@ class Scripts2(QtGui.QWidget):
         self.update = self.settings.value('update')
         self.databaseWriteStorage = deque()
         
-        #self.update = ['DRBO2471', 'DRBO2472', 'DRBO2474', 'DRBO2476', 'DRBO2478', 'DRBO2479', 'DRBO2481', 'DRBO2482', 'DRBO2484', 'DRBO2485', 'DRBO2489', 'DRBO2492', 'DRBO2881', 'DRBO2883', 'DRBO2885', 'DRBO2888', 'DRBO2889', 'DRBO3246', 'DRBO3728', 'DRBO3729', 'DRBO3730', 'DRBO3731']
+        #self.update = ['DRBO2193', 'DRBO2194', 'DRBO2349', 'DRBO2352', 'DRBO2442', 'DRBO2495', 'DRBO2497', 'DRBO2498', 'DRBO2499', 'DRBO2500', 'DRBO2501', 'DRBO2502', 'DRBO2504', 'DRBO2510', 'DRBO2513', 'DRBO2514', 'DRBO2516', 'DRBO2518', 'DRBO2521', 'DRBO2522', 'DRBO2524', 'DRBO2525', 'DRBO2527']
 
         if self.update == None:
             self.update = set()
@@ -2733,14 +2733,15 @@ class Scripts2(QtGui.QWidget):
                 changeLogUploadSuccess = False
                 for changeup in range(1, 20):
                     try:
-                        result = self.UploadFile(self.ftp, 'ChangeLog', 'NewChangeLog', True)
+                        result = self.UploadFile(self.ftp, 'ChangeLog', 'ChangeLog', False)
                         if result != True:
                             if changeup >= 20:
                                 print "ERROR:\n\Changelog has not been uploaded, please retry immediately."
                                 break
                             else:
+                                print 'Changelog upload failed, trying again! ({0}/20)'.format(changeup)
                                 continue
-                        self.ftp.rename('NewChangeLog', 'ChangeLog')
+                        #self.ftp.rename('NewChangeLog', 'ChangeLog')
                         changeLogUploadSuccess = True
                     except ftplib.all_errors:
                         if changeup >= 20:
