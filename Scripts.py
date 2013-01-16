@@ -2736,7 +2736,7 @@ class Scripts2(QtGui.QWidget):
                         result = self.UploadFile(self.ftp, 'ChangeLog', 'ChangeLog', False)
                         if result != True:
                             if changeup >= 20:
-                                print "ERROR:\n\Changelog has not been uploaded, please retry immediately."
+                                print "ERROR:\n\nChangelog has not been uploaded, please retry immediately."
                                 break
                             else:
                                 print 'Changelog upload failed, trying again! ({0}/20)'.format(changeup)
