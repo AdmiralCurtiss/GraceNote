@@ -860,7 +860,7 @@ class Scripts2(QtGui.QWidget):
         self.update = self.settings.value('update')
         self.databaseWriteStorage = deque()
         
-        #self.update = ['DRBO2193', 'DRBO2194', 'DRBO2349', 'DRBO2352', 'DRBO2442', 'DRBO2495', 'DRBO2497', 'DRBO2498', 'DRBO2499', 'DRBO2500', 'DRBO2501', 'DRBO2502', 'DRBO2504', 'DRBO2510', 'DRBO2513', 'DRBO2514', 'DRBO2516', 'DRBO2518', 'DRBO2521', 'DRBO2522', 'DRBO2524', 'DRBO2525', 'DRBO2527']
+        #self.update = ['DRBO3023', 'DRBO3024', 'DRBO3026', 'DRBO3027', 'DRBO3029', 'DRBO3032', 'DRBO3033', 'DRBO3035', 'DRBO3037', 'DRBO3038', 'DRBO3039', 'DRBO3041', 'DRBO3043', 'DRBO3045', 'DRBO3046', 'DRBO3047', 'DRBO3048', 'DRBO3050', 'DRBO3051', 'DRBO3053', 'DRBO3057', 'DRBO3260', 'DRBO3293', 'DRBO3295', 'DRBO3574', 'DRBO3605']
 
         if self.update == None:
             self.update = set()
