@@ -311,7 +311,10 @@ class XTextBox(QtGui.QTextEdit):
         for clip in self.audioClips:
             filename = self.lookupAudioHash(clip)
             if os.path.exists(filename):
+                #print 'playing audio: "' + filename + '"'
                 playerQueue.append(Phonon.MediaSource(filename))
+            else:
+                print 'couldn\'t find audio: "' + filename + '"'
                 
         if playerQueue:
             self.player.enqueue(playerQueue)
