@@ -863,7 +863,7 @@ class Scripts2(QtGui.QWidget):
         self.update = self.settings.value('update')
         self.databaseWriteStorage = deque()
         
-        #self.update = ['DRBO3023', 'DRBO3024', 'DRBO3026', 'DRBO3027', 'DRBO3029', 'DRBO3032', 'DRBO3033', 'DRBO3035', 'DRBO3037', 'DRBO3038', 'DRBO3039', 'DRBO3041', 'DRBO3043', 'DRBO3045', 'DRBO3046', 'DRBO3047', 'DRBO3048', 'DRBO3050', 'DRBO3051', 'DRBO3053', 'DRBO3057', 'DRBO3260', 'DRBO3293', 'DRBO3295', 'DRBO3574', 'DRBO3605']
+        #self.update = ['DRBO2397','DRBO2400','DRBO2403','DRBO2408','DRBO2411','DRBO2414','DRBO2417','DRBO2420','DRBO2602','DRBO2605','DRBO2610','DRBO2613','DRBO2616','DRBO2619','DRBO2624','DRBO2627','DRBO2630','DRBO2893','DRBO2898','DRBO2901','DRBO2906','DRBO2909','DRBO2912','DRBO2915','DRBO2918','DRBO2921','DRBO2924','DRBO2927','DRBO3079','DRBO3082','DRBO3085','DRBO3090','DRBO3097','DRBO3100','DRBO3105','DRBO3108','DRBO3353','DRBO3356','DRBO3363','DRBO3368','DRBO3371','DRBO3374','DRBO3377','DRBO3380','DRBO3385','DRBO3526','DRBO3531','DRBO3534','DRBO3537','DRBO3540','DRBO3547','DRBO3550','DRBO3565','DRBO3569','DRBO3576']
 
         if self.update == None:
             self.update = set()
@@ -877,10 +877,8 @@ class Scripts2(QtGui.QWidget):
                 self.update = a
             except:
                 self.update = set()
-            print 'Files retained from last session: ', ''.join(["%s, " % (k) for k in self.update])[:-2]
-        
-        else:
-            print 'Files retained from last session: ', ''.join(["%s, " % (k) for k in self.update])[:-2]
+        print 'Files retained from last session: ', ''.join(["%s, " % (k) for k in self.update])[:-2]
+        print '(' + str(len(self.update)) + ' Files)'
 
         if self.settings.contains('role'):
             self.role = int(self.settings.value('role'))
