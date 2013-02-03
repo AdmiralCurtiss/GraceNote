@@ -2042,7 +2042,7 @@ class Scripts2(QtGui.QWidget):
         string = ''
         i = 1
         for entry in self.text:
-            if entry[3] == 0:
+            if entry[3] == 0 or self.debug.isChecked() == True:
                 string = string + 'Entry {0}\n'.format(i)
                 if replaceVariables == True:
                     string = string + VariableReplace(entry[0])
