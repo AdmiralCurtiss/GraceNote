@@ -1228,6 +1228,9 @@ class Scripts2(QtGui.QWidget):
         self.scrollDownAct2 = QtGui.QAction('Scroll Down', None)
         self.scrollDownAct2.triggered.connect(self.scrollDown)
         self.scrollDownAct2.setShortcut(QtGui.QKeySequence('Alt+Down'))
+        
+        self.reopenMediaWinAct = QtGui.QAction('Reopen Media Windows', None)
+        self.reopenMediaWinAct.triggered.connect(self.openMediumWindows)
 
 
         roleMenu = QtGui.QMenu('Role', self)
@@ -1318,6 +1321,8 @@ class Scripts2(QtGui.QWidget):
         viewMenu.addAction(self.scrollDownAct)
         viewMenu.addAction(self.scrollUpAct2)
         viewMenu.addAction(self.scrollDownAct2)
+        viewMenu.addSeparator()
+        viewMenu.addAction(self.reopenMediaWinAct)
         viewMenu.addSeparator()
         iconSizeMenu = QtGui.QMenu("Toolbar Icon Size", self)
         for action in self.iconSizeActs:
