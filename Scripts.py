@@ -4525,7 +4525,8 @@ class ImageViewerWindow(QtGui.QDialog):
         self.setWindowModality(False)        
         
         self.setWindowTitle(image.name)
-        self.layout = QtGui.QVBoxLayout()
+        self.scroll = QtGui.QScrollArea()
+        self.layout = QtGui.QVBoxLayout(self.scroll)
         self.setLayout(self.layout)
         
     def refreshInfo(self, text):
@@ -4548,7 +4549,7 @@ class ImageViewerWindow(QtGui.QDialog):
                 old_layout.itemAt(i).widget().setParent(None)
             import sip
             sip.delete(old_layout)
-        self.layout = QtGui.QVBoxLayout()
+        self.layout = QtGui.QVBoxLayout(self.scroll)
         self.setLayout(self.layout)
 
 class LocalChangelog(QtGui.QDialog):
