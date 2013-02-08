@@ -1,5 +1,9 @@
 from xml.dom import minidom
 
+class ImageMediumStruct():
+    def __init__(self):
+        return
+
 class Configuration:
     LocalDatabasePath = ''
     RemoteDatabasePath = ''
@@ -14,6 +18,8 @@ class Configuration:
     VoicePathEnPrefix = ''
     VoicePathEnPostfix = ''
     VoiceEntryOffset = 0
+    
+    Images = []
     
     FileList = []
     
@@ -34,6 +40,19 @@ class Configuration:
         self.VoicePathEnPrefix = mainNode.getAttribute('VoicePathEnPrefix')
         self.VoicePathEnPostfix = mainNode.getAttribute('VoicePathEnPostfix')
         self.VoiceEntryOffset = int(mainNode.getAttribute('VoiceEntryOffset'))
+        
+        try:
+            self.Images = []
+            imgs = mainNode.getElementsByTagName('Images')[0].getElementsByTagName('Image')
+            for img in imgs:
+                newImage = ImageMediumStruct()
+                newImage.name = img.getAttribute('Name')
+                newImage.var = img.getAttribute('Variable')
+                newImage.path = img.getAttribute('Path')
+                newImage.offs = int(img.getAttribute('Offset'))
+                self.Images.append(newImage)
+        except:
+            self.Images = []
         
         self.FileList = [ [] ]
         categories = mainNode.getElementsByTagName('Categories')[0].getElementsByTagName('Category')

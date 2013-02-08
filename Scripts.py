@@ -877,8 +877,7 @@ class Scripts2(QtGui.QWidget):
                 self.update = a
             except:
                 self.update = set()
-        print 'Files retained from last session: ', ''.join(["%s, " % (k) for k in self.update])[:-2]
-        print '(' + str(len(self.update)) + ' Files)'
+        print str(len(self.update)) + ' files retained from last session: ', ''.join(["%s, " % (k) for k in self.update])[:-2]
 
         if self.settings.contains('role'):
             self.role = int(self.settings.value('role'))
@@ -1416,11 +1415,28 @@ class Scripts2(QtGui.QWidget):
         self.globalChangelogOpened = False
         self.statsDialogOpened = False
         self.duplicateTextDialogOpened = False
+        
+        self.openMediumWindows()
+        
+    def openMediumWindows(self):
+        self.media = {}
+        self.openImageWindows()
+            
+    def openImageWindows(self):
+        global configData
+        for img in configData.Images:
+            self.openImageWindow(img)
+    
+    def openImageWindow(self, img):
+        self.media[img.name] = ImageViewerWindow(self, img)
+        self.media[img.name].show()
+        self.media[img.name].raise_()
+        self.media[img.name].activateWindow()
 
     def cleanupAndQuit(self):
         self.WriteDatabaseStorageToHdd()
         self.settings.setValue('update', set(self.update))
-        print 'These files retained for next session: ', ''.join(["%s, " % (k) for k in self.update])[:-2]
+        print str(len(self.update)) + ' files retained for next session: ', ''.join(["%s, " % (k) for k in self.update])[:-2]
         self.settings.sync()
         self.close()
         quit()
@@ -2542,6 +2558,12 @@ class Scripts2(QtGui.QWidget):
                 else:
                     self.regularEditingTextBoxes[i].makePlaybackButtons(AudioClips)
 
+        # inform media boxes
+        centerPanel = 1
+        for name, medium in self.media.iteritems():
+            #print self.text[rowBoxes[centerPanel] + medium.medium.offs][t]
+            medium.refreshInfo( VariableReplace(self.text[rowBoxes[centerPanel] + medium.medium.offs][t]) )
+                    
         # put text into textboxes, display entry number
         twoupTypeHelper = []
         twoupTypeHelper.append('E')
@@ -4493,6 +4515,41 @@ class Scripts2(QtGui.QWidget):
 #        file.close()
    
 
+   
+class ImageViewerWindow(QtGui.QDialog):
+
+    def __init__(self, parent, image):
+        super(ImageViewerWindow, self).__init__()
+        self.parent = parent
+        self.medium = image
+        self.setWindowModality(False)        
+        
+        self.setWindowTitle(image.name)
+        self.layout = QtGui.QVBoxLayout()
+        self.setLayout(self.layout)
+        
+    def refreshInfo(self, text):
+        search = '<' + self.medium.var + ': (.*?)>'
+        parameters = re.findall(search, text, re.DOTALL)
+        self.clearInfo()
+        
+        for param in parameters:
+            splitparams = param.split(' ')
+            
+            pixmap = QtGui.QPixmap( os.getcwd() + '/' + self.medium.path.format(*splitparams) )
+            piclabel = QtGui.QLabel()
+            piclabel.setPixmap(pixmap)
+            self.layout.addWidget(piclabel)
+    
+    def clearInfo(self):
+        if self.layout is not None:
+            old_layout = self.layout
+            for i in reversed(range(old_layout.count())):
+                old_layout.itemAt(i).widget().setParent(None)
+            import sip
+            sip.delete(old_layout)
+        self.layout = QtGui.QVBoxLayout()
+        self.setLayout(self.layout)
 
 class LocalChangelog(QtGui.QDialog):
 
