@@ -5113,8 +5113,12 @@ class MassReplace(QtGui.QDialog):
         font = QtGui.QLabel().font()
         font.setPointSize(10)
  
-        self.original = QtGui.QLineEdit()
-        self.replacement = QtGui.QLineEdit()
+        self.original = QtGui.QTextEdit()
+        self.original.setAcceptRichText(False)
+        self.original.setFixedHeight(50)
+        self.replacement = QtGui.QTextEdit()
+        self.replacement.setAcceptRichText(False)
+        self.replacement.setFixedHeight(50)
         self.exceptions = QtGui.QLineEdit()
         self.fileFilter = QtGui.QLineEdit()
         self.matchExact = QtGui.QRadioButton('Any Match')
@@ -5162,13 +5166,18 @@ class MassReplace(QtGui.QDialog):
         buttonLayout.addWidget(self.search)
         buttonLayout.addWidget(self.replace)
                 
+        textboxLayout = QtGui.QGridLayout()
+        textboxLayout.addWidget(originalLabel    , 0, 0, 1, 1)
+        textboxLayout.addWidget(replaceLabel     , 0, 1, 1, 1)
+        textboxLayout.addWidget(self.original    , 1, 0, 1, 1)
+        textboxLayout.addWidget(self.replacement , 1, 1, 1, 1)
+        textboxWidget = QtGui.QWidget()
+        textboxWidget.setLayout(textboxLayout)
+                
         inputLayout = QtGui.QGridLayout()
-        inputLayout.addWidget(originalLabel    , 1, 0, 1, 1)
-        inputLayout.addWidget(exceptionLabel   , 2, 0, 1, 1)
-        inputLayout.addWidget(replaceLabel     , 3, 0, 1, 1)
-        inputLayout.addWidget(self.original    , 1, 1, 1, 1)
-        inputLayout.addWidget(self.exceptions  , 2, 1, 1, 1)
-        inputLayout.addWidget(self.replacement , 3, 1, 1, 1)
+        inputLayout.addWidget(textboxWidget    , 0, 0, 3, 2)
+        inputLayout.addWidget(exceptionLabel   , 3, 0, 1, 1)
+        inputLayout.addWidget(self.exceptions  , 3, 1, 1, 1)
         inputLayout.addWidget(self.matchCase   , 4, 0, 1, 1)
         inputLayout.addWidget(self.searchDebug , 4, 1, 1, 1)
         inputLayout.addWidget(filterLabel      , 0, 2, 1, 1)
@@ -5242,7 +5251,7 @@ class MassReplace(QtGui.QDialog):
         newSearchTab = self.generateSearchTab()
 
 
-        matchString = unicode(self.original.text())
+        matchString = unicode(self.original.toPlainText())
         exceptString = unicode(self.exceptions.text())
 
         if matchString.count(unicode('<', 'UTF-8')) != matchString.count(unicode('>', 'UTF-8')):
@@ -5386,7 +5395,7 @@ class MassReplace(QtGui.QDialog):
 
         Iterator = QtGui.QTreeWidgetItemIterator(self.tabwidget.currentWidget())
 
-        if len(self.replacement.text()) == 0:
+        if len(self.replacement.toPlainText()) == 0:
             reply = QtGui.QMessageBox.information(self, "Incorrect Search Usage", "Warning:\n\nYour replacement can not be empty. Please enter text in the search bar.")
             return
                 
@@ -5434,7 +5443,7 @@ class MassReplace(QtGui.QDialog):
                     string = unicode(Iterator.value().data(4, 0))
                     
                     orig = unicode(self.tabwidget.tabText(self.tabwidget.currentIndex()))
-                    repl = unicode(self.replacement.text())
+                    repl = unicode(self.replacement.toPlainText())
                     if self.matchCase.isChecked():
                         string = string.replace(orig, repl)
                     else:
@@ -5442,7 +5451,7 @@ class MassReplace(QtGui.QDialog):
                         
                     string = VariableRemove(string)
                 elif ReplacementType == 'Entry':
-                    string = unicode(self.replacement.text())
+                    string = unicode(self.replacement.toPlainText())
                     string = VariableRemove(string)
                                 
                 IterCur.execute(u"update Text set english=?, updated=1, status=? where ID=?", (unicode(string), updateStatusValue, entryID))
