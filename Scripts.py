@@ -2011,6 +2011,8 @@ class Scripts2(QtGui.QWidget):
                 except:
                     pass
             
+            if TempCOM == None:
+                TempCOM = 'None'
             if TempCOM != '':
                 entryDisplayString = entryDisplayString + ' [Comment]'
                 containsComments = True
