@@ -4678,6 +4678,9 @@ class DuplicateText(QtGui.QDialog):
             if x > 5:
                 x = 0
                 y += 1
+        x = 5
+        self.checkall = QtGui.QPushButton('Check All')
+        layout.addWidget(self.checkall, y, x)
         
         self.exceptions = QtGui.QRadioButton('Inconsistent Translations only')
         self.dupes = QtGui.QRadioButton('All Duplicates')
@@ -4708,6 +4711,12 @@ class DuplicateText(QtGui.QDialog):
         self.setLayout(subLayout)
 
         self.go.released.connect(self.SearchCategories)
+        self.checkall.released.connect(self.CheckAll)
+        
+    def CheckAll(self):
+        for category in self.categories:
+            category.setCheckState(QtCore.Qt.Checked)
+        
         
 #     Two options
 #        One: Search for any cloned text with more than one unique translation, and display them
