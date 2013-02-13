@@ -2645,12 +2645,12 @@ class Scripts2(QtGui.QWidget):
         print 'Beginning Save...'
         
         
-        for i in range(1, 20):
+        for ftperrorcount in range(1, 20):
             try:        
                 try:
                     self.ftp = FTP(configData.FTPServer, configData.FTPUsername, configData.FTPPassword, "", 15)
                 except:
-                    if i >= 20:
+                    if ftperrorcount >= 20:
                         print "Warning:\n\nYour computer is currently offline, and will not be able to recieve updates or save to the server. Your progress will instead be saved for uploading upon re-establishment of a network connection, and any text you enter will be preserved automatically until such time."
                         self.settings.setValue('update', set(self.update))
                         return
@@ -2673,8 +2673,16 @@ class Scripts2(QtGui.QWidget):
                 progress.setLabelText('Uploading Files...')
                 LogTable = []
                 saveUpdate = set()
-         
+                
+                # stagger upload into multiple 10-file batches
+                # the way this is written we cannot keep it, but eh
+                singleFileUploadCounter = 0
+                
                 for filename in self.update:
+                    singleFileUploadCounter = singleFileUploadCounter + 1
+                    if singleFileUploadCounter > 10:
+                        saveUpdate.add(filename)
+                        continue
                     
                     # remove empty comments
                     rcommentconn = sqlite3.connect(configData.LocalDatabasePath + "/" + filename)
@@ -2709,18 +2717,29 @@ class Scripts2(QtGui.QWidget):
                         OldMergeCon = sqlite3.connect(configData.LocalDatabasePath + "/temp")
                         OldMergeCur = OldMergeCon.cursor()
                                 
-                        NewMergeCur.execute(u'select * from Text where updated=1')
+                        NewMergeCur.execute(u'SELECT id, stringid, english, comment, updated, status FROM Text WHERE updated=1')
                         NewTable = NewMergeCur.fetchall()
                     
                         for item in NewTable:
                             if item[4] == 1:
-                                OldMergeCur.execute(u"update Text set english=?, comment=?, status=? where ID=?", (item[2], item[3], item[5], item[0]))
+                                OldMergeCur.execute(u"UPDATE Text SET english=?, comment=?, status=? WHERE ID=?", (item[2], item[3], item[5], item[0]))
                         OldMergeCon.commit()
                         
-                        # Uploading new files
-                        result = self.UploadFile(self.ftp, 'temp', str(filename))
-                        if isinstance(result, str):
-                            saveUpdate.add(str(dest))
+                        # Upload new file
+                        
+                        for ftpSingleFileUpErrorCount in range(1, 20):
+                            try:
+                                if ftpSingleFileUpErrorCount >= 20:
+                                    print 'Failed on single file 20 files, try again later and confirm the server file is not corrupted.'
+                                    print 'File in question: ' + filename
+                                    return
+                                result = self.UploadFile(self.ftp, 'temp', str(filename))
+                                if isinstance(result, str):
+                                    saveUpdate.add(str(result))
+                                break
+                            except ftplib.all_errors:
+                                print 'Error uploading ' + filename + ', retrying...'
+                                continue
             
                         # Transposing the local file
                         fnew = open(configData.LocalDatabasePath + '/temp', 'rb')
@@ -2773,6 +2792,7 @@ class Scripts2(QtGui.QWidget):
                                 continue
                         #self.ftp.rename('NewChangeLog', 'ChangeLog')
                         changeLogUploadSuccess = True
+                        break
                     except ftplib.all_errors:
                         if changeup >= 20:
                             print 'ERROR:\n\Changelog has not been uploaded, please retry immediately.'
@@ -2787,14 +2807,14 @@ class Scripts2(QtGui.QWidget):
 
                 print 'Done!'
                 self.ftp.close()
-                print 'Clearing updates for this session.'
-                self.update.clear()
                 print 'Retaining the following files for later upload: ', saveUpdate
+                self.update.clear()
                 self.update = set(saveUpdate)
                 self.settings.setValue('update', self.update)
+                self.settings.sync()
                 break
             except ftplib.all_errors:
-                if i >= 20:
+                if ftperrorcount >= 20:
                     print '20 errors is enough, this is not gonna work. There is probably some fucked up file on the FTP server now, please fix manually or contact someone that knows how to.'
                     break
                 print 'Error during FTP transfer, retrying...'
