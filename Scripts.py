@@ -1895,15 +1895,7 @@ class Scripts2(QtGui.QWidget):
             for item in FileList[i]:
                 newrow = QtGui.QStandardItem()
                 newrow.setStatusTip(item)
-
-                CursorGracesJapanese.execute("SELECT count(1) FROM descriptions WHERE filename = ?", [item])
-                exists = CursorGracesJapanese.fetchall()[0][0]
-                if exists > 0:
-                    CursorGracesJapanese.execute("SELECT shortdesc FROM descriptions WHERE filename = ?", [item])
-                    desc = CursorGracesJapanese.fetchall()[0][0]
-                    newrow.setText(desc)
-                else:
-                    newrow.setText(item)
+                newrow.setText(GetDatabaseDescriptionString(item))
                 
                 # color based on completion / comments exist
                 PercentageCursor.execute("SELECT Count(1) FROM Percentages WHERE Database = ?", [item])
@@ -2729,7 +2721,6 @@ class Scripts2(QtGui.QWidget):
                         OldMergeCon.commit()
                         
                         # Upload new file
-                        
                         for ftpSingleFileUpErrorCount in range(1, 20):
                             try:
                                 if ftpSingleFileUpErrorCount >= 20:
@@ -2738,7 +2729,7 @@ class Scripts2(QtGui.QWidget):
                                     return
                                 result = self.UploadFile(self.ftp, 'temp', str(filename))
                                 if isinstance(result, str):
-                                    saveUpdate.add(str(result))
+                                    continue
                                 break
                             except ftplib.all_errors:
                                 print 'Error uploading ' + filename + ', retrying...'
@@ -2810,6 +2801,7 @@ class Scripts2(QtGui.QWidget):
 
                 print 'Done!'
                 self.ftp.close()
+                
                 print 'Retaining the following files for later upload: ', saveUpdate
                 self.update.clear()
                 self.update = set(saveUpdate)
@@ -4734,7 +4726,7 @@ class DuplicateText(QtGui.QDialog):
             BlackList.append(0)
 
         print 'Fetching debug information...'
-        CursorGracesJapanese.execute('select ID from Japanese where debug=1')
+        CursorGracesJapanese.execute('SELECT ID FROM Japanese WHERE debug=1')
         BlackListDB = CursorGracesJapanese.fetchall()
         for id in BlackListDB:
             BlackList[int(id[0])] = 1
@@ -4750,14 +4742,15 @@ class DuplicateText(QtGui.QDialog):
                     conC = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(filename))
                     curC = conC.cursor()
                     
-                    curC.execute("select StringID, English from Text")
+                    curC.execute("SELECT StringID, English FROM Text")
                     
                     results = curC.fetchall()
                     
                     for item in results:
-                        if BlackList[int(item[0])] == 0:
-                            Table[item[0]][0] += 1
-                            Table[item[0]][1].add(item[1])
+                        StringId = int(item[0])
+                        if BlackList[StringId] == 0:
+                            Table[StringId][0] += 1
+                            Table[StringId][1].add(item[1])
 #                    self.progressbar.setValue(self.progressbar.value() + (6250/len(configData.FileList[i])))
 #                    self.progressLabel.setText("Processing {0}".format(category))
 #                    self.progressLabel.update()
@@ -4766,46 +4759,34 @@ class DuplicateText(QtGui.QDialog):
         
         print 'Displaying entries...'
         i = 0
-        if self.exceptions.isChecked() == True:
-            for item in Table:
-                if ((item[0] > 1) and (len(item[1]) > 2)) or ((item[0] > 1) and (item[1] == set(['']))):
-                    
-                    CursorGracesJapanese.execute('select String from Japanese where ID=?', (i, ))
-                    JP = CursorGracesJapanese.fetchall()[0][0]
-                
-                    textexception = QtGui.QTreeWidgetItem(self.treewidget, [str(item[0]).zfill(2), JP])
-                    textexception.setBackgroundColor(0, QtGui.QColor(212,236,255,255))
-                    textexception.setBackgroundColor(1, QtGui.QColor(212,236,255,255))
-                    for exception in item[1]:
-                        newline = QtGui.QTreeWidgetItem(textexception, ['', exception])
-#                self.progressLabel.setText("Processing {0}/50000".format(i))
-                i += 1
-#                self.progressbar.setValue(self.progressbar.value() + 1)
-
-
-        else:
-            for item in Table:
-                if item[0] > 1:
-                    CursorGracesJapanese.execute('select String from Japanese where ID=?', (i, ))
-                    JP = CursorGracesJapanese.fetchall()[0][0]
-                
-                    textexception = QtGui.QTreeWidgetItem(self.treewidget, [str(item[0]).zfill(2), JP])
-                    textexception.setBackgroundColor(0, QtGui.QColor(212,236,255,255))
-                    textexception.setBackgroundColor(1, QtGui.QColor(212,236,255,255))
-                    for exception in item[1]:
-                        newline = QtGui.QTreeWidgetItem(textexception, ['', exception])
-#                self.progressLabel.setText("Processing {0}/50000".format(i))
-                i += 1
-#                self.progressbar.setValue(self.progressbar.value() + 1)
-#        self.progressLabel.setText('Done!')
+        for item in Table:
+            if (self.exceptions.isChecked() == False and item[0] > 1) or (self.exceptions.isChecked() == True and (((item[0] > 1) and (len(item[1]) >= 2)) or ((item[0] > 1) and (item[1] == set(['']))))):
+                CursorGracesJapanese.execute('SELECT String FROM Japanese WHERE ID=?', (i, ))
+                JP = CursorGracesJapanese.fetchall()[0][0]
+            
+                textexception = QtGui.QTreeWidgetItem(self.treewidget, [str(item[0]).zfill(3), VariableReplace(JP)])
+                textexception.setBackgroundColor(0, QtGui.QColor(212,236,255,255))
+                textexception.setBackgroundColor(1, QtGui.QColor(212,236,255,255))
+                for exception in item[1]:
+                    newline = QtGui.QTreeWidgetItem(textexception, ['', VariableReplace(exception)])
+#           self.progressLabel.setText("Processing {0}/50000".format(i))
+            i += 1
+#           self.progressbar.setValue(self.progressbar.value() + 1)
+#       self.progressLabel.setText('Done!')
         i = 0
 
-#        self.progressbar.reset
+#       self.progressbar.reset
 
     def InitiateMassReplaceSearch(self, item, column):
+        parentItem = item.parent()
         searchstring = item.data(1, 0)
         self.parent.ShowMassReplace()
-        self.parent.massDialog.original.setText(searchstring)
+        if parentItem is None: # clicked on the Japanese text, just search for it
+            self.parent.massDialog.original.setText(searchstring)
+        else: # clicked on the English subentry, search for JP and place ENG in the replacement box
+            self.parent.massDialog.original.setText(parentItem.data(1, 0))
+            self.parent.massDialog.replacement.setText(searchstring)
+            
         self.parent.massDialog.matchEntry.setChecked(True)
         self.parent.massDialog.Search()
 
@@ -5236,7 +5217,7 @@ class MassReplace(QtGui.QDialog):
         treewidget = QtGui.QTreeWidget()
         
         treewidget.setColumnCount(6)
-        treewidget.setHeaderLabels(['File', 'Entry', 'Info', 'Replace', 'E String', 'J String', 'Replacement Type', 'Status'])
+        treewidget.setHeaderLabels(['File', 'Entry', 'Info', 'Replace', 'E String', 'J String', 'Replacement Type', 'Status', 'Database Name'])
         treewidget.setSortingEnabled(True)
         
         treewidget.setColumnWidth(0, 120)
@@ -5384,7 +5365,7 @@ class MassReplace(QtGui.QDialog):
                         ENString = item[1]
                         CursorGracesJapanese.execute('SELECT string FROM Japanese WHERE ID={0}'.format(item[2]))
                         JPString = CursorGracesJapanese.fetchall()[0][0]
-                        MatchedEntries.append([File, item[0], ENString, JPString, item[3], item[4]])
+                        MatchedEntries.append([File, item[0], ENString, JPString, item[3], item[4], GetDatabaseDescriptionString(File)])
 
                     if self.matchCase.isChecked():
                         FilterCur.execute(u"PRAGMA case_sensitive_like = OFF")
@@ -5406,7 +5387,7 @@ class MassReplace(QtGui.QDialog):
                     if exceptString in englishString:
                         continue
                     
-                treeItem = QtGui.QTreeWidgetItem([item[0], str(item[1]), str(item[4]), "", englishString, japaneseString, ReplacementType, str(int(item[5]))])
+                treeItem = QtGui.QTreeWidgetItem([item[0], str(item[1]), str(item[4]), "", englishString, japaneseString, ReplacementType, str(int(item[5])), item[6]])
                 treeItem.setCheckState(3, QtCore.Qt.Checked)
                 newSearchTab.addTopLevelItem(treeItem)
             except:
@@ -5960,3 +5941,15 @@ SubstitutionTable = [
 
 ]
 
+
+
+
+def GetDatabaseDescriptionString(filename):
+    CursorGracesJapanese.execute("SELECT count(1) FROM descriptions WHERE filename = ?", [filename])
+    exists = CursorGracesJapanese.fetchall()[0][0]
+    if exists > 0:
+        CursorGracesJapanese.execute("SELECT shortdesc FROM descriptions WHERE filename = ?", [filename])
+        desc = CursorGracesJapanese.fetchall()[0][0]
+        return desc
+    else:
+        return filename
