@@ -2645,6 +2645,8 @@ class Scripts2(QtGui.QWidget):
         print 'Beginning Save...'
         
         
+        autoRestartAfter = False
+        
         for ftperrorcount in range(1, 20):
             try:        
                 try:
@@ -2681,6 +2683,7 @@ class Scripts2(QtGui.QWidget):
                 for filename in self.update:
                     singleFileUploadCounter = singleFileUploadCounter + 1
                     if singleFileUploadCounter > 10:
+                        autoRestartAfter = True
                         saveUpdate.add(filename)
                         continue
                     
@@ -2812,6 +2815,9 @@ class Scripts2(QtGui.QWidget):
                 self.update = set(saveUpdate)
                 self.settings.setValue('update', self.update)
                 self.settings.sync()
+                
+                if autoRestartAfter == True:
+                    self.SavetoServer()
                 break
             except ftplib.all_errors:
                 if ftperrorcount >= 20:
