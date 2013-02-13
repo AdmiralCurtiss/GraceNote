@@ -5279,14 +5279,15 @@ class MassReplace(QtGui.QDialog):
 
         tabNameString = matchString
         matchString = VariableRemove(matchString)
-
-        if len(matchString) == 1:
-            if ord(matchString) <= 0x20:
-                reply = QtGui.QMessageBox.information(self, "Incorrect Search Usage", "Warning:\n\nYour search can not be only a space, a form feed, a newline, or a tab.")
+        
+        if not self.matchEntry.isChecked():
+            if len(matchString) == 1:
+                if ord(matchString) <= 0x20:
+                    reply = QtGui.QMessageBox.information(self, "Incorrect Search Usage", "Warning:\n\nYour search can not be only a space, a form feed, a newline, or a tab.")
+                    return
+            elif len(matchString) == 0:
+                reply = QtGui.QMessageBox.information(self, "Incorrect Search Usage", "Warning:\n\nYour search can not be empty. Please enter text in the search bar.")
                 return
-        elif len(matchString) == 0:
-            reply = QtGui.QMessageBox.information(self, "Incorrect Search Usage", "Warning:\n\nYour search can not be empty. Please enter text in the search bar.")
-            return
 
         MatchedEntries = []
         aList = configData.FileList
