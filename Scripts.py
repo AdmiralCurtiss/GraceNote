@@ -1102,6 +1102,9 @@ class Scripts2(QtGui.QWidget):
         self.refreshCompleteAct = QtGui.QAction(QtGui.QIcon('icons/refresh.png'), 'Refresh Completion Database', None)
         self.refreshCompleteAct.triggered.connect(self.RefreshCompletion)
         self.refreshCompleteAct.setShortcut(QtGui.QKeySequence('Ctrl+W'))
+        
+        self.recalcFilesToBeUploadedAct = QtGui.QAction(QtGui.QIcon('icons/refresh.png'), 'Find Unsaved Databases', None)
+        self.recalcFilesToBeUploadedAct.triggered.connect(self.RecalculateFilesToBeUploaded)
 
         self.patchAct = QtGui.QAction(QtGui.QIcon('icons/patch.png'), 'Patch Live', None)
         self.patchAct.triggered.connect(self.SavetoPatch)
@@ -1293,6 +1296,7 @@ class Scripts2(QtGui.QWidget):
         fileMenu.addAction(self.saveAct)
         fileMenu.addAction(self.updateAct)
         fileMenu.addAction(self.refreshCompleteAct)
+        fileMenu.addAction(self.recalcFilesToBeUploadedAct)
         fileMenu.addSeparator()
         fileMenu.addAction(self.patchAct)
         fileMenu.addAction(self.patchdolAct)
@@ -1706,7 +1710,8 @@ class Scripts2(QtGui.QWidget):
         try:
             splash.text = 'Downloading updated files...'
         except:
-            print 'Downloading updated files...'
+            pass
+        print 'Downloading updated files...'
             
         # loop to prevent crashes during FTP stuff
         for i in range( 0, 20 ):    # range( start, stop, step )
@@ -1807,7 +1812,8 @@ class Scripts2(QtGui.QWidget):
             splash.text = 'Grace Note now {0} in {1} Mode'.format(self.roletext[self.role], ModeFlag)
             splash.complete = True
         except:
-            print 'Downloaded updated files!'
+            pass
+        print 'Downloaded updated files!'
 
 
     def DownloadFile(self, ftp, source, dest):
@@ -2625,8 +2631,27 @@ class Scripts2(QtGui.QWidget):
         self.state = 'COM'
         self.PopulateTextEdit()
 
-                    
-       
+    def RecalculateFilesToBeUploaded(self):
+        self.WriteDatabaseStorageToHdd()
+        
+        print 'Searching for databases with unsaved changes...'
+        i = 1
+        for item in configData.FileList[0]:
+            for item in configData.FileList[i]:
+                RecalcDbConn = sqlite3.connect(configData.LocalDatabasePath + "/" + item)
+                RecalcDbCur = RecalcDbConn.cursor()
+                RecalcDbCur.execute("SELECT Count(1) FROM Text WHERE updated = 1")
+                exists = RecalcDbCur.fetchall()[0][0]
+                if exists > 0:
+                    self.update.add(str(item))
+                    print 'Found database: ' + item
+                RecalcDbConn.close()
+            i = i + 1
+        self.settings.setValue('update', set(self.update))
+        self.settings.sync()
+        print 'Done searching for databases with unsaved changes!'
+        return
+        
     def SavetoServer(self):
         self.WriteDatabaseStorageToHdd()
         
@@ -2836,6 +2861,7 @@ class Scripts2(QtGui.QWidget):
                     if i == 20:
                         print "FTP connection failed, revert didn't succeed.\nPlease try to revert again at a later date."
                         self.settings.setValue('update', set(self.update))
+                        self.settings.sync()
                         return
                     print 'Error during FTP transfer, retrying...'
                     continue
@@ -2868,6 +2894,7 @@ class Scripts2(QtGui.QWidget):
                 self.ftp.close()
                 self.update.clear()
                 self.settings.setValue('update', self.update)
+                self.settings.sync()
                 print 'Reverted!'
                 break
             except ftplib.all_errors:
@@ -5412,7 +5439,10 @@ class MassReplace(QtGui.QDialog):
         
     def Replace(self):
 
-        Iterator = QtGui.QTreeWidgetItemIterator(self.tabwidget.currentWidget())
+        currentTab = self.tabwidget.currentWidget()
+        if currentTab == None:
+            return
+        Iterator = QtGui.QTreeWidgetItemIterator(currentTab)
 
         if len(self.replacement.toPlainText()) == 0:
             reply = QtGui.QMessageBox.information(self, "Incorrect Search Usage", "Warning:\n\nYour replacement can not be empty. Please enter text in the search bar.")
