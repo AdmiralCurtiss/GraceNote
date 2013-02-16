@@ -4705,9 +4705,25 @@ class DuplicateText(QtGui.QDialog):
             if x > 5:
                 x = 0
                 y += 1
-        x = 5
+        if x != 0:
+            x = 0
+            y += 1
+        x = 2
         self.checkall = QtGui.QPushButton('Check All')
         layout.addWidget(self.checkall, y, x)
+        self.checkall.released.connect(self.CheckAll)
+        x += 1
+        self.checknone = QtGui.QPushButton('Check None')
+        layout.addWidget(self.checknone, y, x)
+        self.checknone.released.connect(self.CheckNone)
+        x += 1
+        self.collall = QtGui.QPushButton('Collapse All')
+        layout.addWidget(self.collall, y, x)
+        self.collall.released.connect(self.CollapseAll)
+        x += 1
+        self.uncollall = QtGui.QPushButton('Expand All')
+        layout.addWidget(self.uncollall, y, x)
+        self.uncollall.released.connect(self.UncollapseAll)
         
         self.exceptions = QtGui.QRadioButton('Inconsistent Translations only')
         self.dupes = QtGui.QRadioButton('All Duplicates')
@@ -4738,11 +4754,17 @@ class DuplicateText(QtGui.QDialog):
         self.setLayout(subLayout)
 
         self.go.released.connect(self.SearchCategories)
-        self.checkall.released.connect(self.CheckAll)
         
     def CheckAll(self):
         for category in self.categories:
             category.setCheckState(QtCore.Qt.Checked)
+    def CheckNone(self):
+        for category in self.categories:
+            category.setCheckState(QtCore.Qt.Unchecked)
+    def CollapseAll(self):
+        self.treewidget.collapseAll()
+    def UncollapseAll(self):
+        self.treewidget.expandAll()
         
         
 #     Two options
@@ -4800,11 +4822,11 @@ class DuplicateText(QtGui.QDialog):
                 CursorGracesJapanese.execute('SELECT String FROM Japanese WHERE ID=?', (i, ))
                 JP = CursorGracesJapanese.fetchall()[0][0]
             
-                textexception = QtGui.QTreeWidgetItem(self.treewidget, [str(item[0]).zfill(3), VariableReplace(JP)])
-                textexception.setBackgroundColor(0, QtGui.QColor(212,236,255,255))
-                textexception.setBackgroundColor(1, QtGui.QColor(212,236,255,255))
+                textOriginalJapaneseText = QtGui.QTreeWidgetItem(self.treewidget, [str(item[0]).zfill(3), VariableReplace(JP)])
+                textOriginalJapaneseText.setBackgroundColor(0, QtGui.QColor(212,236,255,255))
+                textOriginalJapaneseText.setBackgroundColor(1, QtGui.QColor(212,236,255,255))
                 for exception in item[1]:
-                    newline = QtGui.QTreeWidgetItem(textexception, ['', VariableReplace(exception)])
+                    newline = QtGui.QTreeWidgetItem(textOriginalJapaneseText, ['', VariableReplace(exception)])
 #           self.progressLabel.setText("Processing {0}/50000".format(i))
             i += 1
 #           self.progressbar.setValue(self.progressbar.value() + 1)
