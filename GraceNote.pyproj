@@ -22,15 +22,15 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Config.py" />
-    <Compile Include="Enemies.py" />
-    <Compile Include="Font.py" />
     <Compile Include="GraceNote.py" />
-    <Compile Include="GraceTools.py" />
-    <Compile Include="hashtable.py" />
-    <Compile Include="Item.py" />
-    <Compile Include="Layout.py" />
-    <Compile Include="Scripts.py" />
+    <Compile Include="GraceNote\Config.py" />
+    <Compile Include="GraceNote\hashtable.py" />
+    <Compile Include="GraceNote\Scripts.py" />
+    <Compile Include="GraceTools\Enemies.py" />
+    <Compile Include="GraceTools\Font.py" />
+    <Compile Include="GraceTools\GraceTools.py" />
+    <Compile Include="GraceTools\Item.py" />
+    <Compile Include="GraceTools\Layout.py" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="config.xml" />
@@ -85,6 +85,8 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="icons\" />
+    <Folder Include="GraceTools\" />
+    <Folder Include="GraceNote\" />
     <Folder Include="Resources\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
