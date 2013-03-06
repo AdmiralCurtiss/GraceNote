@@ -1,0 +1,91 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{6e6e6cfa-3cd6-4893-956a-d1079513f8c2}</ProjectGuid>
+    <ProjectHome>.</ProjectHome>
+    <StartupFile>GraceNote.py</StartupFile>
+    <SearchPath>
+    </SearchPath>
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <Name>GraceNote</Name>
+    <RootNamespace>GraceNote</RootNamespace>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Config.py" />
+    <Compile Include="Enemies.py" />
+    <Compile Include="Font.py" />
+    <Compile Include="GraceNote.py" />
+    <Compile Include="GraceTools.py" />
+    <Compile Include="hashtable.py" />
+    <Compile Include="Item.py" />
+    <Compile Include="Layout.py" />
+    <Compile Include="Scripts.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="config.xml" />
+    <Content Include="config_danganronpa-bestof.xml" />
+    <Content Include="config_danganronpa.xml" />
+    <Content Include="config_graces_byfolder.xml" />
+    <Content Include="config_graces_bytype.xml" />
+    <Content Include="config_luxpain.xml" />
+    <Content Include="config_temp.xml" />
+    <Content Include="config_test.xml" />
+    <Content Include="config_xillia.xml" />
+    <Content Include="icons\cdnflag.png" />
+    <Content Include="icons\changelog.png" />
+    <Content Include="icons\comment.png" />
+    <Content Include="icons\completion.png" />
+    <Content Include="icons\debugoff.png" />
+    <Content Include="icons\debugOn.png" />
+    <Content Include="icons\dupe.png" />
+    <Content Include="icons\global.png" />
+    <Content Include="icons\globe.png" />
+    <Content Include="icons\japan.png" />
+    <Content Include="icons\japanflag.png" />
+    <Content Include="icons\massreplace.png" />
+    <Content Include="icons\oneoff.png" />
+    <Content Include="icons\oneon.png" />
+    <Content Include="icons\oneup.png" />
+    <Content Include="icons\openfile.png" />
+    <Content Include="icons\openfromserver.png" />
+    <Content Include="icons\patch.png" />
+    <Content Include="icons\patchdol.png" />
+    <Content Include="icons\patchv0.png" />
+    <Content Include="icons\patchv2.png" />
+    <Content Include="icons\pencil.png" />
+    <Content Include="icons\refresh.png" />
+    <Content Include="icons\report.png" />
+    <Content Include="icons\ruta.png" />
+    <Content Include="icons\save.png" />
+    <Content Include="icons\saveas.png" />
+    <Content Include="icons\Splash.png" />
+    <Content Include="icons\threeoff.png" />
+    <Content Include="icons\threeon.png" />
+    <Content Include="icons\tloff.png" />
+    <Content Include="icons\tlon.png" />
+    <Content Include="icons\twooff.png" />
+    <Content Include="icons\twoon.png" />
+    <Content Include="icons\twoup.png" />
+    <Content Include="icons\upload.png" />
+    <Content Include="readme.txt" />
+    <Content Include="Resources\CP932.txt" />
+    <Content Include="Resources\JPDictionary" />
+    <Content Include="Resources\proper_nouns.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="icons\" />
+    <Folder Include="Resources\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
+</Project>

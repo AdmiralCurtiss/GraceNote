@@ -52,9 +52,9 @@ except:
 
 try:
     Audio = True
-    sys.path.append('Clips')
+    #sys.path.append('Clips')
     from PyQt4.phonon import Phonon
-    if os.path.exists('Clips/hashtable.py'):
+    if os.path.exists('hashtable.py'):
         from hashtable import hashtable
         HashTableExists = True
     else:
