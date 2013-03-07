@@ -1,3 +1,5 @@
+from PyQt4 import QtCore, QtGui
+import Globals
 
 class MassReplace(QtGui.QDialog):
 
@@ -162,7 +164,7 @@ class MassReplace(QtGui.QDialog):
             #return
 
         tabNameString = matchString
-        matchString = VariableRemove(matchString)
+        matchString = Globals.VariableRemove(matchString)
         
         if not self.matchEntry.isChecked():
             if len(matchString) == 1:
@@ -274,8 +276,8 @@ class MassReplace(QtGui.QDialog):
             
         for item in MatchedEntries:
             try:
-                englishString = VariableReplace(item[2])
-                japaneseString = VariableReplace(item[3])
+                englishString = Globals.VariableReplace(item[2])
+                japaneseString = Globals.VariableReplace(item[3])
                 
                 if checkForExceptions:
                     if exceptString in englishString:
@@ -353,10 +355,10 @@ class MassReplace(QtGui.QDialog):
                     else:
                         string = re.sub('(?i)' + re.escape(orig), repl, string)
                         
-                    string = VariableRemove(string)
+                    string = Globals.VariableRemove(string)
                 elif ReplacementType == 'Entry':
                     string = unicode(self.replacement.toPlainText())
-                    string = VariableRemove(string)
+                    string = Globals.VariableRemove(string)
                                 
                 IterCur.execute(u"update Text set english=?, updated=1, status=? where ID=?", (unicode(string), updateStatusValue, entryID))
                 self.parent.update.add(unicode(databaseName))

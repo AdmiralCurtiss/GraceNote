@@ -1,3 +1,5 @@
+from PyQt4 import QtCore, QtGui
+import Globals
 
 class LocalChangelog(QtGui.QDialog):
 

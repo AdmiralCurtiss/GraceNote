@@ -1,4 +1,7 @@
-   
+from PyQt4 import QtCore, QtGui
+import Globals
+import re
+
 class ImageViewerWindow(QtGui.QDialog):
 
     def __init__(self, parent, image):

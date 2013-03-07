@@ -1,3 +1,5 @@
+from PyQt4 import QtCore, QtGui
+import Globals
 
 class DuplicateText(QtGui.QDialog):
 
@@ -155,11 +157,11 @@ class DuplicateText(QtGui.QDialog):
                 Globals.CursorGracesJapanese.execute('SELECT String FROM Japanese WHERE ID=?', (i, ))
                 JP = Globals.CursorGracesJapanese.fetchall()[0][0]
             
-                textOriginalJapaneseText = QtGui.QTreeWidgetItem(self.treewidget, [str(item[0]).zfill(3), VariableReplace(JP)])
+                textOriginalJapaneseText = QtGui.QTreeWidgetItem(self.treewidget, [str(item[0]).zfill(3), Globals.VariableReplace(JP)])
                 textOriginalJapaneseText.setBackgroundColor(0, QtGui.QColor(212,236,255,255))
                 textOriginalJapaneseText.setBackgroundColor(1, QtGui.QColor(212,236,255,255))
                 for exception in item[1]:
-                    newline = QtGui.QTreeWidgetItem(textOriginalJapaneseText, ['', VariableReplace(exception)])
+                    newline = QtGui.QTreeWidgetItem(textOriginalJapaneseText, ['', Globals.VariableReplace(exception)])
 #           self.progressLabel.setText("Processing {0}/50000".format(i))
             i += 1
 #           self.progressbar.setValue(self.progressbar.value() + 1)

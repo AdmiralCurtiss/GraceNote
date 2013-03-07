@@ -1,7 +1,8 @@
 from PyQt4 import QtCore, QtGui
-import sqlite3
 import Globals
+import sqlite3
 from HUDLayout import *
+import re
 
 try:
     from PyQt4.phonon import Phonon

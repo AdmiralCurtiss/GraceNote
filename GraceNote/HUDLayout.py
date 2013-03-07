@@ -1,4 +1,5 @@
 from PyQt4 import QtCore, QtGui
+import Globals
 
 class HUDLayout(QtGui.QLayout):
     MinimumSize, SizeHint = range(2)
