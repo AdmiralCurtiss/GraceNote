@@ -1,4 +1,6 @@
-﻿from PyQt4 import QtCore, QtGui
+﻿# -*- coding: utf-8 -*-
+
+from PyQt4 import QtCore, QtGui
 import Globals
 
 class CustomHighlighter( QtGui.QSyntaxHighlighter ):

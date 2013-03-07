@@ -94,36 +94,6 @@ Globals.AmountEditingWindows = 5
 Globals.WriteDatabaseStorageToHddOnEntryChange = False
 Globals.FooterVisibleFlag = False
 
-
-class MainWindow(QtGui.QMainWindow):
-    def __init__(self):
-        super(MainWindow, self).__init__()
-
-        self.Toolbar = QtGui.QToolBar()
-        
-        self.editMenu = QtGui.QMenu("&Edit", self)
-                
-        self.editMenu.addAction("Undo")
-        self.editMenu.addAction("Redo")        
-        self.editMenu.addSeparator()
-        self.editMenu.addAction("Cut")
-        self.editMenu.addAction("Copy")
-        self.editMenu.addAction("Paste")
-        self.editMenu.addAction("Select All")
-                        
-        self.menuBar().addMenu(self.editMenu)
-
-        self.addToolBar(self.Toolbar)
-        self.setUnifiedTitleAndToolBarOnMac(True)
-
-        self.scripts2 = Scripts2(self)
-        self.setCentralWidget(self.scripts2)
-        
-    def closeEvent(self, event):
-        self.scripts2.cleanupAndQuit()
-        return
-
-
 class SpellAction(QtGui.QAction):
     correct = QtCore.pyqtSignal(unicode)
  
@@ -133,7 +103,6 @@ class SpellAction(QtGui.QAction):
         self.triggered.connect(lambda x: self.correct.emit(
             unicode(self.text())))
 
-
 class SearchAction(QtGui.QAction):
  
     jumpTo = QtCore.pyqtSignal(unicode, int)
@@ -142,67 +111,6 @@ class SearchAction(QtGui.QAction):
         QtGui.QAction.__init__(self, *args)
  
         self.triggered.connect(lambda x: self.jumpTo.emit(self.data()[0], self.data()[1]))
-
-
-
-
-class SplashScreen(QtGui.QWidget):
-    
-    def __init__(self, parent=None):
-        super(SplashScreen, self).__init__(parent)
-        
-        self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
-        self.setWindowModality(True)        
-        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
-        
-        self.setFixedSize(450, 350)
-
-        self.text = 'Downloading new files...'
-
-        self.complete = False
-        self.offline = False
-        
-        font = self.font()
-        font.setPixelSize(10)
-        self.setFont(font)
-
-
-    def paintEvent(self, event):
-        QtGui.QWidget.paintEvent(self, event)
-        
-        painter = QtGui.QPainter(self)
-
-        painter.drawPixmap(0, 0, QtGui.QPixmap('icons/Splash.png'))
-
-        painter.drawText(350, 185, 'v10.0')
-        painter.drawText(92, 185, self.text)
-        
-        if Globals.enchanted == False and self.offline == True:
-            painter.setPen(QtGui.QColor(255, 0, 0, 255))
-            painter.drawText(100, 198, 'Spell Checker not available')
-            painter.drawText(112, 210, 'Offline Mode')
-            painter.setPen(QtGui.QColor(0, 0, 0, 255))
-        
-        elif Globals.enchanted == False:
-            painter.setPen(QtGui.QColor(255, 0, 0, 255))
-            painter.drawText(100, 198, 'Spell Checker not available')
-            painter.setPen(QtGui.QColor(0, 0, 0, 255))
-            
-        elif self.offline == True:
-            painter.setPen(QtGui.QColor(255, 0, 0, 255))
-            painter.drawText(100, 198, 'Offline Mode')
-            painter.setPen(QtGui.QColor(0, 0, 0, 255))
-               
-                   
-    def mousePressEvent(self, event):
-        if self.complete == True:
-            self.close()
-            self.destroy(True)
-
-    def destroyScreen(self):
-        self.close()
-        self.destroy(True)
-
 
 class DatabaseEntryStruct():
     def __init__(self, cleanString, databaseName, entry, role, state):
@@ -217,7 +125,6 @@ class DatabaseEntryStruct():
         #string state; // "ENG" or "COM", defines which column in the database to update
         self.state = state
         self.timestamp = time.clock()
-        
 
 class Scripts2(QtGui.QWidget):
 
@@ -1158,7 +1065,7 @@ class Scripts2(QtGui.QWidget):
                     WipeUpdateCur.execute(u"update Text set updated=0")
                     WipeUpdateCon.commit()
                     
-                    CalculateCompletionForDatabase(item)
+                    CompletionTable.CalculateCompletionForDatabase(item)
 
                                 
                 old = open(Globals.configData.LocalDatabasePath + '/ChangeLog', 'wb')
@@ -1271,7 +1178,7 @@ class Scripts2(QtGui.QWidget):
             for item in FileList[i]:
                 newrow = QtGui.QStandardItem()
                 newrow.setStatusTip(item)
-                newrow.setText(GetDatabaseDescriptionString(item))
+                newrow.setText(Globals.GetDatabaseDescriptionString(item))
                 
                 # color based on completion / comments exist
                 PercentageCursor.execute("SELECT Count(1) FROM Percentages WHERE Database = ?", [item])
@@ -1675,7 +1582,7 @@ class Scripts2(QtGui.QWidget):
     def RefreshCompletion(self):
         self.WriteDatabaseStorageToHdd()
         
-        CalculateAllCompletionPercentagesForDatabase()
+        CompletionTable.CalculateAllCompletionPercentagesForDatabase()
 
     def PlayCentralAudio(self):
         self.regularEditingTextBoxes[1].playAudio()
@@ -2150,7 +2057,7 @@ class Scripts2(QtGui.QWidget):
 
                     LogTable.append(filename)
                     
-                    CalculateCompletionForDatabase(filename)
+                    CompletionTable.CalculateCompletionForDatabase(filename)
 
                 # Fix up the changelog and upload
                 Globals.LogCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/ChangeLog")
@@ -2257,7 +2164,7 @@ class Scripts2(QtGui.QWidget):
                     WipeUpdateCur.execute(u"update Text set updated=0")
                     WipeUpdateCon.commit()
                     
-                    CalculateCompletionForDatabase(item)
+                    CompletionTable.CalculateCompletionForDatabase(item)
 
                 self.ftp.close()
                 self.update.clear()
@@ -3934,56 +3841,7 @@ class Scripts2(QtGui.QWidget):
 
         xmlFile.close()
 
-
-
-
-def CalculateAllCompletionPercentagesForDatabase():
-    aList = Globals.configData.FileList
-    
-    
-    for i in range(len(aList)-1):
-        for item in aList[i+1]:
-            CalculateCompletionForDatabase(item)
-
-def CalculateCompletionForDatabase(database):
-    #print 'Calculating percentages for ' + database + '...'
-    
-    tempCon = sqlite3.connect(Globals.configData.LocalDatabasePath + '/' + database)
-    tempCur = tempCon.cursor()
-    
-    tempCur.execute("SELECT Count(1) from Text where status>=0")
-    totalDB = tempCur.fetchall()[0][0]
-
-    tempCur.execute("SELECT Count(1) from Text where status>=1")
-    translated = tempCur.fetchall()[0][0]
-
-    tempCur.execute("SELECT Count(1) from Text where status>=2")
-    tlCheck = tempCur.fetchall()[0][0]
-
-    tempCur.execute("SELECT Count(1) from Text where status>=3")
-    rewrite = tempCur.fetchall()[0][0]
-
-    tempCur.execute("SELECT Count(1) from Text where status>=4")
-    grammar = tempCur.fetchall()[0][0]
-
-    tempCur.execute("SELECT Count(1) FROM Text WHERE comment != ''")
-    commentAmount = tempCur.fetchall()[0][0]
-    
-    tempCon = sqlite3.connect(Globals.configData.LocalDatabasePath + '/CompletionPercentage')
-    tempCur = tempCon.cursor()
-    
-    tempCur.execute("SELECT Count(1) FROM Percentages WHERE Database = ?", [database])
-    exists = tempCur.fetchall()[0][0]
-    
-    if exists > 0:
-        tempCur.execute("UPDATE Percentages SET entries = ?, translation = ?, editing1 = ?, editing2 = ?, editing3 = ?, comments = ? WHERE Database = ?", [totalDB, translated, tlCheck, rewrite, grammar, commentAmount, database])
-    else:
-        tempCur.execute("INSERT INTO Percentages (entries, translation, editing1, editing2, editing3, comments, Database) VALUES (?, ?, ?, ?, ?, ?, ?)", [totalDB, translated, tlCheck, rewrite, grammar, commentAmount, database])
-    tempCon.commit()
-
-
 def TrueCount():
-    
     i = 1
     aList = Globals.configData.FileList[0]
 
@@ -4002,16 +3860,3 @@ def TrueCount():
                     
         print '{0}: {1} entries'.format(item, len(typeset))
         i += 1
-
-
-
-
-def GetDatabaseDescriptionString(filename):
-    Globals.CursorGracesJapanese.execute("SELECT count(1) FROM descriptions WHERE filename = ?", [filename])
-    exists = Globals.CursorGracesJapanese.fetchall()[0][0]
-    if exists > 0:
-        Globals.CursorGracesJapanese.execute("SELECT shortdesc FROM descriptions WHERE filename = ?", [filename])
-        desc = Globals.CursorGracesJapanese.fetchall()[0][0]
-        return desc
-    else:
-        return filename

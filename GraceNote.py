@@ -3,6 +3,7 @@
 import sys
 sys.path.append('GraceNote')
 from Scripts import *
+from MainWindow import *
 
 
 if __name__ == '__main__':

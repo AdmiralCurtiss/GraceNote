@@ -37,6 +37,7 @@
     <Compile Include="GraceNote\HUDLayout.py" />
     <Compile Include="GraceNote\ImageViewerWindow.py" />
     <Compile Include="GraceNote\LocalChangelog.py" />
+    <Compile Include="GraceNote\MainWindow.py" />
     <Compile Include="GraceNote\MassReplace.py" />
     <Compile Include="GraceNote\Scripts.py" />
     <Compile Include="GraceNote\Statistics.py" />

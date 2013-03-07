@@ -1,4 +1,6 @@
-﻿commentsAvailableLabel = False
+﻿# -*- coding: utf-8 -*-
+
+commentsAvailableLabel = False
 Audio = False
 configfile = ''
 configData = None
@@ -358,4 +360,17 @@ SubstitutionTable = [
 ]
 
 ]
+
+
+
+
+def GetDatabaseDescriptionString(filename):
+    CursorGracesJapanese.execute("SELECT count(1) FROM descriptions WHERE filename = ?", [filename])
+    exists = CursorGracesJapanese.fetchall()[0][0]
+    if exists > 0:
+        CursorGracesJapanese.execute("SELECT shortdesc FROM descriptions WHERE filename = ?", [filename])
+        desc = CursorGracesJapanese.fetchall()[0][0]
+        return desc
+    else:
+        return filename
 

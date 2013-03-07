@@ -1,4 +1,6 @@
-﻿from PyQt4 import QtCore, QtGui
+﻿# -*- coding: utf-8 -*-
+
+from PyQt4 import QtCore, QtGui
 import Globals
 
 class MassReplace(QtGui.QDialog):
@@ -261,7 +263,7 @@ class MassReplace(QtGui.QDialog):
                         ENString = item[1]
                         Globals.CursorGracesJapanese.execute('SELECT string FROM Japanese WHERE ID={0}'.format(item[2]))
                         JPString = Globals.CursorGracesJapanese.fetchall()[0][0]
-                        MatchedEntries.append([File, item[0], ENString, JPString, item[3], item[4], GetDatabaseDescriptionString(File)])
+                        MatchedEntries.append([File, item[0], ENString, JPString, item[3], item[4], Globals.GetDatabaseDescriptionString(File)])
 
                     if self.matchCase.isChecked():
                         FilterCur.execute(u"PRAGMA case_sensitive_like = OFF")

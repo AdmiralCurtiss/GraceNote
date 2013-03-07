@@ -1,4 +1,6 @@
-﻿from PyQt4 import QtCore, QtGui
+﻿# -*- coding: utf-8 -*-
+
+from PyQt4 import QtCore, QtGui
 import Globals
 
 class CompletionTable(QtGui.QDialog):
@@ -120,4 +122,47 @@ class CompletionTable(QtGui.QDialog):
 
         file = item.data(0, 0)
         self.parent.JumpToEntry(file, 1)
+
+def CalculateAllCompletionPercentagesForDatabase():
+    aList = Globals.configData.FileList
+    
+    for i in range(len(aList)-1):
+        for item in aList[i+1]:
+            CalculateCompletionForDatabase(item)
+
+def CalculateCompletionForDatabase(database):
+    #print 'Calculating percentages for ' + database + '...'
+    
+    tempCon = sqlite3.connect(Globals.configData.LocalDatabasePath + '/' + database)
+    tempCur = tempCon.cursor()
+    
+    tempCur.execute("SELECT Count(1) from Text where status>=0")
+    totalDB = tempCur.fetchall()[0][0]
+
+    tempCur.execute("SELECT Count(1) from Text where status>=1")
+    translated = tempCur.fetchall()[0][0]
+
+    tempCur.execute("SELECT Count(1) from Text where status>=2")
+    tlCheck = tempCur.fetchall()[0][0]
+
+    tempCur.execute("SELECT Count(1) from Text where status>=3")
+    rewrite = tempCur.fetchall()[0][0]
+
+    tempCur.execute("SELECT Count(1) from Text where status>=4")
+    grammar = tempCur.fetchall()[0][0]
+
+    tempCur.execute("SELECT Count(1) FROM Text WHERE comment != ''")
+    commentAmount = tempCur.fetchall()[0][0]
+    
+    tempCon = sqlite3.connect(Globals.configData.LocalDatabasePath + '/CompletionPercentage')
+    tempCur = tempCon.cursor()
+    
+    tempCur.execute("SELECT Count(1) FROM Percentages WHERE Database = ?", [database])
+    exists = tempCur.fetchall()[0][0]
+    
+    if exists > 0:
+        tempCur.execute("UPDATE Percentages SET entries = ?, translation = ?, editing1 = ?, editing2 = ?, editing3 = ?, comments = ? WHERE Database = ?", [totalDB, translated, tlCheck, rewrite, grammar, commentAmount, database])
+    else:
+        tempCur.execute("INSERT INTO Percentages (entries, translation, editing1, editing2, editing3, comments, Database) VALUES (?, ?, ?, ?, ?, ?, ?)", [totalDB, translated, tlCheck, rewrite, grammar, commentAmount, database])
+    tempCon.commit()
 

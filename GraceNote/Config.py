@@ -1,4 +1,6 @@
-﻿from xml.dom import minidom
+﻿# -*- coding: utf-8 -*-
+
+from xml.dom import minidom
 
 class ImageMediumStruct():
     def __init__(self):
