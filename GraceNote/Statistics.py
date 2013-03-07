@@ -2,6 +2,7 @@
 
 from PyQt4 import QtCore, QtGui
 import Globals
+import time
 
 class Statistics(QtGui.QDialog):
 

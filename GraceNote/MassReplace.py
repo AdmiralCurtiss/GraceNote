@@ -2,6 +2,8 @@
 
 from PyQt4 import QtCore, QtGui
 import Globals
+import sqlite3
+import re
 
 class MassReplace(QtGui.QDialog):
 

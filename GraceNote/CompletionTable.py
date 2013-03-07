@@ -2,6 +2,8 @@
 
 from PyQt4 import QtCore, QtGui
 import Globals
+import os
+import sqlite3
 
 class CompletionTable(QtGui.QDialog):
 

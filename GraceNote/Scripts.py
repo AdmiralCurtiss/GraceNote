@@ -34,6 +34,7 @@ from Config import *
 from collections import deque
 import filecmp
 
+from MainWindow import *
 from XTextBox import *
 from CustomHighlighter import *
 from MassReplace import *
@@ -41,7 +42,7 @@ from GlobalChangelog import *
 from LocalChangelog import *
 from Statistics import *
 from DuplicateText import *
-from CompletionTable import *
+import CompletionTable
 from ImageViewerWindow import *
 
 # load config
@@ -1534,7 +1535,10 @@ class Scripts2(QtGui.QWidget):
     
     
     def ShowChangelog(self):
-        self.LogDialog = LocalChangelog(self.treemodel.itemFromIndex(self.tree.currentIndex()).statusTip())
+        item = self.treemodel.itemFromIndex(self.tree.currentIndex())
+        if item == None or item.statusTip() == '':
+            return
+        self.LogDialog = LocalChangelog(item.statusTip())
 
         self.LogDialog.show()
         self.LogDialog.raise_()
@@ -1573,7 +1577,7 @@ class Scripts2(QtGui.QWidget):
     def ShowCompletionTable(self):
         self.WriteDatabaseStorageToHdd()
         
-        self.comDialog = CompletionTable(self)
+        self.comDialog = CompletionTable.CompletionTable(self)
 
         self.comDialog.show()
         self.comDialog.raise_()

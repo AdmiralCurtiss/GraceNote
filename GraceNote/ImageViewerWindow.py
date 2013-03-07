@@ -3,6 +3,8 @@
 from PyQt4 import QtCore, QtGui
 import Globals
 import re
+import os
+import sip
 
 class ImageViewerWindow(QtGui.QDialog):
 

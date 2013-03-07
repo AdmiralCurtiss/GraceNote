@@ -1,5 +1,8 @@
 ﻿# -*- coding: utf-8 -*-
 
+from PyQt4 import QtCore, QtGui
+import Globals
+import Scripts
 
 class MainWindow(QtGui.QMainWindow):
     def __init__(self):
@@ -22,7 +25,7 @@ class MainWindow(QtGui.QMainWindow):
         self.addToolBar(self.Toolbar)
         self.setUnifiedTitleAndToolBarOnMac(True)
 
-        self.scripts2 = Scripts2(self)
+        self.scripts2 = Scripts.Scripts2(self)
         self.setCentralWidget(self.scripts2)
         
     def closeEvent(self, event):
