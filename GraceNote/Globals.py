@@ -1,4 +1,4 @@
-commentsAvailableLabel = False
+﻿commentsAvailableLabel = False
 Audio = False
 configfile = ''
 configData = None

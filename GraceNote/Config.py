@@ -1,4 +1,4 @@
-from xml.dom import minidom
+﻿from xml.dom import minidom
 
 class ImageMediumStruct():
     def __init__(self):

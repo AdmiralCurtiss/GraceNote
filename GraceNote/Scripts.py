@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 
 # This is only needed for Python v2 but is harmless for Python v3.
 import sip
