@@ -27,11 +27,19 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="GraceNote.py" />
+    <Compile Include="GraceNote\CompletionTable.py" />
     <Compile Include="GraceNote\Config.py" />
+    <Compile Include="GraceNote\CustomHighlighter.py" />
+    <Compile Include="GraceNote\DuplicateText.py" />
+    <Compile Include="GraceNote\GlobalChangelog.py" />
     <Compile Include="GraceNote\Globals.py" />
     <Compile Include="GraceNote\hashtable.py" />
     <Compile Include="GraceNote\HUDLayout.py" />
+    <Compile Include="GraceNote\ImageViewerWindow.py" />
+    <Compile Include="GraceNote\LocalChangelog.py" />
+    <Compile Include="GraceNote\MassReplace.py" />
     <Compile Include="GraceNote\Scripts.py" />
+    <Compile Include="GraceNote\Statistics.py" />
     <Compile Include="GraceNote\XTextBox.py" />
     <Compile Include="GraceTools\Enemies.py" />
     <Compile Include="GraceTools\Font.py" />

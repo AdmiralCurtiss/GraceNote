@@ -35,7 +35,14 @@ from collections import deque
 import filecmp
 
 from XTextBox import *
-
+from CustomHighlighter import *
+from MassReplace import *
+from GlobalChangelog import *
+from LocalChangelog import *
+from Statistics import *
+from DuplicateText import *
+from CompletionTable import *
+from ImageViewerWindow import *
 
 # load config
 try:
@@ -360,7 +367,7 @@ class Scripts2(QtGui.QWidget):
             tb2 = XTextBox('jp', self)
             tb2.hide()
             tb2.setReadOnly(True)
-            MyHighlighter(tb2, 'something')
+            CustomHighlighter(tb2, 'something')
             if self.settings.contains('font'):
                 size = int(self.settings.value('font'))
                 tb1.setFontPointSize(size)
@@ -2938,406 +2945,6 @@ class Scripts2(QtGui.QWidget):
 
 
 
-    def SavetoBugfixXML(self):
-        self.WriteDatabaseStorageToHdd()
-        
-
-
-        # Make some output directories
-        if not os.path.exists('riivolution'):
-            os.makedirs('riivolution')
-
-        if not os.path.exists('Graces'):
-            os.makedirs('Graces')
-
-        if not os.path.exists('Graces/v2'):
-            os.makedirs('Graces/v2')
-
-        if not os.path.exists('Resources/Wii'):
-            os.makedirs('Resources/Wii')
-
-
-        if self.settings.contains('Graceful'):
-            Graceful = self.settings.value('Graceful')
-            if not os.path.isfile(Graceful):
-                Graceful = QtGui.QFileDialog.getOpenFileName(self, 'Locate Graceful', '', 'All Files(*)')
-                if Graceful == '': return
-                Graceful = str(Graceful)
-        else:
-            Graceful = QtGui.QFileDialog.getOpenFileName(self, 'Locate Graceful', '', 'All Files(*)')
-            if Graceful == '': return
-            Graceful = str(Graceful)
-        self.settings.setValue("Graceful", Graceful)
-
-        if self.settings.contains('RootRfix'):
-            RootR = self.settings.value('RootRfix')
-            if not os.path.isfile(RootR):
-                RootR = QtGui.QFileDialog.getOpenFileName(self, 'Locate bugfix rootR.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
-                if RootR == '': return
-                RootR = str(RootR)
-        else:
-            RootR = QtGui.QFileDialog.getOpenFileName(self, 'Locate bugfix rootR.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
-            if RootR == '': return
-            RootR = str(RootR)
-        self.settings.setValue("RootRfix", RootR)
-
-        if self.settings.contains('Map0Rfix'):
-            Map0R = self.settings.value('Map0Rfix')
-            if not os.path.isfile(Map0R):
-                Map0R = QtGui.QFileDialog.getOpenFileName(self, 'Locate bugfix map0R.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
-                if Map0R == '': return
-                Map0R = str(Map0R)
-        else:
-            Map0R = QtGui.QFileDialog.getOpenFileName(self, 'Locate bugfix map0R.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
-            if Map0R == '': return
-            Map0R = str(Map0R)
-        self.settings.setValue("Map0Rfix", Map0R)
-
-        if self.settings.contains('Map1Rfix'):
-            Map1R = self.settings.value('Map1Rfix')
-            if not os.path.isfile(Map1R):
-                Map1R = QtGui.QFileDialog.getOpenFileName(self, 'Locate bugfix map1R.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
-                if Map1R == '': return
-                Map1R = str(Map1R)
-        else:
-            Map1R = QtGui.QFileDialog.getOpenFileName(self, 'Locate bugfix map1R.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
-            if Map1R == '': return
-            Map1R = str(Map1R)
-        self.settings.setValue("Map1Rfix", Map1R)
-
-        
-        #Delety function!
-        TestPath = [os.path.dirname(str(RootR)), os.path.dirname(str(Map0R)), os.path.dirname(str(Map1R))]
-        
-        for Path in TestPath:
-            for File in os.listdir(Path):
-                if File.rfind('.toc') >= 0:
-                    os.remove(Path + "/" + File)
-                if File.rfind('.patch') >=0:
-                    os.remove(Path + '/' + File)
-
-
-        # Everyone loves progress bars!
-        progress = QtGui.QProgressDialog("Saving databases to SCS...", "Abort", 0, len(os.listdir(Globals.configData.LocalDatabasePath))+1)
-        progress.setWindowModality(QtCore.Qt.WindowModal)
-
-
-        # Create the .scs files
-        self.MakeSCS(os.listdir(Globals.configData.LocalDatabasePath), progress, 'Wii')
-
-        progress.setValue(len(os.listdir(Globals.configData.LocalDatabasePath))+1)
- 
-        
-
-        # Now do Graceful Stuff!
-        progress = QtGui.QProgressDialog("Creating Riivolution Patch with Graceful...", "Abort", 0, 120)
-        progress.setWindowModality(QtCore.Qt.WindowModal)
-
-        XML = []
-        GracesPath = os.path.dirname(os.path.abspath(sys.argv[0])) + os.sep + "Resources" + os.sep + 'Wii' + os.sep
-        
-        
-        
-        # RootR Scripts
-        args = ["mono", str(Graceful), "4", "2", str(RootR)]
-
-        if os.name != 'posix':
-            args = []
-            command = [str(Graceful), "4", "2", str(RootR)]
-
-        rootRbin = open('Graces/rootR.bin', 'wb')
-
-        off = 0
-
-        # Chat  
-        Archive = Globals.configDataGracesFolders[1][:] # Chat_MS
-        Archive.extend(Globals.configDataGracesFolders[2][:]) # Chat_SB
-        ArchiveLocation = 'chat' + os.sep + 'scs' + os.sep + 'JA' + os.sep
-
-        for file in Archive:
-            args.extend(["{0}{1}.scs".format(GracesPath, file), "{0}{1}.scs".format(ArchiveLocation, file)])
-            tempFile = open("{0}{1}.scs".format(GracesPath, file))
-            tempData = tempFile.read()
-            rootRbin.write(tempData)
-            tempFile.close()
-            
-            
-        # SysString        
-        Archive = (Globals.configDataGracesFolders[-1]) # SysString.bin
-        ArchiveLocation = 'sys' + os.sep + 'ja' + os.sep
-        args.extend(["{0}{1}.bin".format(GracesPath, Archive[0]), "{0}{1}.bin".format(ArchiveLocation, Archive[0])])
-        tempFile = open("{0}{1}.bin".format(GracesPath, Archive[0]))
-        tempData = tempFile.read()
-        rootRbin.write(tempData)
-        tempFile.close()
-
-
-        # TOG stuff
-        Archive = (['TOG_SS_ChatName', 'TOG_SS_StringECommerce']) # Special Cased Sys Subs
-        ArchiveLocation = 'SysSub' + os.sep + 'JA' + os.sep
-
-        for file in Archive:
-            args.extend(["{0}{1}.dat".format(GracesPath, file), "{0}{1}.dat".format(ArchiveLocation, file)])
-            tempFile = open("{0}{1}.dat".format(GracesPath, file))
-            tempData = tempFile.read()
-            rootRbin.write(tempData)
-            tempFile.close()
-                    
-        
-        # Movies
-        Archive = (Globals.configDataGracesFolders[-2]) # Movie Subtitles
-        ArchiveLocation = 'movie' + os.sep + 'str' + os.sep + 'ja' + os.sep
-
-        for file in Archive:
-            args.extend(["{0}{1}.bin".format(GracesPath, file), "{0}{1}.bin".format(ArchiveLocation, file)])
-            tempFile = open("{0}{1}.bin".format(GracesPath, file))
-            tempData = tempFile.read()
-            rootRbin.write(tempData)
-            tempFile.close()
-
-        progress.setValue(10)
-
-
-        # Special Strings
-        Archive = (Globals.configDataGracesFolders[-3]) # Special Stuff
-        ArchiveLocation = 'str' + os.sep + 'ja' + os.sep
-
-        for file in Archive:
-            args.extend(["{0}{1}.bin".format(str(GracesPath), file), "{0}{1}.bin".format(ArchiveLocation, file)])
-            tempFile = open("{0}{1}.bin".format(GracesPath, file))
-            tempData = tempFile.read()
-            rootRbin.write(tempData)
-            tempFile.close()
-
-
-        # Images
-        Images = [("Resources/TitleTexture.tex", "SysSub/JA/TitleTexture.tex"), 
-                  ("Resources/main.tex", "mnu/tex/main.tex"),
-                  ("Resources/shop.tex", "mnu/tex/shop.tex"),
-                  ("Resources/skill.tex", "mnu/tex/skill.tex"),
-#                  ("Resources/snd_test.tex", "mnu/tex/snd_test.tex"),
-                  ("Resources/bin000.acf", "btl/acf/bin000.acf"),
-                  ("Resources/FontTexture2.tex", "sys/FontTexture2.tex"),
-                  ("Resources/FontBinary2.bin", "sys/FontBinary2.bin"),
-                  ("Resources/mainRR.sel", "module/mainRR.sel")
-                  ]
-
-        for image in Images:
-            args.extend([image[0], image[1]])
-            tempFile = open(image[0], 'rb')
-            tempData = tempFile.read()
-            rootRbin.write(tempData)
-            tempFile.close()
-
-        # Run the process!
-        if os.name == 'posix':
-        
-            proc=subprocess.Popen(args,shell=False,stdin=subprocess.PIPE,stdout=subprocess.PIPE)
-    
-            data = proc.stdout.read()
-            XML.extend(re.findall(u'<.*?>', data, re.DOTALL))
-            progress.setValue(57)
-            rootRbin.close()
-
-        else:
-            for i in range(0, len(args), 20):
-                if len(args) > i+20:
-                    finalArgs = command + args[i:i+20]
-                else:
-                    finalArgs = command + args[i:]
-                
-                
-                proc=subprocess.Popen(finalArgs,shell=False,stdin=subprocess.PIPE,stdout=subprocess.PIPE)
-
-                while proc.poll() == None:
-                    pass
-                
-                data = proc.stdout.read()
-
-                XML.extend(re.findall(u'<.*?>', data, re.DOTALL))
-
-            progress.setValue(57)
-            rootRbin.close()
-
-
-        # Map0R Scripts
-        Map0RCPK = ['mapfile_basiR.cpk', 'mapfile_briaR.cpk', 'mapfile_bridR.cpk', 'mapfile_caveR.cpk', 'mapfile_fallR.cpk', 'mapfile_ff12R.cpk', 'mapfile_ff13R.cpk', 'mapfile_ff14R.cpk', 'mapfile_ff15R.cpk', 'mapfile_ff16R.cpk', 'mapfile_ff17R.cpk', 'mapfile_ff19R.cpk', 'mapfile_ff20R.cpk', 'mapfile_foreR.cpk', 'mapfile_gentR.cpk', 'mapfile_icebR.cpk', 'mapfile_ironR.cpk', 'mapfile_koneR.cpk', 'mapfile_kotR.cpk', 'mapfile_lasR.cpk', 'mapfile_montR.cpk', 'mapfile_rockR.cpk', 'mapfile_sandR.cpk', 'mapfile_sf08R.cpk', 'mapfile_sf09R.cpk', 'mapfile_sf10R.cpk', 'mapfile_sf11R.cpk', 'mapfile_sf18R.cpk', 'mapfile_sneeR.cpk', 'mapfile_snowR.cpk', 'mapfile_stdaR.cpk', 'mapfile_varoR.cpk', 'mapfile_wf01R.cpk', 'mapfile_wf02R.cpk', 'mapfile_wf03R.cpk', 'mapfile_wf04R.cpk', 'mapfile_wf05R.cpk', 'mapfile_wf06R.cpk', 'mapfile_wf07R.cpk', 'mapfile_wf21R.cpk', 'mapfile_wincR.cpk', 'mapfile_zoneR.cpk']
-
-        map0Rbin = open('Graces/map0R.bin', 'wb')
-
-
-        i = 4
-
-        for CPK in Map0RCPK:
-            args = ["mono", str(Graceful), "4", "1", str(Map0R), CPK]
-            if os.name != 'posix':
-                args = [str(Graceful), "4", "1", str(Map0R), CPK]
-            
-            Archive = Globals.configDataGracesFolders[i]
-            i += 1
-            ArchiveLocation = 'map' + os.sep + 'sce' + os.sep + 'R' + os.sep + 'ja' + os.sep
-
-            for file in Archive:
-                args.extend(["{0}{1}.scs".format(GracesPath, file), "{0}{1}.scs".format(ArchiveLocation, file)])
-
-                tempFile = open("{0}{1}.scs".format(GracesPath, file))
-                tempData = tempFile.read()
-                map0Rbin.write(tempData)
-                tempFile.close()
-
-
-            # Run the process!
-            proc=subprocess.Popen(args,shell=False,stdin=subprocess.PIPE,stdout=subprocess.PIPE)
-    
-            data = proc.stdout.read()
-            XML.extend(re.findall(u'<.*?>', data, re.DOTALL))
-            progress.setValue(progress.value() + 1)
-
-        map0Rbin.close()
-        
-
-        # Map1R Scripts
-        Map1RCPK = ['mapfile_anmaR.cpk', 'mapfile_beraR.cpk', 'mapfile_debugR.cpk', 'mapfile_fendR.cpk', 'mapfile_kameR.cpk', 'mapfile_koya_r06R.cpk', 'mapfile_lakeR.cpk', 'mapfile_lanR.cpk', 'mapfile_nekoR.cpk', 'mapfile_olleR.cpk', 'mapfile_otheR.cpk', 'mapfile_ozweR.cpk', 'mapfile_riotR.cpk', 'mapfile_sablR.cpk', 'mapfile_shatR.cpk', 'mapfile_shipR.cpk', 'mapfile_strtR.cpk', 'mapfile_supaR.cpk', 'mapfile_systemR.cpk', 'mapfile_winR.cpk']
-
-
-        map1Rbin = open('Graces/map1R.bin', 'wb')
-
-        i = 46
-
-        for CPK in Map1RCPK:
-            args = ["mono", str(Graceful), "4", "1", str(Map1R), CPK]
-            if os.name != 'posix':
-                args = [str(Graceful), "4", "1", str(Map1R), CPK]
-            
-            Archive = Globals.configDataGracesFolders[i]
-            i += 1
-            ArchiveLocation = 'map' + os.sep + 'sce' + os.sep + 'R' + os.sep + 'ja' + os.sep
-
-            for file in Archive:
-                args.extend(["{0}{1}.scs".format(GracesPath, file), "{0}{1}.scs".format(ArchiveLocation, file)])
-
-                tempFile = open("{0}{1}.scs".format(GracesPath, file))
-                tempData = tempFile.read()
-                map1Rbin.write(tempData)
-                tempFile.close()
-
-
-            # Run the process!
-            proc=subprocess.Popen(args,shell=False,stdin=subprocess.PIPE,stdout=subprocess.PIPE)
-    
-            data = proc.stdout.read()
-            XML.extend(re.findall(u'<.*?>', data, re.DOTALL))
-            progress.setValue(progress.value() + 1)
-
-        map1Rbin.close()
-
-
-        # Let's make an XML! And also move all those .toc files over
-
-        for Path in TestPath:
-            for File in os.listdir(Path):
-                if File.rfind('.toc') >= 0:
-                    try:
-                        os.remove("Graces/v2/" + File)
-                    except:
-                        pass
-                    shutil.move(Path + "/" + File, "Graces/v2")
-                if File.rfind('.patch') >=0:
-                    try:
-                        os.remove("Graces/v2/" + File)
-                    except:
-                        pass
-                    shutil.move(Path + "/" + File, "Graces/v2")
-                    
-        #shutil.rmtree('Resources/Wii')
-        
-
-        XMLset = set(XML)
-        XMLFinal = []
-        for entry in XMLset:
-            XMLFinal.append(entry)
-        
-        XMLFinal.sort()    
-                
-        
-        xmlFile = open("riivolution/GracesBugfix.xml", "w")
-        
-        
-        
-        patchFile = open("Graces/v2/rootR.cpk.patch", "r")
-        rootRPatch = patchFile.readline()
-        patchFile.close()
-
-        patchFile = open("Graces/v2/map0R.cpk.patch", "r")
-        map0RPatch = patchFile.readline()
-        patchFile.close()
-
-        patchFile = open("Graces/v2/map1R.cpk.patch", "r")
-        map1RPatch = patchFile.readline()
-        patchFile.close()
-
-                
-        XMLString = [
-        
-        '<wiidisc version="1">\n',        
-        '\t<id game="STG" version="2"/>\n',
-        '\t<options>\n',
-        '\t\t<section name="Testing">\n',
-        
-        '\t\t\t<option name="Graces Translation" default="1">\n',
-        '\t\t\t\t<choice name="Enabled">\n',
-        '\t\t\t\t\t<patch id="graces" />\n',
-        '\t\t\t\t\t<patch id="gracesfiles" />\n',
-        '\t\t\t\t</choice>\n',
-        '\t\t\t</option>\n',
-
-        '\t\t\t<option name="Region Patch" default="1">\n',
-        '\t\t\t\t<choice name="Enabled">\n',
-        '\t\t\t\t\t<patch id="localeZero" />\n',
-        '\t\t\t\t</choice>\n',
-        '\t\t\t</option>\n',
-        
-        '\t\t\t<option name="Debug Output">\n',
-        '\t\t\t\t<choice name="For Original (v0)">\n',
-        '\t\t\t\t\t<patch id="kamek_Ori" />\n',
-        '\t\t\t\t</choice>\n',
-        '\t\t\t</option>\n',
-        
-        '\t\t</section>\n',
-        '\t</options>\n',
-        
-        '\t<patch id="localeZero">\n',
-        '\t\t<memory offset="0x803595DC" value="38600000" />\n',
-        '\t</patch>\n',
-
-        '\t<patch id="graces" root="/Graces/v2">\n',
-        '\t\t<file disc="/rootR.cpk" external="rootR.cpk.patch" offset="{0}" resize="true" />\n'.format(rootRPatch),
-        '\t\t<file disc="/map0R.cpk" external="map0R.cpk.patch" offset="{0}" resize="true" />\n'.format(map0RPatch),
-        '\t\t<file disc="/map1R.cpk" external="map1R.cpk.patch" offset="{0}" resize="true" />\n'.format(map1RPatch),
-        "".join(["\t\t%s\n" % (k) for k in XMLFinal[:63]]), #[:63]
-        '\t</patch>\n',
-
-        '\t<patch id="gracesfiles" root="/Graces">\n',
-        '\t\t<file resize="false" offset="0x70000000" disc="map0R.cpk" external="map0R.bin" />\n',
-	    '\t\t<file resize="false" offset="0x70000000" disc="map1R.cpk" external="map1R.bin" />\n',
-	    '\t\t<file resize="false" offset="0x70000000" disc="rootR.cpk" external="rootR.bin" />\n',
-        '\t</patch>\n',
-        
-        '\t<patch id="kamek_New">\n',
-        '\t\t<memory offset="0x80035C10" value="4bfcbc2c" />\n',
-        '\t\t<memory offset="0x80001800" value="9421fff07c0802a693e1000c7c7f1b783c60800090010014386318f04cc63182480343f1800100147fe3fb7883e1000c7c0803a6382100104e8000207c0802a69421ef8093e1107c900110849081101c90a1102090c1102490e110289101102c912110309141103440860024d8211038d8411040d8611048d8811050d8a11058d8c11060d8e11068d9011070380000013be10014980100083800000098010009380110887c641b7838a100089001000c7fe3fb7838011018900100104832e8457fe3fb78483258f9388000017c651b7838c000007fe3fb784832b5418001108483e1107c382110807c0803a64e8000206c6f6c0a00" />\n',
-        '\t</patch>\n',
-        
-        '</wiidisc>'
-        
-        ]
-        
-        xmlFile.write("".join(["%s" % (k) for k in XMLString]))
-        progress.setValue(progress.value() + 1)
-
-        xmlFile.close()
-
-
     def SavetoGracesfDemoXML(self):
         self.WriteDatabaseStorageToHdd()
         
@@ -3925,286 +3532,407 @@ class Scripts2(QtGui.QWidget):
 #        file.close()
    
 
-   
-class ImageViewerWindow(QtGui.QDialog):
+    def SavetoBugfixXML(self):
+        self.WriteDatabaseStorageToHdd()
+        
 
-    def __init__(self, parent, image):
-        super(ImageViewerWindow, self).__init__()
-        self.parent = parent
-        self.medium = image
-        self.setWindowModality(False)        
+
+        # Make some output directories
+        if not os.path.exists('riivolution'):
+            os.makedirs('riivolution')
+
+        if not os.path.exists('Graces'):
+            os.makedirs('Graces')
+
+        if not os.path.exists('Graces/v2'):
+            os.makedirs('Graces/v2')
+
+        if not os.path.exists('Resources/Wii'):
+            os.makedirs('Resources/Wii')
+
+
+        if self.settings.contains('Graceful'):
+            Graceful = self.settings.value('Graceful')
+            if not os.path.isfile(Graceful):
+                Graceful = QtGui.QFileDialog.getOpenFileName(self, 'Locate Graceful', '', 'All Files(*)')
+                if Graceful == '': return
+                Graceful = str(Graceful)
+        else:
+            Graceful = QtGui.QFileDialog.getOpenFileName(self, 'Locate Graceful', '', 'All Files(*)')
+            if Graceful == '': return
+            Graceful = str(Graceful)
+        self.settings.setValue("Graceful", Graceful)
+
+        if self.settings.contains('RootRfix'):
+            RootR = self.settings.value('RootRfix')
+            if not os.path.isfile(RootR):
+                RootR = QtGui.QFileDialog.getOpenFileName(self, 'Locate bugfix rootR.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
+                if RootR == '': return
+                RootR = str(RootR)
+        else:
+            RootR = QtGui.QFileDialog.getOpenFileName(self, 'Locate bugfix rootR.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
+            if RootR == '': return
+            RootR = str(RootR)
+        self.settings.setValue("RootRfix", RootR)
+
+        if self.settings.contains('Map0Rfix'):
+            Map0R = self.settings.value('Map0Rfix')
+            if not os.path.isfile(Map0R):
+                Map0R = QtGui.QFileDialog.getOpenFileName(self, 'Locate bugfix map0R.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
+                if Map0R == '': return
+                Map0R = str(Map0R)
+        else:
+            Map0R = QtGui.QFileDialog.getOpenFileName(self, 'Locate bugfix map0R.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
+            if Map0R == '': return
+            Map0R = str(Map0R)
+        self.settings.setValue("Map0Rfix", Map0R)
+
+        if self.settings.contains('Map1Rfix'):
+            Map1R = self.settings.value('Map1Rfix')
+            if not os.path.isfile(Map1R):
+                Map1R = QtGui.QFileDialog.getOpenFileName(self, 'Locate bugfix map1R.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
+                if Map1R == '': return
+                Map1R = str(Map1R)
+        else:
+            Map1R = QtGui.QFileDialog.getOpenFileName(self, 'Locate bugfix map1R.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
+            if Map1R == '': return
+            Map1R = str(Map1R)
+        self.settings.setValue("Map1Rfix", Map1R)
+
         
-        self.setWindowTitle(image.name)
-        self.scroll = QtGui.QScrollArea()
-        self.layout = QtGui.QVBoxLayout(self.scroll)
-        self.setLayout(self.layout)
+        #Delety function!
+        TestPath = [os.path.dirname(str(RootR)), os.path.dirname(str(Map0R)), os.path.dirname(str(Map1R))]
         
-    def refreshInfo(self, text):
-        search = '<' + self.medium.var + ': (.*?)>'
-        parameters = re.findall(search, text, re.DOTALL)
-        self.clearInfo()
+        for Path in TestPath:
+            for File in os.listdir(Path):
+                if File.rfind('.toc') >= 0:
+                    os.remove(Path + "/" + File)
+                if File.rfind('.patch') >=0:
+                    os.remove(Path + '/' + File)
+
+
+        # Everyone loves progress bars!
+        progress = QtGui.QProgressDialog("Saving databases to SCS...", "Abort", 0, len(os.listdir(Globals.configData.LocalDatabasePath))+1)
+        progress.setWindowModality(QtCore.Qt.WindowModal)
+
+
+        # Create the .scs files
+        self.MakeSCS(os.listdir(Globals.configData.LocalDatabasePath), progress, 'Wii')
+
+        progress.setValue(len(os.listdir(Globals.configData.LocalDatabasePath))+1)
+ 
         
-        for param in parameters:
-            splitparams = param.split(' ')
+
+        # Now do Graceful Stuff!
+        progress = QtGui.QProgressDialog("Creating Riivolution Patch with Graceful...", "Abort", 0, 120)
+        progress.setWindowModality(QtCore.Qt.WindowModal)
+
+        XML = []
+        GracesPath = os.path.dirname(os.path.abspath(sys.argv[0])) + os.sep + "Resources" + os.sep + 'Wii' + os.sep
+        
+        
+        
+        # RootR Scripts
+        args = ["mono", str(Graceful), "4", "2", str(RootR)]
+
+        if os.name != 'posix':
+            args = []
+            command = [str(Graceful), "4", "2", str(RootR)]
+
+        rootRbin = open('Graces/rootR.bin', 'wb')
+
+        off = 0
+
+        # Chat  
+        Archive = Globals.configDataGracesFolders[1][:] # Chat_MS
+        Archive.extend(Globals.configDataGracesFolders[2][:]) # Chat_SB
+        ArchiveLocation = 'chat' + os.sep + 'scs' + os.sep + 'JA' + os.sep
+
+        for file in Archive:
+            args.extend(["{0}{1}.scs".format(GracesPath, file), "{0}{1}.scs".format(ArchiveLocation, file)])
+            tempFile = open("{0}{1}.scs".format(GracesPath, file))
+            tempData = tempFile.read()
+            rootRbin.write(tempData)
+            tempFile.close()
             
-            pixmap = QtGui.QPixmap( os.getcwd() + '/' + self.medium.path.format(*splitparams) )
-            piclabel = QtGui.QLabel()
-            piclabel.setPixmap(pixmap)
-            self.layout.addWidget(piclabel)
+            
+        # SysString        
+        Archive = (Globals.configDataGracesFolders[-1]) # SysString.bin
+        ArchiveLocation = 'sys' + os.sep + 'ja' + os.sep
+        args.extend(["{0}{1}.bin".format(GracesPath, Archive[0]), "{0}{1}.bin".format(ArchiveLocation, Archive[0])])
+        tempFile = open("{0}{1}.bin".format(GracesPath, Archive[0]))
+        tempData = tempFile.read()
+        rootRbin.write(tempData)
+        tempFile.close()
+
+
+        # TOG stuff
+        Archive = (['TOG_SS_ChatName', 'TOG_SS_StringECommerce']) # Special Cased Sys Subs
+        ArchiveLocation = 'SysSub' + os.sep + 'JA' + os.sep
+
+        for file in Archive:
+            args.extend(["{0}{1}.dat".format(GracesPath, file), "{0}{1}.dat".format(ArchiveLocation, file)])
+            tempFile = open("{0}{1}.dat".format(GracesPath, file))
+            tempData = tempFile.read()
+            rootRbin.write(tempData)
+            tempFile.close()
+                    
+        
+        # Movies
+        Archive = (Globals.configDataGracesFolders[-2]) # Movie Subtitles
+        ArchiveLocation = 'movie' + os.sep + 'str' + os.sep + 'ja' + os.sep
+
+        for file in Archive:
+            args.extend(["{0}{1}.bin".format(GracesPath, file), "{0}{1}.bin".format(ArchiveLocation, file)])
+            tempFile = open("{0}{1}.bin".format(GracesPath, file))
+            tempData = tempFile.read()
+            rootRbin.write(tempData)
+            tempFile.close()
+
+        progress.setValue(10)
+
+
+        # Special Strings
+        Archive = (Globals.configDataGracesFolders[-3]) # Special Stuff
+        ArchiveLocation = 'str' + os.sep + 'ja' + os.sep
+
+        for file in Archive:
+            args.extend(["{0}{1}.bin".format(str(GracesPath), file), "{0}{1}.bin".format(ArchiveLocation, file)])
+            tempFile = open("{0}{1}.bin".format(GracesPath, file))
+            tempData = tempFile.read()
+            rootRbin.write(tempData)
+            tempFile.close()
+
+
+        # Images
+        Images = [("Resources/TitleTexture.tex", "SysSub/JA/TitleTexture.tex"), 
+                  ("Resources/main.tex", "mnu/tex/main.tex"),
+                  ("Resources/shop.tex", "mnu/tex/shop.tex"),
+                  ("Resources/skill.tex", "mnu/tex/skill.tex"),
+#                  ("Resources/snd_test.tex", "mnu/tex/snd_test.tex"),
+                  ("Resources/bin000.acf", "btl/acf/bin000.acf"),
+                  ("Resources/FontTexture2.tex", "sys/FontTexture2.tex"),
+                  ("Resources/FontBinary2.bin", "sys/FontBinary2.bin"),
+                  ("Resources/mainRR.sel", "module/mainRR.sel")
+                  ]
+
+        for image in Images:
+            args.extend([image[0], image[1]])
+            tempFile = open(image[0], 'rb')
+            tempData = tempFile.read()
+            rootRbin.write(tempData)
+            tempFile.close()
+
+        # Run the process!
+        if os.name == 'posix':
+        
+            proc=subprocess.Popen(args,shell=False,stdin=subprocess.PIPE,stdout=subprocess.PIPE)
     
-    def clearInfo(self):
-        if self.layout is not None:
-            old_layout = self.layout
-            for i in reversed(range(old_layout.count())):
-                old_layout.itemAt(i).widget().setParent(None)
-            import sip
-            sip.delete(old_layout)
-        self.layout = QtGui.QVBoxLayout(self.scroll)
-        self.setLayout(self.layout)
+            data = proc.stdout.read()
+            XML.extend(re.findall(u'<.*?>', data, re.DOTALL))
+            progress.setValue(57)
+            rootRbin.close()
 
-class LocalChangelog(QtGui.QDialog):
+        else:
+            for i in range(0, len(args), 20):
+                if len(args) > i+20:
+                    finalArgs = command + args[i:i+20]
+                else:
+                    finalArgs = command + args[i:]
+                
+                
+                proc=subprocess.Popen(finalArgs,shell=False,stdin=subprocess.PIPE,stdout=subprocess.PIPE)
 
-    def __init__(self, file):
+                while proc.poll() == None:
+                    pass
+                
+                data = proc.stdout.read()
+
+                XML.extend(re.findall(u'<.*?>', data, re.DOTALL))
+
+            progress.setValue(57)
+            rootRbin.close()
+
+
+        # Map0R Scripts
+        Map0RCPK = ['mapfile_basiR.cpk', 'mapfile_briaR.cpk', 'mapfile_bridR.cpk', 'mapfile_caveR.cpk', 'mapfile_fallR.cpk', 'mapfile_ff12R.cpk', 'mapfile_ff13R.cpk', 'mapfile_ff14R.cpk', 'mapfile_ff15R.cpk', 'mapfile_ff16R.cpk', 'mapfile_ff17R.cpk', 'mapfile_ff19R.cpk', 'mapfile_ff20R.cpk', 'mapfile_foreR.cpk', 'mapfile_gentR.cpk', 'mapfile_icebR.cpk', 'mapfile_ironR.cpk', 'mapfile_koneR.cpk', 'mapfile_kotR.cpk', 'mapfile_lasR.cpk', 'mapfile_montR.cpk', 'mapfile_rockR.cpk', 'mapfile_sandR.cpk', 'mapfile_sf08R.cpk', 'mapfile_sf09R.cpk', 'mapfile_sf10R.cpk', 'mapfile_sf11R.cpk', 'mapfile_sf18R.cpk', 'mapfile_sneeR.cpk', 'mapfile_snowR.cpk', 'mapfile_stdaR.cpk', 'mapfile_varoR.cpk', 'mapfile_wf01R.cpk', 'mapfile_wf02R.cpk', 'mapfile_wf03R.cpk', 'mapfile_wf04R.cpk', 'mapfile_wf05R.cpk', 'mapfile_wf06R.cpk', 'mapfile_wf07R.cpk', 'mapfile_wf21R.cpk', 'mapfile_wincR.cpk', 'mapfile_zoneR.cpk']
+
+        map0Rbin = open('Graces/map0R.bin', 'wb')
+
+
+        i = 4
+
+        for CPK in Map0RCPK:
+            args = ["mono", str(Graceful), "4", "1", str(Map0R), CPK]
+            if os.name != 'posix':
+                args = [str(Graceful), "4", "1", str(Map0R), CPK]
+            
+            Archive = Globals.configDataGracesFolders[i]
+            i += 1
+            ArchiveLocation = 'map' + os.sep + 'sce' + os.sep + 'R' + os.sep + 'ja' + os.sep
+
+            for file in Archive:
+                args.extend(["{0}{1}.scs".format(GracesPath, file), "{0}{1}.scs".format(ArchiveLocation, file)])
+
+                tempFile = open("{0}{1}.scs".format(GracesPath, file))
+                tempData = tempFile.read()
+                map0Rbin.write(tempData)
+                tempFile.close()
+
+
+            # Run the process!
+            proc=subprocess.Popen(args,shell=False,stdin=subprocess.PIPE,stdout=subprocess.PIPE)
     
-        super(LocalChangelog, self).__init__()
+            data = proc.stdout.read()
+            XML.extend(re.findall(u'<.*?>', data, re.DOTALL))
+            progress.setValue(progress.value() + 1)
 
-        self.setWindowModality(False)        
-        self.listwidget = QtGui.QListWidget()
+        map0Rbin.close()
         
-        Globals.LogCur.execute("select * from Log where File='{0}'".format(file))
-        templist = Globals.LogCur.fetchall()
-        for entry in templist:
-            self.listwidget.addItem('{0} on {1}'.format(entry[2], time.strftime('%a, %B %d at %H:%M %p', time.localtime(entry[3]))))
 
-        
-        self.setWindowTitle('Changelog: {0}'.format(file))
-        layout = QtGui.QVBoxLayout()
-        layout.addWidget(QtGui.QLabel('File Modified By:'))
-        layout.addWidget(self.listwidget)
-        self.setLayout(layout)
+        # Map1R Scripts
+        Map1RCPK = ['mapfile_anmaR.cpk', 'mapfile_beraR.cpk', 'mapfile_debugR.cpk', 'mapfile_fendR.cpk', 'mapfile_kameR.cpk', 'mapfile_koya_r06R.cpk', 'mapfile_lakeR.cpk', 'mapfile_lanR.cpk', 'mapfile_nekoR.cpk', 'mapfile_olleR.cpk', 'mapfile_otheR.cpk', 'mapfile_ozweR.cpk', 'mapfile_riotR.cpk', 'mapfile_sablR.cpk', 'mapfile_shatR.cpk', 'mapfile_shipR.cpk', 'mapfile_strtR.cpk', 'mapfile_supaR.cpk', 'mapfile_systemR.cpk', 'mapfile_winR.cpk']
 
 
-class GlobalChangelog(QtGui.QDialog):
+        map1Rbin = open('Graces/map1R.bin', 'wb')
 
-    def __init__(self, parent):
-        super(GlobalChangelog, self).__init__()
+        i = 46
 
-        self.parent = parent
-        
-        self.setWindowModality(False)        
-        self.treewidget = QtGui.QTreeWidget()
-        
-        self.treewidget.setColumnCount(3)
-        self.treewidget.setHeaderLabels(['Date', 'Name', 'File'])
-        self.treewidget.setSortingEnabled(True)
-        
-        self.treewidget.setColumnWidth(0, 200)
-        self.treewidget.setColumnWidth(1, 100)
-        self.treewidget.setColumnWidth(2, 80)
-        
-        self.treewidget.setMinimumSize(450, 600)
-        
-        Globals.LogCur.execute("SELECT * FROM Log ORDER BY Timestamp DESC")
-        templist = Globals.LogCur.fetchall()
-        #templist.pop(0)
-        for entry in templist:
-            for filename in entry[1].split(','):
-                self.treewidget.addTopLevelItem(QtGui.QTreeWidgetItem(['{0}'.format(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(entry[3]))), '{0}'.format(entry[2]), '{0}'.format(filename)]))
-        
-        self.treewidget.itemDoubleClicked.connect(self.JumpToFile)
-
-        self.setWindowTitle('Global Changelog')
-        layout = QtGui.QVBoxLayout()
-        layout.addWidget(QtGui.QLabel('Recent Changes:'))
-        layout.addWidget(self.treewidget)
-        self.setLayout(layout)
-
-    def JumpToFile(self, item, column):
-        file = item.data(2, 0)
-        self.parent.JumpToEntry(file, 1)
-
-
-class DuplicateText(QtGui.QDialog):
-
-    def __init__(self, parent):
-        super(DuplicateText, self).__init__()
-
-        self.setWindowModality(False)        
-        
-        self.parent = parent
-
-        self.treewidget = QtGui.QTreeWidget()
-        
-        self.treewidget.setColumnCount(2)
-        self.treewidget.setHeaderLabels(['Amount', 'Text'])
-        self.treewidget.setSortingEnabled(True)
-        
-        self.treewidget.setColumnWidth(0, 80)
-        self.treewidget.setColumnWidth(1, 540)
-        
-        self.treewidget.setMinimumSize(620, 500)
-
-        
-        self.box = QtGui.QGroupBox()
-        self.box.setTitle('Search:')
-        
-        layout = QtGui.QGridLayout()
-        
-        self.categories = []
-        
-        i = 0
-        x = 0
-        y = 0
-        for cat in Globals.configData.FileList[0]:
-            self.categories.append(QtGui.QCheckBox(cat))
-            layout.addWidget(self.categories[i], y, x)
-            i += 1
-            x += 1
-            if x > 5:
-                x = 0
-                y += 1
-        if x != 0:
-            x = 0
-            y += 1
-        x = 2
-        self.checkall = QtGui.QPushButton('Check All')
-        layout.addWidget(self.checkall, y, x)
-        self.checkall.released.connect(self.CheckAll)
-        x += 1
-        self.checknone = QtGui.QPushButton('Check None')
-        layout.addWidget(self.checknone, y, x)
-        self.checknone.released.connect(self.CheckNone)
-        x += 1
-        self.collall = QtGui.QPushButton('Collapse All')
-        layout.addWidget(self.collall, y, x)
-        self.collall.released.connect(self.CollapseAll)
-        x += 1
-        self.uncollall = QtGui.QPushButton('Expand All')
-        layout.addWidget(self.uncollall, y, x)
-        self.uncollall.released.connect(self.UncollapseAll)
-        
-        self.exceptions = QtGui.QRadioButton('Inconsistent Translations only')
-        self.dupes = QtGui.QRadioButton('All Duplicates')
-        self.exceptions.setChecked(True)
-        
-        self.go = QtGui.QPushButton('Search')
-
-        self.progressbar = QtGui.QProgressBar()
-        self.progressbar.setRange(0, 100000)
-        
-        self.progressLabel = QtGui.QLabel('Pending')
-        
-        layoutSystemButtons = QtGui.QGridLayout()
-        layoutSystemButtons.addWidget(self.exceptions, 0, 0)
-        layoutSystemButtons.addWidget(self.dupes, 0, 1)
-        #layoutSystemButtons.addWidget(self.progressbar, 3, 1)
-        #layoutSystemButtons.addWidget(self.progressLabel, 4, 1)
-        layoutSystemButtons.addWidget(self.go, 0, 2)
-        layoutSystemButtons.setColumnMinimumWidth(0, 200)
-        
-        self.treewidget.itemDoubleClicked.connect(self.InitiateMassReplaceSearch)
-
-        self.setWindowTitle('Duplicate Text Retriever')
-        subLayout = QtGui.QVBoxLayout()
-        subLayout.addLayout(layoutSystemButtons)
-        subLayout.addLayout(layout)
-        subLayout.addWidget(self.treewidget)
-        self.setLayout(subLayout)
-
-        self.go.released.connect(self.SearchCategories)
-        
-    def CheckAll(self):
-        for category in self.categories:
-            category.setCheckState(QtCore.Qt.Checked)
-    def CheckNone(self):
-        for category in self.categories:
-            category.setCheckState(QtCore.Qt.Unchecked)
-    def CollapseAll(self):
-        self.treewidget.collapseAll()
-    def UncollapseAll(self):
-        self.treewidget.expandAll()
-        
-        
-#     Two options
-#        One: Search for any cloned text with more than one unique translation, and display them
-#        Two: Search for any cloned text at all, and display them
-    def SearchCategories(self):
-
-        self.treewidget.clear()
-
-        print 'Initializing container...'
-        Table = []
-        BlackList = []
-        Globals.CursorGracesJapanese.execute('SELECT MAX(ID) FROM Japanese')
-        maxid = int(Globals.CursorGracesJapanese.fetchall()[0][0])
-        for i in xrange( maxid + 1 ):
-            Table.append([0, set([])])
-            BlackList.append(0)
-
-        print 'Fetching debug information...'
-        Globals.CursorGracesJapanese.execute('SELECT ID FROM Japanese WHERE debug=1')
-        BlackListDB = Globals.CursorGracesJapanese.fetchall()
-        for id in BlackListDB:
-            BlackList[int(id[0])] = 1
-        aList = Globals.configData.FileList
-
-        i = 1
-        print 'Processing databases...'
-        for category in self.categories:
-            if category.isChecked() == True:
-                for filename in aList[i]:
-                    #print 'Processing ' + filename + '...'
-
-                    conC = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(filename))
-                    curC = conC.cursor()
-                    
-                    curC.execute("SELECT StringID, English FROM Text")
-                    
-                    results = curC.fetchall()
-                    
-                    for item in results:
-                        StringId = int(item[0])
-                        if BlackList[StringId] == 0:
-                            Table[StringId][0] += 1
-                            Table[StringId][1].add(item[1])
-#                    self.progressbar.setValue(self.progressbar.value() + (6250/len(Globals.configData.FileList[i])))
-#                    self.progressLabel.setText("Processing {0}".format(category))
-#                    self.progressLabel.update()
-#            self.progressbar.setValue(i * 6250)
-            i += 1
-        
-        print 'Displaying entries...'
-        i = 0
-        for item in Table:
-            if (self.exceptions.isChecked() == False and item[0] > 1) or (self.exceptions.isChecked() == True and (((item[0] > 1) and (len(item[1]) >= 2)) or ((item[0] > 1) and (item[1] == set(['']))))):
-                Globals.CursorGracesJapanese.execute('SELECT String FROM Japanese WHERE ID=?', (i, ))
-                JP = Globals.CursorGracesJapanese.fetchall()[0][0]
+        for CPK in Map1RCPK:
+            args = ["mono", str(Graceful), "4", "1", str(Map1R), CPK]
+            if os.name != 'posix':
+                args = [str(Graceful), "4", "1", str(Map1R), CPK]
             
-                textOriginalJapaneseText = QtGui.QTreeWidgetItem(self.treewidget, [str(item[0]).zfill(3), VariableReplace(JP)])
-                textOriginalJapaneseText.setBackgroundColor(0, QtGui.QColor(212,236,255,255))
-                textOriginalJapaneseText.setBackgroundColor(1, QtGui.QColor(212,236,255,255))
-                for exception in item[1]:
-                    newline = QtGui.QTreeWidgetItem(textOriginalJapaneseText, ['', VariableReplace(exception)])
-#           self.progressLabel.setText("Processing {0}/50000".format(i))
+            Archive = Globals.configDataGracesFolders[i]
             i += 1
-#           self.progressbar.setValue(self.progressbar.value() + 1)
-#       self.progressLabel.setText('Done!')
-        i = 0
+            ArchiveLocation = 'map' + os.sep + 'sce' + os.sep + 'R' + os.sep + 'ja' + os.sep
 
-#       self.progressbar.reset
+            for file in Archive:
+                args.extend(["{0}{1}.scs".format(GracesPath, file), "{0}{1}.scs".format(ArchiveLocation, file)])
 
-    def InitiateMassReplaceSearch(self, item, column):
-        parentItem = item.parent()
-        searchstring = item.data(1, 0)
-        self.parent.ShowMassReplace()
-        if parentItem is None: # clicked on the Japanese text, just search for it
-            self.parent.massDialog.original.setText(searchstring)
-        else: # clicked on the English subentry, search for JP and place ENG in the replacement box
-            self.parent.massDialog.original.setText(parentItem.data(1, 0))
-            self.parent.massDialog.replacement.setText(searchstring)
-            
-        self.parent.massDialog.matchEntry.setChecked(True)
-        self.parent.massDialog.Search()
+                tempFile = open("{0}{1}.scs".format(GracesPath, file))
+                tempData = tempFile.read()
+                map1Rbin.write(tempData)
+                tempFile.close()
+
+
+            # Run the process!
+            proc=subprocess.Popen(args,shell=False,stdin=subprocess.PIPE,stdout=subprocess.PIPE)
+    
+            data = proc.stdout.read()
+            XML.extend(re.findall(u'<.*?>', data, re.DOTALL))
+            progress.setValue(progress.value() + 1)
+
+        map1Rbin.close()
+
+
+        # Let's make an XML! And also move all those .toc files over
+
+        for Path in TestPath:
+            for File in os.listdir(Path):
+                if File.rfind('.toc') >= 0:
+                    try:
+                        os.remove("Graces/v2/" + File)
+                    except:
+                        pass
+                    shutil.move(Path + "/" + File, "Graces/v2")
+                if File.rfind('.patch') >=0:
+                    try:
+                        os.remove("Graces/v2/" + File)
+                    except:
+                        pass
+                    shutil.move(Path + "/" + File, "Graces/v2")
+                    
+        #shutil.rmtree('Resources/Wii')
+        
+
+        XMLset = set(XML)
+        XMLFinal = []
+        for entry in XMLset:
+            XMLFinal.append(entry)
+        
+        XMLFinal.sort()    
+                
+        
+        xmlFile = open("riivolution/GracesBugfix.xml", "w")
+        
+        
+        
+        patchFile = open("Graces/v2/rootR.cpk.patch", "r")
+        rootRPatch = patchFile.readline()
+        patchFile.close()
+
+        patchFile = open("Graces/v2/map0R.cpk.patch", "r")
+        map0RPatch = patchFile.readline()
+        patchFile.close()
+
+        patchFile = open("Graces/v2/map1R.cpk.patch", "r")
+        map1RPatch = patchFile.readline()
+        patchFile.close()
+
+                
+        XMLString = [
+        
+        '<wiidisc version="1">\n',        
+        '\t<id game="STG" version="2"/>\n',
+        '\t<options>\n',
+        '\t\t<section name="Testing">\n',
+        
+        '\t\t\t<option name="Graces Translation" default="1">\n',
+        '\t\t\t\t<choice name="Enabled">\n',
+        '\t\t\t\t\t<patch id="graces" />\n',
+        '\t\t\t\t\t<patch id="gracesfiles" />\n',
+        '\t\t\t\t</choice>\n',
+        '\t\t\t</option>\n',
+
+        '\t\t\t<option name="Region Patch" default="1">\n',
+        '\t\t\t\t<choice name="Enabled">\n',
+        '\t\t\t\t\t<patch id="localeZero" />\n',
+        '\t\t\t\t</choice>\n',
+        '\t\t\t</option>\n',
+        
+        '\t\t\t<option name="Debug Output">\n',
+        '\t\t\t\t<choice name="For Original (v0)">\n',
+        '\t\t\t\t\t<patch id="kamek_Ori" />\n',
+        '\t\t\t\t</choice>\n',
+        '\t\t\t</option>\n',
+        
+        '\t\t</section>\n',
+        '\t</options>\n',
+        
+        '\t<patch id="localeZero">\n',
+        '\t\t<memory offset="0x803595DC" value="38600000" />\n',
+        '\t</patch>\n',
+
+        '\t<patch id="graces" root="/Graces/v2">\n',
+        '\t\t<file disc="/rootR.cpk" external="rootR.cpk.patch" offset="{0}" resize="true" />\n'.format(rootRPatch),
+        '\t\t<file disc="/map0R.cpk" external="map0R.cpk.patch" offset="{0}" resize="true" />\n'.format(map0RPatch),
+        '\t\t<file disc="/map1R.cpk" external="map1R.cpk.patch" offset="{0}" resize="true" />\n'.format(map1RPatch),
+        "".join(["\t\t%s\n" % (k) for k in XMLFinal[:63]]), #[:63]
+        '\t</patch>\n',
+
+        '\t<patch id="gracesfiles" root="/Graces">\n',
+        '\t\t<file resize="false" offset="0x70000000" disc="map0R.cpk" external="map0R.bin" />\n',
+	    '\t\t<file resize="false" offset="0x70000000" disc="map1R.cpk" external="map1R.bin" />\n',
+	    '\t\t<file resize="false" offset="0x70000000" disc="rootR.cpk" external="rootR.bin" />\n',
+        '\t</patch>\n',
+        
+        '\t<patch id="kamek_New">\n',
+        '\t\t<memory offset="0x80035C10" value="4bfcbc2c" />\n',
+        '\t\t<memory offset="0x80001800" value="9421fff07c0802a693e1000c7c7f1b783c60800090010014386318f04cc63182480343f1800100147fe3fb7883e1000c7c0803a6382100104e8000207c0802a69421ef8093e1107c900110849081101c90a1102090c1102490e110289101102c912110309141103440860024d8211038d8411040d8611048d8811050d8a11058d8c11060d8e11068d9011070380000013be10014980100083800000098010009380110887c641b7838a100089001000c7fe3fb7838011018900100104832e8457fe3fb78483258f9388000017c651b7838c000007fe3fb784832b5418001108483e1107c382110807c0803a64e8000206c6f6c0a00" />\n',
+        '\t</patch>\n',
+        
+        '</wiidisc>'
+        
+        ]
+        
+        xmlFile.write("".join(["%s" % (k) for k in XMLString]))
+        progress.setValue(progress.value() + 1)
+
+        xmlFile.close()
+
+
+
 
 def CalculateAllCompletionPercentagesForDatabase():
     aList = Globals.configData.FileList
@@ -4251,127 +3979,6 @@ def CalculateCompletionForDatabase(database):
     tempCon.commit()
 
 
-class CompletionTable(QtGui.QDialog):
-
-    def __init__(self, parent):
-        super(CompletionTable, self).__init__()
-
-
-        self.parent = parent
-        self.setWindowModality(False)        
-
-        self.treewidget = QtGui.QTreeWidget()
-        
-        self.treewidget.setColumnCount(6)
-        self.treewidget.setHeaderLabels(['Name', 'Translation', 'Editing 1', 'Editing 2', 'Editing 3', 'Comments'])
-        self.treewidget.setSortingEnabled(True)
-        
-        self.treewidget.setColumnWidth(0, 200)
-        self.treewidget.setColumnWidth(1, 150)
-        self.treewidget.setColumnWidth(2, 150)
-        self.treewidget.setColumnWidth(3, 150)
-        self.treewidget.setColumnWidth(4, 150)
-        
-        self.treewidget.setMinimumSize(620, 500)
-
-        subLayout = QtGui.QVBoxLayout()
-        subLayout.addWidget(self.treewidget)
-        self.setLayout(subLayout)
-
-        self.treewidget.itemDoubleClicked.connect(self.JumpToFile)
-
-        progress = QtGui.QProgressDialog("Calculating percentages...", "Abort", 0, len(os.listdir(Globals.configData.LocalDatabasePath))+1)
-        progress.setWindowModality(QtCore.Qt.WindowModal)
-
-        bigTotal = 0
-        bigTrans = 0
-
-        i = 1
-        aList = Globals.configData.FileList
-            
-            
-        tempCon = sqlite3.connect(Globals.configData.LocalDatabasePath + '/CompletionPercentage')
-        tempCur = tempCon.cursor()
-            
-        for item in aList[0]:
-                        
-            cat = QtGui.QTreeWidgetItem(self.treewidget, [item, '-', '-', '-', '-', '-'])
-            
-            catTotalDB = 0
-            catTrans = 0
-            catTlCheck = 0
-            catRewrite = 0
-            catGrammar = 0
-            catTotalComments = 0
-            
-            for item in aList[i]:                
-                try:
-                    tempCur.execute("SELECT entries, translation, editing1, editing2, editing3, comments FROM Percentages WHERE Database = ?", [item])
-                    rows = tempCur.fetchall()
-                    totalDB = rows[0][0]
-                    translated = rows[0][1]
-                    tlCheck = rows[0][2]
-                    rewrite = rows[0][3]
-                    grammar = rows[0][4]
-                    commentamount = rows[0][5]
-                except:
-                    CalculateCompletionForDatabase(item)
-                    tempCur.execute("SELECT entries, translation, editing1, editing2, editing3, comments FROM Percentages WHERE Database = ?", [item])
-                    rows = tempCur.fetchall()
-                    totalDB = rows[0][0]
-                    translated = rows[0][1]
-                    tlCheck = rows[0][2]
-                    rewrite = rows[0][3]
-                    grammar = rows[0][4]
-                    commentamount = rows[0][5]
-                    
-                catTotalDB += totalDB
-                catTotalComments += commentamount
-                catTrans += translated
-                catTlCheck += tlCheck
-                catRewrite += rewrite
-                catGrammar += grammar
-
-                if totalDB != 0:
-                    translationPercent = '{0:06.2f}% ({1:04d}/{2:04d})'.format(float(translated)/float(totalDB)*100, translated, totalDB)
-                    tlCheckPercent = '{0:06.2f}% ({1:04d}/{2:04d})'.format(float(tlCheck)/float(totalDB)*100, tlCheck, totalDB)
-                    rewritePercent = '{0:06.2f}% ({1:04d}/{2:04d})'.format(float(rewrite)/float(totalDB)*100, rewrite, totalDB)
-                    grammarPercent = '{0:06.2f}% ({1:04d}/{2:04d})'.format(float(grammar)/float(totalDB)*100, grammar, totalDB)
-                else:
-                    translationPercent = 'N/A'
-                    tlCheckPercent = 'N/A'
-                    rewritePercent = 'N/A'
-                    grammarPercent = 'N/A'
-                    
-                newrow = QtGui.QTreeWidgetItem(cat, [item, translationPercent, tlCheckPercent, rewritePercent, grammarPercent, '{0}'.format(commentamount)])
-                    
-                progress.setValue(progress.value() + 1)
-    
-            cat.setData(1, 0, '{0:06.2f}% ({1:06d}/{2:06d})'.format(float(catTrans)/float(catTotalDB)*100, catTrans, catTotalDB))
-            cat.setData(2, 0, '{0:06.2f}% ({1:06d}/{2:06d})'.format(float(catTlCheck)/float(catTotalDB)*100, catTlCheck, catTotalDB))
-            cat.setData(3, 0, '{0:06.2f}% ({1:06d}/{2:06d})'.format(float(catRewrite)/float(catTotalDB)*100, catRewrite, catTotalDB)) 
-            cat.setData(4, 0, '{0:06.2f}% ({1:06d}/{2:06d})'.format(float(catGrammar)/float(catTotalDB)*100, catGrammar, catTotalDB))
-            cat.setData(5, 0, '{0}'.format(catTotalComments))
-            
-            bigTotal += catTotalDB
-            bigTrans += catTrans           
-                
-            i = i + 1
-
-        self.treewidget.sortItems(0, 1)
-        progress.setValue(len(os.listdir(Globals.configData.LocalDatabasePath))+1)
-        
-        
-        self.setWindowTitle('Current Phase: Translation, at {0:.2f}% completion'.format(float(bigTrans)/float(bigTotal)*100))
-
-    def JumpToFile(self, item, column):
-        if item.childCount() > 0:
-            return
-
-        file = item.data(0, 0)
-        self.parent.JumpToEntry(file, 1)
-
-
 def TrueCount():
     
     i = 1
@@ -4392,637 +3999,6 @@ def TrueCount():
                     
         print '{0}: {1} entries'.format(item, len(typeset))
         i += 1
-
-
-class Statistics(QtGui.QDialog):
-
-    def __init__(self):
-        super(Statistics, self).__init__()
-
-        self.setWindowModality(False)        
-        layout = QtGui.QVBoxLayout()
-        
-        
-        self.setMinimumSize(400, 600)
-        self.setMaximumWidth(400)
-        
-        Globals.LogCur.execute("SELECT * FROM Log")
-        LogList = Globals.LogCur.fetchall()
-        
-        # Today Stats
-        TodayGroup = QtGui.QGroupBox()
-        layout.addWidget(TodayGroup)
-        
-        TodayGroup.setTitle('Today:')   
-        TodayLay = QtGui.QVBoxLayout()
-        TodayGroup.setLayout(TodayLay)
-        TodayList = set()
-        TodaySet = set()
-        today = time.strftime('%m/%d', time.localtime(time.time()))
-        for entry in LogList:
-            if time.strftime('%m/%d', time.localtime(entry[3])) == today:
-                TodaySet.add(entry[2])
-                for x in entry[1].split(','):
-                    TodayList.add((x, entry[2]))
-
-        if TodaySet == set([]):
-            TodayLay.addWidget(QtGui.QLabel("Nobody's done anything today =("))
-        else:
-            for name in TodaySet:
-                string = ''
-                i = 0
-                for entry in TodayList:
-                    if entry[1] == name:
-                        string = string + entry[0] + ', '
-                        i+=1 
-                label = QtGui.QLabel('{0}: {1} files translated'.format(name, i))
-                TodayLay.addWidget(label)
-                label = QtGui.QLabel(string[:-2] + '\n')
-                label.setWordWrap(True)
-                font = label.font()
-                font.setPointSize(10)
-                font.setItalic(True)
-                label.setFont(font)
-                TodayLay.addWidget(label)
-
-
-        # Yesterday Stats
-        YesterdayGroup = QtGui.QGroupBox()
-        layout.addWidget(YesterdayGroup)
-        
-        YesterdayGroup.setTitle('Yesterday:')   
-        YesterdayLay = QtGui.QVBoxLayout()
-        YesterdayGroup.setLayout(YesterdayLay)
-        YesterdayList = set()
-        YesterdaySet = set()
-        
-        yesterday = '{0}/{1}'.format(time.strftime('%m', time.localtime(time.time())), str(int(time.strftime('%d', time.localtime(time.time())))-1).zfill(2))
-                
-        for entry in LogList:
-            if time.strftime('%m/%d', time.localtime(entry[3])) == yesterday:
-                YesterdaySet.add(entry[2])
-                for x in entry[1].split(','):
-                    YesterdayList.add((x, entry[2]))
-
-        if YesterdaySet == ():
-            YesterdayLay.addWidget(QtGui.QLabel("Nobody did anything yesterday =("))
-        else:
-            for name in YesterdaySet:
-                string = ''
-                i = 0
-                for entry in YesterdayList:
-                    if entry[1] == name:
-                        string = string + entry[0] + ', '
-                        i+=1 
-                label = QtGui.QLabel('{0}: {1} files translated'.format(name, i))
-                YesterdayLay.addWidget(label)
-                label = QtGui.QLabel(string[:-2] + '\n')
-                label.setWordWrap(True)
-                font = label.font()
-                font.setPointSize(10)
-                font.setItalic(True)
-                label.setFont(font)
-                YesterdayLay.addWidget(label)
-
-        
-        #Lifetime Stats
-        LifetimeGroup = QtGui.QGroupBox()
-        layout.addWidget(LifetimeGroup)
-        
-        LifetimeGroup.setTitle('Lifetime:')   
-        LifetimeLay = QtGui.QVBoxLayout()
-        LifetimeGroup.setLayout(LifetimeLay)
-        
-        LifetimeList = []
-        LifetimeSet = set()
-        for entry in LogList:
-            LifetimeSet.add(entry[2])
-            for x in entry[1].split(','):
-                LifetimeList.append((x, entry[2]))
-
-        PrintList = []   
-        for name in LifetimeSet:
-            string = ''
-            countset = set()
-            for entry in LifetimeList:
-                if entry[1] == name:
-                    countset.add(entry[0]) 
-            PrintList.append([len(countset), name])
-        
-            
-        PrintList.sort()
-        PrintList.reverse()
-        
-        for entry in PrintList:         
-            label = QtGui.QLabel('{0:<20}\t{1} files translated'.format(entry[1] + ':', entry[0]))
-            LifetimeLay.addWidget(label)
-
-        
-        self.setLayout(layout)
-
-
-
-class MassReplace(QtGui.QDialog):
-
-    def __init__(self, parent):
-        super(MassReplace, self).__init__()
-
-        self.parent = parent
-
-        self.setWindowModality(False)
-        
-        self.searches = []
-        self.tabwidget = QtGui.QTabWidget()
-        
-        
-        font = QtGui.QLabel().font()
-        font.setPointSize(10)
- 
-        self.original = QtGui.QTextEdit()
-        self.original.setAcceptRichText(False)
-        self.original.setFixedHeight(50)
-        self.replacement = QtGui.QTextEdit()
-        self.replacement.setAcceptRichText(False)
-        self.replacement.setFixedHeight(50)
-        self.exceptions = QtGui.QLineEdit()
-        self.fileFilter = QtGui.QLineEdit()
-        self.matchExact = QtGui.QRadioButton('Any Match')
-        self.matchEnglish = QtGui.QRadioButton('Any: English Only')
-        self.matchEntry = QtGui.QRadioButton('Complete Entry')
-        self.matchComments = QtGui.QRadioButton('Comments')
-        self.matchEnglish.setChecked(True)
-        self.fileFilter.setToolTip('Wildcards implicit. eg CHT will match all skits')
-        self.matchCase = QtGui.QCheckBox('Match case')
-        self.searchDebug = QtGui.QCheckBox('Search Debug')
-        
-        self.matchEnglish.setFont(font)
-        self.matchExact.setFont(font)
-        self.matchEntry.setFont(font)
-        self.matchComments.setFont(font)
-                
-        originalLabel = QtGui.QLabel('Search for:')
-        originalLabel.setFont(font)
-        exceptionLabel = QtGui.QLabel('Excluding:')
-        exceptionLabel.setFont(font)
-        replaceLabel = QtGui.QLabel('Replace with:')
-        replaceLabel.setFont(font)
-        
-        filterLabel = QtGui.QLabel('Filter by File:')
-        filterLabel.setToolTip('Wildcards implicit. eg CHT will match all skits')
-        filterLabel.setFont(font)
-        
-        self.search = QtGui.QPushButton('Search')
-        self.replace = QtGui.QPushButton('Replace')
-
-        self.checkAll = QtGui.QToolButton()
-        self.checkAll.setText('Check All')
-        self.checkNone = QtGui.QToolButton()
-        self.checkNone.setText('Check None')
-        self.removeTabButton = QtGui.QToolButton()
-        self.removeTabButton.setText('Remove Tab')
-        
-        checkLayout = QtGui.QHBoxLayout()
-        checkLayout.addWidget(self.checkAll)
-        checkLayout.addWidget(self.checkNone)
-        checkLayout.addWidget(self.removeTabButton)
-
-        buttonLayout = QtGui.QHBoxLayout()
-        buttonLayout.addLayout(checkLayout)
-        buttonLayout.addWidget(self.search)
-        buttonLayout.addWidget(self.replace)
-                
-        textboxLayout = QtGui.QGridLayout()
-        textboxLayout.addWidget(originalLabel    , 0, 0, 1, 1)
-        textboxLayout.addWidget(replaceLabel     , 0, 1, 1, 1)
-        textboxLayout.addWidget(self.original    , 1, 0, 1, 1)
-        textboxLayout.addWidget(self.replacement , 1, 1, 1, 1)
-        textboxWidget = QtGui.QWidget()
-        textboxWidget.setLayout(textboxLayout)
-                
-        inputLayout = QtGui.QGridLayout()
-        inputLayout.addWidget(textboxWidget    , 0, 0, 3, 2)
-        inputLayout.addWidget(exceptionLabel   , 3, 0, 1, 1)
-        inputLayout.addWidget(self.exceptions  , 3, 1, 1, 1)
-        inputLayout.addWidget(self.matchCase   , 4, 0, 1, 1)
-        inputLayout.addWidget(self.searchDebug , 4, 1, 1, 1)
-        inputLayout.addWidget(filterLabel      , 0, 2, 1, 1)
-        inputLayout.addWidget(self.fileFilter  , 1, 2, 1, 1)
-        inputLayout.addWidget(self.matchEntry  , 2, 2, 1, 1)
-        inputLayout.addWidget(self.matchExact  , 3, 2, 1, 1)
-        inputLayout.addWidget(self.matchEnglish, 4, 2, 1, 1)
-        #inputLayout.addWidget(self.matchComments,5, 2, 1, 1)
-        
-        inputLayout.setColumnStretch(1, 1)
-        
-        self.search.released.connect(self.Search)
-        self.replace.released.connect(self.Replace)
-        self.checkAll.released.connect(self.checkingAll)
-        self.checkNone.released.connect(self.checkingNone)
-        self.removeTabButton.released.connect(self.closeCurrentTab)
-                
-        self.setWindowTitle('Mass Replace')
-        layout = QtGui.QVBoxLayout()
-        #layout.addWidget(QtGui.QLabel('Replace:'))
-        layout.addLayout(inputLayout)
-        layout.addWidget(self.tabwidget)
-        layout.addLayout(buttonLayout, QtCore.Qt.AlignRight)
-        self.setLayout(layout)
-        self.setMinimumSize(800, 600)
-
-    def generateSearchTab(self):
-        treewidget = QtGui.QTreeWidget()
-        
-        treewidget.setColumnCount(6)
-        treewidget.setHeaderLabels(['File', 'Entry', 'Info', 'Replace', 'E String', 'J String', 'Replacement Type', 'Status', 'Database Name'])
-        treewidget.setSortingEnabled(True)
-        
-        treewidget.setColumnWidth(0, 120)
-        treewidget.setColumnWidth(1, 30)
-        treewidget.setColumnWidth(2, 50)
-        treewidget.setColumnWidth(3, 20)
-        treewidget.setColumnWidth(4, 275)
-        treewidget.setColumnWidth(5, 275)
-        treewidget.setColumnWidth(6, 30)
-        
-        #treewidget.setMinimumSize(780, 400)
-        treewidget.sortItems(0, QtCore.Qt.AscendingOrder)
-        
-        treewidget.itemDoubleClicked.connect(self.JumpToFile)
-        
-        return treewidget
-
-    def checkingAll(self):
-    
-        Iterator = QtGui.QTreeWidgetItemIterator(self.tabwidget.currentWidget())
-        while Iterator.value():
-
-            Iterator.value().setCheckState(3, 2)
-            Iterator += 1 
-        
-    def checkingNone(self):
-    
-        Iterator = QtGui.QTreeWidgetItemIterator(self.tabwidget.currentWidget())
-        while Iterator.value():
-
-            Iterator.value().setCheckState(3, 0)
-            Iterator += 1 
-
-    def closeCurrentTab(self):
-        self.tabwidget.removeTab( self.tabwidget.currentIndex() )
-            
-    def Search(self):
-        # Place all matching strings to the search into the tree widget
-        
-        newSearchTab = self.generateSearchTab()
-
-
-        matchString = unicode(self.original.toPlainText())
-        exceptString = unicode(self.exceptions.text())
-
-        if matchString.count(unicode('<', 'UTF-8')) != matchString.count(unicode('>', 'UTF-8')):
-            
-            reply = QtGui.QMessageBox.information(self, "Incorrect Search Usage", "Warning:\n\nPart of a variable: Be sure you know what you're doing.")
-            #return
-
-        tabNameString = matchString
-        matchString = VariableRemove(matchString)
-        
-        if not self.matchEntry.isChecked():
-            if len(matchString) == 1:
-                if ord(matchString) <= 0x20:
-                    reply = QtGui.QMessageBox.information(self, "Incorrect Search Usage", "Warning:\n\nYour search can not be only a space, a form feed, a newline, or a tab.")
-                    return
-            elif len(matchString) == 0:
-                reply = QtGui.QMessageBox.information(self, "Incorrect Search Usage", "Warning:\n\nYour search can not be empty. Please enter text in the search bar.")
-                return
-
-        MatchedEntries = []
-        aList = Globals.configData.FileList
-        
-        # turn on case sensitive checking
-        if self.matchCase.isChecked():
-            Globals.CursorGracesJapanese.execute(u"PRAGMA case_sensitive_like = ON")
-
-        # any match within a string
-        if self.matchExact.isChecked():
-            Globals.CursorGracesJapanese.execute(u"select ID from Japanese where string LIKE ?", ('%' + unicode(matchString) + '%', ))
-            JPmatches = set(Globals.CursorGracesJapanese.fetchall())
-            SqlExpressionMatchString = '%' + unicode(matchString) + '%'
-            TextSearchColumn = 'English'
-            ReplacementType = 'Substr'
-        # any match in English strings only
-        elif self.matchEnglish.isChecked():
-            JPmatches = set()
-            SqlExpressionMatchString = '%' + unicode(matchString) + '%'
-            TextSearchColumn = 'English'
-            ReplacementType = 'Substr'
-        # match the entire entry
-        elif self.matchEntry.isChecked():
-            Globals.CursorGracesJapanese.execute(u"select ID from Japanese where string LIKE ?", (unicode(matchString),))
-            JPmatches = set(Globals.CursorGracesJapanese.fetchall())
-            SqlExpressionMatchString = unicode(matchString)
-            TextSearchColumn = 'English'
-            ReplacementType = 'Entry'
-        elif self.matchComments.isChecked():
-            JPmatches = set()
-            SqlExpressionMatchString = '%' + unicode(matchString) + '%'
-            TextSearchColumn = 'Comment'
-            ReplacementType = 'CommentSubstr'
-            
-        ORIDStringList = []
-        tmp = ''
-        i = 0
-        while JPmatches:
-            i = i + 1
-            if i >= 500: # split up query into multiple queries when it gets too large
-                ORIDStringList = ORIDStringList + [tmp]
-                tmp = ''
-                i = 0
-            tmp = tmp + " OR StringID=" + str(JPmatches.pop()[0])
-        ORIDStringList = ORIDStringList + [tmp]
-        
-        AdditionalConstraintsString = ""
-        if not self.searchDebug.isChecked():
-            AdditionalConstraintsString = "AND status >= 0"
-            
-            
-        for i in range(1, len(aList)):
-            for File in aList[i]:
-                if File.find(self.fileFilter.text()) >= 0:
-                    FilterCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(File))
-                    FilterCur = FilterCon.cursor()
-                    
-                    if self.matchCase.isChecked():
-                        FilterCur.execute(u"PRAGMA case_sensitive_like = ON")
-                        
-                    TempList = []
-                    try: # fetch the english entires
-                        FilterCur.execute(u"SELECT ID, English, StringID, IdentifyString, status FROM Text WHERE {1} LIKE ? {0}".format(AdditionalConstraintsString, TextSearchColumn), (SqlExpressionMatchString, ))
-                    except:
-                        FilterCur.execute(u"SELECT ID, English, StringID, '' AS IdentifyString, status FROM Text WHERE {1} LIKE ? {0}".format(AdditionalConstraintsString, TextSearchColumn), (SqlExpressionMatchString, ))
-                    TempList = TempList + FilterCur.fetchall()
-                    
-                    for ORIDString in ORIDStringList: # fetch the japanese entries
-                        try:
-                            FilterCur.execute(u"SELECT ID, English, StringID, IdentifyString, status FROM Text WHERE ( 1=2 {0} ) {1}".format(ORIDString, AdditionalConstraintsString))
-                        except:
-                            FilterCur.execute(u"SELECT ID, English, StringID, '' AS IdentifyString, status FROM Text WHERE ( 1=2 {0} ) {1}".format(ORIDString, AdditionalConstraintsString))
-                        # This may fetch entries that were already fetched above in the english ones, make sure it's not already added
-                        JapaneseFetches = FilterCur.fetchall()
-                        for JapaneseFetch in JapaneseFetches:
-                            notYetAdded = True
-                            for EnglishFetch in TempList:
-                                if JapaneseFetch[0] == EnglishFetch[0]:
-                                    notYetAdded = False
-                                    break
-                            if notYetAdded:
-                                TempList = TempList + [JapaneseFetch]
-                    
-                    for item in TempList:
-                        ENString = item[1]
-                        Globals.CursorGracesJapanese.execute('SELECT string FROM Japanese WHERE ID={0}'.format(item[2]))
-                        JPString = Globals.CursorGracesJapanese.fetchall()[0][0]
-                        MatchedEntries.append([File, item[0], ENString, JPString, item[3], item[4], GetDatabaseDescriptionString(File)])
-
-                    if self.matchCase.isChecked():
-                        FilterCur.execute(u"PRAGMA case_sensitive_like = OFF")
-                        
-        if len(MatchedEntries) == 0:
-            return
-
-        if len(exceptString) >= 1:
-            checkForExceptions = True
-        else:
-            checkForExceptions = False
-            
-        for item in MatchedEntries:
-            try:
-                englishString = VariableReplace(item[2])
-                japaneseString = VariableReplace(item[3])
-                
-                if checkForExceptions:
-                    if exceptString in englishString:
-                        continue
-                    
-                treeItem = QtGui.QTreeWidgetItem([item[0], str(item[1]), str(item[4]), "", englishString, japaneseString, ReplacementType, str(int(item[5])), item[6]])
-                treeItem.setCheckState(3, QtCore.Qt.Checked)
-                newSearchTab.addTopLevelItem(treeItem)
-            except:
-                print("Mass Replace: Failed adding file [" + item[0] + "], entry [" + str(item[1]) + "]")
-        
-        # turn case sensitiveness back off
-        if self.matchCase.isChecked():
-            Globals.CursorGracesJapanese.execute(u"PRAGMA case_sensitive_like = OFF")
-            
-        self.tabwidget.addTab(newSearchTab, tabNameString)
-        self.tabwidget.setCurrentIndex(self.tabwidget.count()-1)
-        
-    def Replace(self):
-
-        currentTab = self.tabwidget.currentWidget()
-        if currentTab == None:
-            return
-        Iterator = QtGui.QTreeWidgetItemIterator(currentTab)
-
-        if len(self.replacement.toPlainText()) == 0:
-            reply = QtGui.QMessageBox.information(self, "Incorrect Search Usage", "Warning:\n\nYour replacement can not be empty. Please enter text in the search bar.")
-            return
-                
-        while Iterator.value():
-        
-            if Iterator.value().checkState(3) == 2:
-                
-                databaseName = Iterator.value().data(0, 0)
-                entryID = int(Iterator.value().data(1, 0))
-                
-                IterCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(databaseName))
-                IterCur = IterCon.cursor()
-                
-                #if self.matchCase.isChecked():
-                #    IterCur.execute(u"PRAGMA case_sensitive_like = ON")
-                
-                
-                
-                IterCur.execute("SELECT status FROM Text WHERE ID=?", (entryID,))
-                currentStatus = IterCur.fetchall()[0][0]
-
-                # if origin by typing or automatic:
-                if Globals.ModeFlag == 'Manual':
-                    # in manual mode: leave status alone, do not change, just fetch the existing one
-                    updateStatusValue = currentStatus
-                else:
-                    # in (semi)auto mode: change to current role, except when disabled by option and current role is lower than existing status
-                    if Globals.UpdateLowerStatusFlag == False:
-                        statuscheck = currentStatus
-                        if statuscheck > self.parent.role:
-                            updateStatusValue = statuscheck
-                        else:
-                            updateStatusValue = self.parent.role
-                    else:
-                        updateStatusValue = self.parent.role
-                    # endif Globals.UpdateLowerStatusFlag
-                # endif Globals.ModeFlag
-                
-                
-                
-                ReplacementType = Iterator.value().data(6, 0)
-                if ReplacementType == 'Substr':
-                    string = unicode(Iterator.value().data(4, 0))
-                    
-                    orig = unicode(self.tabwidget.tabText(self.tabwidget.currentIndex()))
-                    repl = unicode(self.replacement.toPlainText())
-                    if self.matchCase.isChecked():
-                        string = string.replace(orig, repl)
-                    else:
-                        string = re.sub('(?i)' + re.escape(orig), repl, string)
-                        
-                    string = VariableRemove(string)
-                elif ReplacementType == 'Entry':
-                    string = unicode(self.replacement.toPlainText())
-                    string = VariableRemove(string)
-                                
-                IterCur.execute(u"update Text set english=?, updated=1, status=? where ID=?", (unicode(string), updateStatusValue, entryID))
-                self.parent.update.add(unicode(databaseName))
-            
-                #if self.matchCase.isChecked():
-                #    IterCur.execute(u"PRAGMA case_sensitive_like = OFF")
-                    
-                IterCon.commit()
-
-            Iterator += 1 
-            
-        self.tabwidget.removeTab( self.tabwidget.currentIndex() )
-        
-    def JumpToFile(self, item, column):
-        if item.childCount() > 0:
-            return
-
-        file = item.data(0, 0)
-        entryno = item.data(1, 0)
-        self.parent.JumpToEntry(file, entryno)
-        self.parent.show()
-        self.parent.raise_()
-        self.parent.activateWindow()
-
-class MyHighlighter( QtGui.QSyntaxHighlighter ):
-
-    WORDS = u'(?iu)[\w\']+'
-    
-    def __init__( self, parent, theme ):
-        self.dict = None
-        QtGui.QSyntaxHighlighter.__init__( self, parent )
-        self.parent = parent
-        self.stateDic={'normalState':-1,'inPrefix':0,'inPostfix':1,'inName':2}
-        self.m_formats= {'othtag':0,'postfix':1,'prefix':2,'name':3}
-        #init formats
-        darkBlue = QtGui.QColor()
-        darkBlue.setNamedColor("darkBlue")
-        darkRed = QtGui.QColor()
-        darkRed.setNamedColor("darkRed")
-        darkGreen = QtGui.QColor()
-        darkGreen.setNamedColor("darkGreen")
-        entityFmt = QtGui.QTextCharFormat()
-        entityFmt.setForeground( darkBlue )
-        entityFmt.setFontWeight( QtGui.QFont.Bold )
-        self.setFormatFor('othtag',entityFmt)
-        tagFmt = QtGui.QTextCharFormat()
-        tagFmt.setForeground( darkGreen )
-        tagFmt.setFontWeight( QtGui.QFont.Bold )
-        self.setFormatFor('postfix',tagFmt)
-        commentFmt = QtGui.QTextCharFormat()
-        commentFmt.setForeground( darkRed )
-        commentFmt.setFontWeight( QtGui.QFont.Bold )
-        self.setFormatFor('prefix',commentFmt)
-        nameFmt = QtGui.QTextCharFormat()
-        nameFmt.setForeground( darkRed )
-        nameFmt.setFontWeight( QtGui.QFont.Bold )
-        self.setFormatFor('name',entityFmt)
-
-
-    def highlightBlock( self, text ):
-        state = self.previousBlockState()
-        len = text.length()
-        start = 0
-        pos = 0
-        while pos<len:
-            if  state==self.stateDic['normalState']:
-                while pos < len :
-                    if  text.mid(pos, 1) == u'<' :
-                        if text.mid(pos, 2) == u'<C' :
-                            state = self.stateDic['inPrefix']
-                        else :
-                            state = self.stateDic['inPostfix']
-                        break
-                    else :
-                        pos=pos+1
-                continue
-            if  state==self.stateDic['inPrefix'] :
-                start = pos
-                while pos < len :
-                    if  text.mid(pos, 1) == u'>' :
-                        pos=pos+1
-                        state = self.stateDic['inName']
-                        break
-                    else :
-                        pos=pos+1
-                self.setFormat(start, pos - start, self.m_formats['prefix'])
-                continue
-            if  state==self.stateDic['inPostfix'] :
-                start = pos
-                while pos < len :
-                    if  text.mid(pos, 1) == u'>':
-                        pos=pos+1
-                        state = self.stateDic['normalState']
-                        break
-                    else :
-                        pos=pos+1
-                self.setFormat(start, pos - start, self.m_formats['postfix'])
-                continue
-            if  state==self.stateDic['inName'] :
-                start = pos
-                while pos < len :
-                    if  text.mid(pos, 1) == u'<':
-                        if text.mid(pos, 2) == u'<C' :
-                            state = self.stateDic['inPrefix']
-                        else :
-                            state = self.stateDic['inPostfix']
-                        break
-                    else :
-                        pos=pos+1
-                self.setFormat(start, pos - start, self.m_formats['name'])
-                continue
-        self.setCurrentBlockState(state)
-
-        if Globals.enchanted == True:
-            if not self.dict:
-                return
-     
-            text = unicode(text)
-     
-            format = QtGui.QTextCharFormat()
-            format.setUnderlineColor(QtCore.Qt.red)
-            format.setUnderlineStyle(QtGui.QTextCharFormat.SpellCheckUnderline)
-          
-            for word_object in re.finditer(self.WORDS, text):
-                if ord(word_object.group()[0]) > 0x79:
-                    continue
-                if not self.dict.check(word_object.group()):
-                    self.setFormat(word_object.start(),
-                        word_object.end() - word_object.start(), format)
-
-                
-                
-    def setFormatFor( self,cons,qformat):
-        self.m_formats[cons]=qformat
-        self.rehighlight()
-
-
-    def getFormatFor( self, cons):
-        return self.m_formats[cons]
-
-
-    def setDict(self, dict):
-        self.dict = dict
 
 
 

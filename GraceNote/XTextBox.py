@@ -94,7 +94,7 @@ class XTextBox(QtGui.QTextEdit):
                     self.dict.add_to_session(word.strip())
                 customWordFile.close()
             self.dict.add_to_session
-            self.highlighter = MyHighlighter(self.document(), 'something')
+            self.highlighter = CustomHighlighter(self.document(), 'something')
             self.highlighter.setDict(self.dict)
         
         self.textChanged.connect(self.textChangedSignal)
