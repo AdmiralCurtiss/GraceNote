@@ -30,6 +30,7 @@
     <Compile Include="GraceNote\Config.py" />
     <Compile Include="GraceNote\Globals.py" />
     <Compile Include="GraceNote\hashtable.py" />
+    <Compile Include="GraceNote\HUDLayout.py" />
     <Compile Include="GraceNote\Scripts.py" />
     <Compile Include="GraceNote\XTextBox.py" />
     <Compile Include="GraceTools\Enemies.py" />

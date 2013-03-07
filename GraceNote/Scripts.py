@@ -39,61 +39,53 @@ from XTextBox import *
 
 # load config
 try:
-    configfile = sys.argv[1]
+    Globals.configfile = sys.argv[1]
 except:
-    configfile = 'config.xml'
-print 'Loading configuration: ' + configfile
-configData = Configuration(configfile)
+    Globals.configfile = 'config.xml'
+print 'Loading configuration: ' + Globals.configfile
+Globals.configData = Configuration(Globals.configfile)
 
 # load graces folder config if it's available
 try:
-    configDataGracesFolders = Configuration('config_graces_byfolder.xml').FileList
+    Globals.configDataGracesFolders = Configuration('config_graces_byfolder.xml').FileList
 except:
-    configDataGracesFolders = [[]]
+    Globals.configDataGracesFolders = [[]]
 
+if os.path.exists('hashtable.py'):
+    from hashtable import hashtable
+    Globals.HashTableExists = True
+else:
+    Globals.HashTableExists = False
 
-try:
-    Globals.Audio = True
-    #sys.path.append('Clips')
-    from PyQt4.phonon import Phonon
-    if os.path.exists('hashtable.py'):
-        from hashtable import hashtable
-        HashTableExists = True
-    else:
-        HashTableExists = False
-except ImportError:
-    print "Your Qt installation does not have Phonon support.\nPhonon is required to play audio clips."
-    Globals.Audio = False
-
-
-if not os.path.exists(configData.LocalDatabasePath + '/CompletionPercentage'):
-    CreateConnection = sqlite3.connect(configData.LocalDatabasePath + '/CompletionPercentage')
+# create CompletionPercentage if it doesn't exist
+if not os.path.exists(Globals.configData.LocalDatabasePath + '/CompletionPercentage'):
+    CreateConnection = sqlite3.connect(Globals.configData.LocalDatabasePath + '/CompletionPercentage')
     CreateCursor = CreateConnection.cursor()
     CreateCursor.execute("CREATE TABLE Percentages (Database TEXT PRIMARY KEY, entries INT, translation INT, editing1 INT, editing2 INT, editing3 INT, comments INT)")
     CreateConnection.commit()
 
 try:
     import enchant
-    enchanted = True
-except:
-    enchanted = False
+    Globals.enchanted = True
+except ImportError:
+    Globals.enchanted = False
     print 'No pyenchant found. Spell checking will not be available.'
 
 
 os.chdir(os.path.dirname(os.path.abspath(sys.argv[0])))
 
-ConnectionGracesJapanese = sqlite3.connect(configData.LocalDatabasePath + '/GracesJapanese')
-CursorGracesJapanese = ConnectionGracesJapanese.cursor()
+Globals.ConnectionGracesJapanese = sqlite3.connect(Globals.configData.LocalDatabasePath + '/GracesJapanese')
+Globals.CursorGracesJapanese = Globals.ConnectionGracesJapanese.cursor()
 
-LogCon = sqlite3.connect(configData.LocalDatabasePath + '/ChangeLog')
-LogCur = LogCon.cursor()
+Globals.LogCon = sqlite3.connect(Globals.configData.LocalDatabasePath + '/ChangeLog')
+Globals.LogCur = Globals.LogCon.cursor()
 
-EnglishVoiceLanguageFlag = False
-UpdateLowerStatusFlag = False
-ModeFlag = 'Semi-Auto'
-AmountEditingWindows = 5
-WriteDatabaseStorageToHddOnEntryChange = False
-FooterVisibleFlag = False
+Globals.EnglishVoiceLanguageFlag = False
+Globals.UpdateLowerStatusFlag = False
+Globals.ModeFlag = 'Semi-Auto'
+Globals.AmountEditingWindows = 5
+Globals.WriteDatabaseStorageToHddOnEntryChange = False
+Globals.FooterVisibleFlag = False
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -146,89 +138,6 @@ class SearchAction(QtGui.QAction):
 
 
 
-class HUDLayout(QtGui.QLayout):
-    MinimumSize, SizeHint = range(2)
-
-    def __init__(self, parent=None, margin=0, spacing=-1):
-        super(HUDLayout, self).__init__(parent)
-
-        self.setMargin(margin)
-        self.setSpacing(spacing)
-        self.list = []
-
-    def addItem(self, item):
-        self.add(item)
-
-    def addWidget(self, widget):
-        widget.setGeometry(QtCore.QRect(0,0,26,26))
-        widget.setMinimumSize(QtCore.QSize(26,26))
-        self.add(QtGui.QWidgetItem(widget))
-
-    def expandingDirections(self):
-        return QtCore.Qt.Horizontal | QtCore.Qt.Vertical
-
-    def hasHeightForWidth(self):
-        return False
-
-    def count(self):
-        return len(self.list)
-
-    def itemAt(self, index):
-        if index < len(self.list):
-            return self.list[index]
-
-        return None
-
-    def minimumSize(self):
-        return self.calculateSize(HUDLayout.MinimumSize)
-
-    def setGeometry(self, rect):
-        Width = 0
-        Height = 0
-
-        super(HUDLayout, self).setGeometry(rect)
-
-        for item in self.list:            
-            Height = item.geometry().height() + self.spacing()
-            Width += item.geometry().width() + self.spacing()
-
-            newRect = QtCore.QRect(
-                    rect.x() + rect.width() - Width + self.spacing(),
-                    rect.y() + rect.height() - Height + self.spacing(),
-                    item.geometry().width(), 
-                    item.geometry().height())
-
-            item.setGeometry(newRect)
-
-    def sizeHint(self):
-        return self.calculateSize(HUDLayout.SizeHint)
-
-    def takeAt(self, index):
-        if index >= 0 and index < len(self.list):
-            layoutStruct = self.list.pop(index)
-            return layoutStruct
-
-        return None
-
-    def add(self, item):
-        self.list.append(item)
-
-    def calculateSize(self, sizeType):
-        totalSize = QtCore.QSize()
-
-        for item in self.list:
-            itemSize = QtCore.QSize()
-
-            if sizeType == HUDLayout.MinimumSize:
-                itemSize = item.minimumSize()
-            else: # sizeType == BorderLayout.SizeHint
-                itemSize = item.sizeHint()
-
-            totalSize.setWidth(totalSize.width() + itemSize.width())
-
-        return totalSize
-
-
 
 class SplashScreen(QtGui.QWidget):
     
@@ -261,13 +170,13 @@ class SplashScreen(QtGui.QWidget):
         painter.drawText(350, 185, 'v10.0')
         painter.drawText(92, 185, self.text)
         
-        if enchanted == False and self.offline == True:
+        if Globals.enchanted == False and self.offline == True:
             painter.setPen(QtGui.QColor(255, 0, 0, 255))
             painter.drawText(100, 198, 'Spell Checker not available')
             painter.drawText(112, 210, 'Offline Mode')
             painter.setPen(QtGui.QColor(0, 0, 0, 255))
         
-        elif enchanted == False:
+        elif Globals.enchanted == False:
             painter.setPen(QtGui.QColor(255, 0, 0, 255))
             painter.drawText(100, 198, 'Spell Checker not available')
             painter.setPen(QtGui.QColor(0, 0, 0, 255))
@@ -356,54 +265,48 @@ class Scripts2(QtGui.QWidget):
         else:
             self.role = 1
 
-        global ModeFlag
         if self.settings.contains('mode'):
-            ModeFlag = self.settings.value('mode')
+            Globals.ModeFlag = self.settings.value('mode')
         else:
             self.settings.setValue('mode', 'Semi-Auto')
-            ModeFlag = 'Semi-Auto'
+            Globals.ModeFlag = 'Semi-Auto'
         
-        global EnglishVoiceLanguageFlag
         if self.settings.contains('voicelanguage'):
-            EnglishVoiceLanguageFlag = self.settings.value('voicelanguage') == 'EN'
+            Globals.EnglishVoiceLanguageFlag = self.settings.value('voicelanguage') == 'EN'
         else:
             self.settings.setValue('voicelanguage', 'JP')
-            EnglishVoiceLanguageFlag = False
+            Globals.EnglishVoiceLanguageFlag = False
         
-        global UpdateLowerStatusFlag
         if self.settings.contains('updatelowerstatus'):
-            UpdateLowerStatusFlag = self.settings.value('updatelowerstatus') == 'True'
+            Globals.UpdateLowerStatusFlag = self.settings.value('updatelowerstatus') == 'True'
         else:
             self.settings.setValue('updatelowerstatus', 'False')
-            UpdateLowerStatusFlag = False
+            Globals.UpdateLowerStatusFlag = False
         
-        global WriteDatabaseStorageToHddOnEntryChange
         if self.settings.contains('writeonentrychange'):
-            WriteDatabaseStorageToHddOnEntryChange = self.settings.value('writeonentrychange') == 'True'
+            Globals.WriteDatabaseStorageToHddOnEntryChange = self.settings.value('writeonentrychange') == 'True'
         else:
             self.settings.setValue('writeonentrychange', 'False')
-            WriteDatabaseStorageToHddOnEntryChange = False
+            Globals.WriteDatabaseStorageToHddOnEntryChange = False
         
-        global FooterVisibleFlag
         if self.settings.contains('footervisible'):
-            FooterVisibleFlag = self.settings.value('footervisible') == 'True'
+            Globals.FooterVisibleFlag = self.settings.value('footervisible') == 'True'
         else:
             self.settings.setValue('footervisible', 'False')
-            FooterVisibleFlag = False
+            Globals.FooterVisibleFlag = False
         
-        global AmountEditingWindows
         if self.settings.contains('editpane_amount'):
-            AmountEditingWindows = int(self.settings.value('editpane_amount'))
+            Globals.AmountEditingWindows = int(self.settings.value('editpane_amount'))
         else:
             self.settings.setValue('editpane_amount', '5')
-            AmountEditingWindows = 5
-        if AmountEditingWindows < 3 or AmountEditingWindows > 25:
-            AmountEditingWindows = 5
+            Globals.AmountEditingWindows = 5
+        if Globals.AmountEditingWindows < 3 or Globals.AmountEditingWindows > 25:
+            Globals.AmountEditingWindows = 5
 
         self.roletext = ['', 'Translating', 'Reviewing Translations', 'Reviewing Context', 'Editing']
 
-        self.parent.setWindowTitle("Grace Note - {0} in {1} mode".format(self.roletext[self.role] , ModeFlag))
-        #>>> CursorGracesJapanese.execute('create table Log(ID int primary key, File text, Name text, Timestamp int)')
+        self.parent.setWindowTitle("Grace Note - {0} in {1} mode".format(self.roletext[self.role] , Globals.ModeFlag))
+        #>>> Globals.CursorGracesJapanese.execute('create table Log(ID int primary key, File text, Name text, Timestamp int)')
 
 
         # Grab the changes
@@ -423,7 +326,7 @@ class Scripts2(QtGui.QWidget):
         self.tree.sortByColumn(1, 0)
         self.tree.setHeaderHidden(True)
         
-        self.PopulateModel(configData.FileList)
+        self.PopulateModel(Globals.configData.FileList)
 
 #        self.treemodel = QtGui.QSortFilterProxyModel()
 #        self.treemodel.setSortCaseSensitivity(QtCore.Qt.CaseSensitive)
@@ -451,7 +354,7 @@ class Scripts2(QtGui.QWidget):
         self.textEditingBoxes = []
         self.textEditingFooters = []
         self.twoupEditingFooters = []
-        for i in range(AmountEditingWindows):
+        for i in range(Globals.AmountEditingWindows):
             # create text boxes, set defaults
             tb1 = XTextBox(None, self)
             tb2 = XTextBox('jp', self)
@@ -476,7 +379,7 @@ class Scripts2(QtGui.QWidget):
             tmplayout = QtGui.QGridLayout()
             tmplayout.addWidget(tb1, 1, 1, 1, 1)
             tmplayout.addWidget(tb2, 1, 2, 1, 1)
-            if FooterVisibleFlag:
+            if Globals.FooterVisibleFlag:
                 tmplayout.addWidget(footer, 2, 1, 1, 2)
                 tmplayout.addWidget(footer2, 3, 1, 1, 2)
             
@@ -484,7 +387,7 @@ class Scripts2(QtGui.QWidget):
             tmpqgrpbox = QtGui.QGroupBox()
             tmpqgrpbox.setLayout(tmplayout)
             tmpqgrpbox.setTitle("-----")
-            if FooterVisibleFlag:
+            if Globals.FooterVisibleFlag:
                 tmpqgrpbox.setFlat(True)
             self.textEditingBoxes.append(tmpqgrpbox)
             
@@ -653,20 +556,20 @@ class Scripts2(QtGui.QWidget):
         self.reloadConfigAct.triggered.connect(self.ReloadConfiguration)
         self.reloadConfigAct.setShortcut(QtGui.QKeySequence('Ctrl-Shift-Alt-R'))
         
-        if EnglishVoiceLanguageFlag:
+        if Globals.EnglishVoiceLanguageFlag:
             self.voiceLangAct = QtGui.QAction('English Voices', None)
         else:
             self.voiceLangAct = QtGui.QAction('Japanese Voices', None)
         self.voiceLangAct.triggered.connect(self.VoiceLanguageSwap)
         self.voiceLangAct.setShortcut(QtGui.QKeySequence('Ctrl-Shift-Alt-E'))
         
-        if UpdateLowerStatusFlag:
+        if Globals.UpdateLowerStatusFlag:
             self.updateLowerStatusAct = QtGui.QAction('Updating lower status', None)
         else:
             self.updateLowerStatusAct = QtGui.QAction('Not updating lower status', None)
         self.updateLowerStatusAct.triggered.connect(self.UpdateLowerStatusSwap)
         
-        if FooterVisibleFlag:
+        if Globals.FooterVisibleFlag:
             self.displayFooterAct = QtGui.QAction('Footer enabled', None)
         else:
             self.displayFooterAct = QtGui.QAction('Footer disabled', None)
@@ -675,7 +578,7 @@ class Scripts2(QtGui.QWidget):
         self.changeEditingWindowAmountAct = QtGui.QAction('Change Editing Window Amount', None)
         self.changeEditingWindowAmountAct.triggered.connect(self.ChangeEditingWindowAmountDisplay)
         
-        if WriteDatabaseStorageToHddOnEntryChange:
+        if Globals.WriteDatabaseStorageToHddOnEntryChange:
             self.writeDatabaseStorageToHddAct = QtGui.QAction('Writing on Entry change', None)
         else:
             self.writeDatabaseStorageToHddAct = QtGui.QAction('Not writing on Entry change', None)
@@ -903,8 +806,7 @@ class Scripts2(QtGui.QWidget):
         self.openImageWindows()
             
     def openImageWindows(self):
-        global configData
-        for img in configData.Images:
+        for img in Globals.configData.Images:
             self.openImageWindow(img)
     
     def openImageWindow(self, img):
@@ -981,12 +883,11 @@ class Scripts2(QtGui.QWidget):
         if action == self.grammarmode:
             self.role = 4
 
-        global ModeFlag
         try:
             self.settings.setValue('role', int(self.role))
         except:
             self.settings.setValue('role', 1)
-        self.parent.setWindowTitle("Grace Note - {0} in {1} mode".format(self.roletext[self.role] , ModeFlag))
+        self.parent.setWindowTitle("Grace Note - {0} in {1} mode".format(self.roletext[self.role] , Globals.ModeFlag))
         self.PopulateEntryList()
 
 
@@ -999,73 +900,64 @@ class Scripts2(QtGui.QWidget):
             mode = 'Manual'
             
         self.settings.setValue('mode', mode)
-        global ModeFlag
-        ModeFlag = mode
+        Globals.ModeFlag = mode
 
-        self.parent.setWindowTitle("Grace Note - {0} in {1} mode".format(self.roletext[self.role] , ModeFlag))
+        self.parent.setWindowTitle("Grace Note - {0} in {1} mode".format(self.roletext[self.role] , Globals.ModeFlag))
 
 
     def ReloadConfiguration(self):
         self.WriteDatabaseStorageToHdd()
         
-        global configfile
-        global configData
-        
-        configData = Configuration(configfile)
-        self.PopulateModel(configData.FileList)
+        Globals.configData = Configuration(Globals.configfile)
+        self.PopulateModel(Globals.configData.FileList)
         
     def VoiceLanguageSwap(self):
-        global EnglishVoiceLanguageFlag
-        if EnglishVoiceLanguageFlag == True:
+        if Globals.EnglishVoiceLanguageFlag == True:
             self.voiceLangAct.setText('Japanese Voices')
-            EnglishVoiceLanguageFlag = False
+            Globals.EnglishVoiceLanguageFlag = False
             self.settings.setValue('voicelanguage', 'JP')
         else:
             self.voiceLangAct.setText('English Voices')
-            EnglishVoiceLanguageFlag = True
+            Globals.EnglishVoiceLanguageFlag = True
             self.settings.setValue('voicelanguage', 'EN')
         
     def UpdateLowerStatusSwap(self):
-        global UpdateLowerStatusFlag
-        if UpdateLowerStatusFlag == True:
+        if Globals.UpdateLowerStatusFlag == True:
             self.updateLowerStatusAct.setText('Not updating lower status')
-            UpdateLowerStatusFlag = False
+            Globals.UpdateLowerStatusFlag = False
             self.settings.setValue('updatelowerstatus', 'False')
         else:
             self.updateLowerStatusAct.setText('Updating lower status')
-            UpdateLowerStatusFlag = True
+            Globals.UpdateLowerStatusFlag = True
             self.settings.setValue('updatelowerstatus', 'True')
             
     def DisplayFooterSwap(self):
-        global FooterVisibleFlag
-        if FooterVisibleFlag == True:
+        if Globals.FooterVisibleFlag == True:
             self.displayFooterAct.setText('Footer disabled')
-            FooterVisibleFlag = False
+            Globals.FooterVisibleFlag = False
             self.settings.setValue('footervisible', 'False')
         else:
             self.displayFooterAct.setText('Footer enabled')
-            FooterVisibleFlag = True
+            Globals.FooterVisibleFlag = True
             self.settings.setValue('footervisible', 'True')
 
     def ChangeWriteDatabaseStorageToHddBehavior(self):
-        global WriteDatabaseStorageToHddOnEntryChange
-        if WriteDatabaseStorageToHddOnEntryChange == True:
+        if Globals.WriteDatabaseStorageToHddOnEntryChange == True:
             self.writeDatabaseStorageToHddAct.setText('Not writing on Entry change')
-            WriteDatabaseStorageToHddOnEntryChange = False
+            Globals.WriteDatabaseStorageToHddOnEntryChange = False
             self.settings.setValue('writeonentrychange', 'False')
         else:
             self.writeDatabaseStorageToHddAct.setText('Writing on Entry change')
-            WriteDatabaseStorageToHddOnEntryChange = True
+            Globals.WriteDatabaseStorageToHddOnEntryChange = True
             self.settings.setValue('writeonentrychange', 'True')
             
     def ChangeEditingWindowAmountDisplay(self):
-        global AmountEditingWindows
         text, ok = QtGui.QInputDialog.getText(self, "Enter new window amount", "New amount: (restart GN after entering!)", QtGui.QLineEdit.Normal)
         if ok and text != '':
             tmp = int(text)
             if tmp >= 3 and tmp <= 25:
                 self.settings.setValue('editpane_amount', text)
-                AmountEditingWindows = tmp
+                Globals.AmountEditingWindows = tmp
 
     def setToolbariconsize(self, action):
         i = 0
@@ -1119,7 +1011,7 @@ class Scripts2(QtGui.QWidget):
         # Applies the debug status in GracesJapanese to all databases
             
         i = 1
-        aList = configData.FileList
+        aList = Globals.configData.FileList
             
         for item in aList[0]:
             print item
@@ -1127,16 +1019,16 @@ class Scripts2(QtGui.QWidget):
 
                 print "Processing: {0}".format(filename)
             
-                UpdateCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(filename))
+                UpdateCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(filename))
                 UpdateCur = UpdateCon.cursor()
                         
                 UpdateCur.execute("select ID, StringID, status from Text")
                 
                 for entry in UpdateCur.fetchall():                        
-                    CursorGracesJapanese.execute("select debug from Japanese where ID=?", (entry[1],))
+                    Globals.CursorGracesJapanese.execute("select debug from Japanese where ID=?", (entry[1],))
             
                     try:
-                        if CursorGracesJapanese.fetchall()[0][0] == 1:
+                        if Globals.CursorGracesJapanese.fetchall()[0][0] == 1:
                             UpdateCur.execute("update Text set status=-1 where ID=? AND status != -1", (entry[0],))
                         else:
                             if entry[2] == -1:
@@ -1154,7 +1046,7 @@ class Scripts2(QtGui.QWidget):
         # Applies the debug status in Databases to GracesJapanese
         
         i = 1
-        aList = configData.FileList
+        aList = Globals.configData.FileList
             
         for item in aList[0]:
             print item
@@ -1162,17 +1054,17 @@ class Scripts2(QtGui.QWidget):
 
                 print "Processing: {0}".format(filename)
             
-                UpdateCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(filename))
+                UpdateCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(filename))
                 UpdateCur = UpdateCon.cursor()
                         
                 UpdateCur.execute("SELECT StringID FROM Text WHERE status = -1")
                 
                 for entry in UpdateCur.fetchall():
-                    CursorGracesJapanese.execute("UPDATE Japanese SET debug = 1 WHERE ID=?", (entry[0],))
+                    Globals.CursorGracesJapanese.execute("UPDATE Japanese SET debug = 1 WHERE ID=?", (entry[0],))
                 UpdateCon.rollback()
                 
             i += 1
-        ConnectionGracesJapanese.commit()
+        Globals.ConnectionGracesJapanese.commit()
 
     def RetrieveModifiedFiles(self, splash):
         self.WriteDatabaseStorageToHdd()
@@ -1189,12 +1081,12 @@ class Scripts2(QtGui.QWidget):
             try:
                 
                 try:
-                    ftp = FTP(configData.FTPServer, configData.FTPUsername, configData.FTPPassword, "", 15)
+                    ftp = FTP(Globals.configData.FTPServer, Globals.configData.FTPUsername, Globals.configData.FTPPassword, "", 15)
                 except:
                     if i == 20:
                         print '20 errors is enough, this is not gonna work'
                         try:
-                            splash.text = 'Grace Note Loaded'.format(self.roletext[self.role], ModeFlag)
+                            splash.text = 'Grace Note Loaded'.format(self.roletext[self.role], Globals.ModeFlag)
                             splash.complete = True
                             splash.offline = True
                         except:
@@ -1204,7 +1096,7 @@ class Scripts2(QtGui.QWidget):
                     continue
                     
                 ftp.cwd('/')
-                ftp.cwd(configData.RemoteDatabasePath)
+                ftp.cwd(Globals.configData.RemoteDatabasePath)
                         
                 changes = self.DownloadFile(ftp, 'ChangeLog', 'NewChangeLog')
                 
@@ -1214,11 +1106,11 @@ class Scripts2(QtGui.QWidget):
 
 
                 # Get any new entries
-                LogCur.execute('select ID, File from Log ORDER BY ID')
-                results = LogCur.fetchall()
+                Globals.LogCur.execute('select ID, File from Log ORDER BY ID')
+                results = Globals.LogCur.fetchall()
                 LogSet = set(results)
 
-                NewLogCon = sqlite3.connect(configData.LocalDatabasePath + "/NewChangeLog")
+                NewLogCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/NewChangeLog")
                 NewLogCur = NewLogCon.cursor()
                 
                 NewLogCur.execute('select ID, File from Log ORDER BY ID')
@@ -1241,11 +1133,11 @@ class Scripts2(QtGui.QWidget):
                 
                 #Downloader.sort()
                 for item in set(Downloader):
-                    CursorGracesJapanese.execute("SELECT count(1) FROM descriptions WHERE filename = ?", [item])
-                    exists = CursorGracesJapanese.fetchall()[0][0]
+                    Globals.CursorGracesJapanese.execute("SELECT count(1) FROM descriptions WHERE filename = ?", [item])
+                    exists = Globals.CursorGracesJapanese.fetchall()[0][0]
                     if exists > 0:
-                        CursorGracesJapanese.execute("SELECT shortdesc FROM descriptions WHERE filename = ?", [item])
-                        desc = CursorGracesJapanese.fetchall()[0][0]
+                        Globals.CursorGracesJapanese.execute("SELECT shortdesc FROM descriptions WHERE filename = ?", [item])
+                        desc = Globals.CursorGracesJapanese.fetchall()[0][0]
                         print 'Downloading ' + desc + ' [' + item + ']...'
                     else:
                         print 'Downloading ' + item + '...'
@@ -1253,7 +1145,7 @@ class Scripts2(QtGui.QWidget):
                     
                     
                     self.DownloadFile(ftp, item, item)
-                    WipeUpdateCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(item))
+                    WipeUpdateCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(item))
                     WipeUpdateCur = WipeUpdateCon.cursor()
             
                     WipeUpdateCur.execute(u"update Text set updated=0")
@@ -1262,8 +1154,8 @@ class Scripts2(QtGui.QWidget):
                     CalculateCompletionForDatabase(item)
 
                                 
-                old = open(configData.LocalDatabasePath + '/ChangeLog', 'wb')
-                new = open(configData.LocalDatabasePath + '/NewChangeLog', 'rb')
+                old = open(Globals.configData.LocalDatabasePath + '/ChangeLog', 'wb')
+                new = open(Globals.configData.LocalDatabasePath + '/NewChangeLog', 'rb')
                 old.write(new.read())
                 new.close()
                 old.close()
@@ -1280,7 +1172,7 @@ class Scripts2(QtGui.QWidget):
                 continue
                 
         try:
-            splash.text = 'Grace Note now {0} in {1} Mode'.format(self.roletext[self.role], ModeFlag)
+            splash.text = 'Grace Note now {0} in {1} Mode'.format(self.roletext[self.role], Globals.ModeFlag)
             splash.complete = True
         except:
             pass
@@ -1290,13 +1182,13 @@ class Scripts2(QtGui.QWidget):
     def DownloadFile(self, ftp, source, dest):
         self.WriteDatabaseStorageToHdd()
                 
-        save = open(configData.LocalDatabasePath + '/{0}'.format(dest), 'wb')
+        save = open(Globals.configData.LocalDatabasePath + '/{0}'.format(dest), 'wb')
         ftp.retrbinary('RETR {0}'.format(source), save.write)
         save.close()
 
         size = ftp.size('{0}'.format(source))
 
-        check = open(configData.LocalDatabasePath + '/{0}'.format(dest), 'rb')
+        check = open(Globals.configData.LocalDatabasePath + '/{0}'.format(dest), 'rb')
         localsize = len(check.read())
         check.close()
         
@@ -1305,11 +1197,11 @@ class Scripts2(QtGui.QWidget):
             for i in range(3):
                 print 'Problem Downloading {0}. Retry #{1}'.format(source, i+1)
                 
-                e = open(configData.LocalDatabasePath + '/{0}'.format(dest), 'wb')
+                e = open(Globals.configData.LocalDatabasePath + '/{0}'.format(dest), 'wb')
                 ftp.retrbinary('RETR {0}'.format(source), e.write)
                 e.close()
         
-                e = open(configData.LocalDatabasePath + '/{0}'.format(dest), 'rb')
+                e = open(Globals.configData.LocalDatabasePath + '/{0}'.format(dest), 'rb')
                 localsize = len(e.read())
                 e.close()
 
@@ -1330,13 +1222,13 @@ class Scripts2(QtGui.QWidget):
         source = str(source)
         dest = str(dest)
     
-        check = open(configData.LocalDatabasePath + '/{0}'.format(source), 'rb')
+        check = open(Globals.configData.LocalDatabasePath + '/{0}'.format(source), 'rb')
         localsize = len(check.read())
         check.close()
         
         success = False
         for i in range(6):
-            fnew = open(configData.LocalDatabasePath + '/{0}'.format(source), 'rb')
+            fnew = open(Globals.configData.LocalDatabasePath + '/{0}'.format(source), 'rb')
             UploadString = str('STOR ' + dest)
             ftp.storbinary(UploadString, fnew)
             fnew.close()
@@ -1344,7 +1236,7 @@ class Scripts2(QtGui.QWidget):
             if size == localsize:
                 if confirmUpload == True:
                     self.DownloadFile(ftp, dest, 'uploadConfirmTemp')
-                    success = filecmp.cmp(configData.LocalDatabasePath + '/{0}'.format(source), configData.LocalDatabasePath + '/uploadConfirmTemp')
+                    success = filecmp.cmp(Globals.configData.LocalDatabasePath + '/{0}'.format(source), Globals.configData.LocalDatabasePath + '/uploadConfirmTemp')
                 else:
                     success = True
                     break
@@ -1362,7 +1254,7 @@ class Scripts2(QtGui.QWidget):
         
         self.treemodel.clear()
         
-        PercentageConnection = sqlite3.connect(configData.LocalDatabasePath + "/CompletionPercentage")
+        PercentageConnection = sqlite3.connect(Globals.configData.LocalDatabasePath + "/CompletionPercentage")
         PercentageCursor = PercentageConnection.cursor()
         
         i = 1
@@ -1442,7 +1334,7 @@ class Scripts2(QtGui.QWidget):
 
         databasefilename = self.treemodel.itemFromIndex(index).statusTip()
         self.currentlyOpenDatabase = databasefilename
-        SaveCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(databasefilename))
+        SaveCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(databasefilename))
         SaveCur = SaveCon.cursor()
         
         try:
@@ -1456,8 +1348,8 @@ class Scripts2(QtGui.QWidget):
             ContainsIDString = False
             
         for i in xrange(len(TempList)):
-            CursorGracesJapanese.execute("select * from Japanese where ID={0}".format(TempList[i][1]))
-            TempString = CursorGracesJapanese.fetchall() 
+            Globals.CursorGracesJapanese.execute("select * from Japanese where ID={0}".format(TempList[i][1]))
+            TempString = Globals.CursorGracesJapanese.fetchall() 
             TempJPN = TempString[0][1]
             TempDebug = TempString[0][2]
 
@@ -1614,19 +1506,19 @@ class Scripts2(QtGui.QWidget):
 
         # For an Exact match to the string at any point                        
         try:
-            CursorGracesJapanese.execute(u"select ID from Japanese where debug=0 AND string LIKE ?", ('%' + unicode(matchString) + '%', ))
-            JPmatches = set(CursorGracesJapanese.fetchall())
+            Globals.CursorGracesJapanese.execute(u"select ID from Japanese where debug=0 AND string LIKE ?", ('%' + unicode(matchString) + '%', ))
+            JPmatches = set(Globals.CursorGracesJapanese.fetchall())
         except:
             reply = QtGui.QMessageBox.information(self, "Incorrect Search Usage", "Warning:\n\nYour search returned too many results, try something with more letters or use the mass replace.")
             return
 
         MatchedEntries = []
 
-        aList = configData.FileList
+        aList = Globals.configData.FileList
 
         for i in range(1, len(aList)):
             for File in aList[i]:
-                FilterCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(File))
+                FilterCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(File))
                 FilterCur = FilterCon.cursor()
                 
                 ORIDString = ''
@@ -1646,8 +1538,8 @@ class Scripts2(QtGui.QWidget):
                                         
                 for item in TempList:
                     if item[1] == '':
-                        CursorGracesJapanese.execute('select string from Japanese where ID={0}'.format(item[2]))
-                        String = CursorGracesJapanese.fetchall()[0][0]
+                        Globals.CursorGracesJapanese.execute('select string from Japanese where ID={0}'.format(item[2]))
+                        String = Globals.CursorGracesJapanese.fetchall()[0][0]
                     else:
                         String = item[1]
                     MatchedEntries.append((File, item[0], String))
@@ -1810,21 +1702,21 @@ class Scripts2(QtGui.QWidget):
         
         selectedRow = int(self.entrysort.data(index)[6:11])-1
         databasefilename = self.treemodel.itemFromIndex(self.tree.currentIndex()).statusTip()
-        SaveCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(databasefilename))
+        SaveCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(databasefilename))
         SaveCur = SaveCon.cursor()
         SaveCur.execute("select StringID from Text where ID={0}".format(selectedRow+1))
         NextID = SaveCur.fetchall()[0][0]
         if DebugState == True:
-            CursorGracesJapanese.execute("UPDATE Japanese SET debug = 1 WHERE ID = {0} AND debug != 1".format(NextID))
+            Globals.CursorGracesJapanese.execute("UPDATE Japanese SET debug = 1 WHERE ID = {0} AND debug != 1".format(NextID))
             SaveCur.execute("UPDATE Text SET status = -1, updated = 1 WHERE ID = {0} AND status != -1".format(selectedRow+1))
             self.entrymodel.item(index.row()).setWhatsThis("d")
         else:
-            CursorGracesJapanese.execute("UPDATE Japanese SET debug = 0 WHERE ID = {0} AND debug != 0".format(NextID))
+            Globals.CursorGracesJapanese.execute("UPDATE Japanese SET debug = 0 WHERE ID = {0} AND debug != 0".format(NextID))
             SaveCur.execute("UPDATE Text SET status =  0, updated = 1 WHERE ID = {0} AND status  = -1".format(selectedRow+1))
             self.entrymodel.item(index.row()).setWhatsThis("n")
         self.update.add(str(databasefilename))
         SaveCon.commit()
-        ConnectionGracesJapanese.commit()
+        Globals.ConnectionGracesJapanese.commit()
         
 
         # color
@@ -1890,7 +1782,6 @@ class Scripts2(QtGui.QWidget):
             CommandOriginButton = True
         
         
-        global ModeFlag
         if CommandOriginButton == True:
             # if origin a button: always set to argument
             updateStatusValue = role
@@ -1899,13 +1790,12 @@ class Scripts2(QtGui.QWidget):
             updateStatusValue = self.text[textBox.currentEntry - 1][4]
         else:
             # if origin by typing or automatic:
-            if ModeFlag == 'Manual':
+            if Globals.ModeFlag == 'Manual':
                 # in manual mode: leave status alone, do not change, just fetch the existing one
                 updateStatusValue = self.text[textBox.currentEntry - 1][4]
             else:
                 # in (semi)auto mode: change to current role, except when disabled by option and current role is lower than existing status
-                global UpdateLowerStatusFlag
-                if UpdateLowerStatusFlag == False:
+                if Globals.UpdateLowerStatusFlag == False:
                     statuscheck = self.text[textBox.currentEntry - 1][4]
                     if statuscheck > role:
                         updateStatusValue = statuscheck
@@ -1913,8 +1803,8 @@ class Scripts2(QtGui.QWidget):
                         updateStatusValue = role
                 else:
                     updateStatusValue = role
-                # endif UpdateLowerStatusFlag
-            # endif ModeFlag
+                # endif Globals.UpdateLowerStatusFlag
+            # endif Globals.ModeFlag
         # endif CommandOriginButton
 
 
@@ -1952,7 +1842,7 @@ class Scripts2(QtGui.QWidget):
         for d in sortedStorage:
             if lastDatabase != d.databaseName: # open up new DB connectin if neccesary, otherwise just reuse the old one
                 self.update.add(str(d.databaseName))
-                SaveCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(d.databaseName))
+                SaveCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(d.databaseName))
                 SaveCur = SaveCon.cursor()
                 
             if d.state == 'ENG':
@@ -1964,8 +1854,7 @@ class Scripts2(QtGui.QWidget):
         self.databaseWriteStorage.clear()
 
     def PopulateTextEdit(self):
-        global WriteDatabaseStorageToHddOnEntryChange
-        if WriteDatabaseStorageToHddOnEntryChange == True:
+        if Globals.WriteDatabaseStorageToHddOnEntryChange == True:
             self.WriteDatabaseStorageToHdd()
                 
         index = self.entry.currentIndex()
@@ -2025,7 +1914,7 @@ class Scripts2(QtGui.QWidget):
             for i in range(lengthEditingBoxes):
                 if self.regularEditingTextBoxes[i].currentEntry == -1:
                     continue
-                AudioSearchText = VariableReplace(self.text[rowBoxes[i] + configData.VoiceEntryOffset][t])
+                AudioSearchText = VariableReplace(self.text[rowBoxes[i] + Globals.configData.VoiceEntryOffset][t])
                 AudioClips = re.findall('<Audio: (.*?)>', AudioSearchText, re.DOTALL)
                 AudioClips = AudioClips + re.findall('<Voice: (.*?)>', AudioSearchText, re.DOTALL)
                 if AudioClips == []:
@@ -2060,8 +1949,7 @@ class Scripts2(QtGui.QWidget):
             
 
         # auto-update in Auto mode
-        global ModeFlag
-        if ModeFlag == 'Auto':
+        if Globals.ModeFlag == 'Auto':
             for i in range(len(self.textEditingBoxes)):
                 self.regularEditingTextBoxes[i].manualEdit.emit(5, self.regularEditingTextBoxes[i], self.textEditingFooters[i])
 
@@ -2106,9 +1994,9 @@ class Scripts2(QtGui.QWidget):
         
         print 'Searching for databases with unsaved changes...'
         i = 1
-        for item in configData.FileList[0]:
-            for item in configData.FileList[i]:
-                RecalcDbConn = sqlite3.connect(configData.LocalDatabasePath + "/" + item)
+        for item in Globals.configData.FileList[0]:
+            for item in Globals.configData.FileList[i]:
+                RecalcDbConn = sqlite3.connect(Globals.configData.LocalDatabasePath + "/" + item)
                 RecalcDbCur = RecalcDbConn.cursor()
                 RecalcDbCur.execute("SELECT Count(1) FROM Text WHERE updated = 1")
                 exists = RecalcDbCur.fetchall()[0][0]
@@ -2137,7 +2025,7 @@ class Scripts2(QtGui.QWidget):
         for ftperrorcount in range(1, 20):
             try:        
                 try:
-                    self.ftp = FTP(configData.FTPServer, configData.FTPUsername, configData.FTPPassword, "", 15)
+                    self.ftp = FTP(Globals.configData.FTPServer, Globals.configData.FTPUsername, Globals.configData.FTPPassword, "", 15)
                 except:
                     if ftperrorcount >= 20:
                         print "Warning:\n\nYour computer is currently offline, and will not be able to recieve updates or save to the server. Your progress will instead be saved for uploading upon re-establishment of a network connection, and any text you enter will be preserved automatically until such time."
@@ -2154,7 +2042,7 @@ class Scripts2(QtGui.QWidget):
                 progress.setLabelText('Connecting to server...')
                 
                 self.ftp.cwd('/')
-                self.ftp.cwd(configData.RemoteDatabasePath)
+                self.ftp.cwd(Globals.configData.RemoteDatabasePath)
 
                 print "Retrieving any files modified by others..."
                 self.RetrieveModifiedFiles(self.splashScreen)
@@ -2175,17 +2063,17 @@ class Scripts2(QtGui.QWidget):
                         continue
                     
                     # remove empty comments
-                    rcommentconn = sqlite3.connect(configData.LocalDatabasePath + "/" + filename)
+                    rcommentconn = sqlite3.connect(Globals.configData.LocalDatabasePath + "/" + filename)
                     rcommentcur = rcommentconn.cursor()
                     rcommentcur.execute(u"UPDATE text SET comment = '', updated = 1 WHERE comment IS NULL")
                     rcommentconn.commit()
                     rcommentconn.close()
                     
-                    CursorGracesJapanese.execute("SELECT count(1) FROM descriptions WHERE filename = ?", [filename])
-                    exists = CursorGracesJapanese.fetchall()[0][0]
+                    Globals.CursorGracesJapanese.execute("SELECT count(1) FROM descriptions WHERE filename = ?", [filename])
+                    exists = Globals.CursorGracesJapanese.fetchall()[0][0]
                     if exists > 0:
-                        CursorGracesJapanese.execute("SELECT shortdesc FROM descriptions WHERE filename = ?", [filename])
-                        desc = CursorGracesJapanese.fetchall()[0][0]
+                        Globals.CursorGracesJapanese.execute("SELECT shortdesc FROM descriptions WHERE filename = ?", [filename])
+                        desc = Globals.CursorGracesJapanese.fetchall()[0][0]
                         print 'Uploading ' + desc + ' [' + filename + ']...'
                     else:
                         print 'Uploading ' + filename + '...'
@@ -2194,17 +2082,17 @@ class Scripts2(QtGui.QWidget):
                     self.DownloadFile(self.ftp, str(filename), 'temp')
 
                     try:
-                        WipeUpdateCon = sqlite3.connect(configData.LocalDatabasePath + "/temp")
+                        WipeUpdateCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/temp")
                         WipeUpdateCur = WipeUpdateCon.cursor()
                 
                         WipeUpdateCur.execute(u"update Text set updated=0")
                         WipeUpdateCon.commit()
                         
                         # Merging the Server and the local version
-                        NewMergeCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(filename))
+                        NewMergeCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(filename))
                         NewMergeCur = NewMergeCon.cursor()
             
-                        OldMergeCon = sqlite3.connect(configData.LocalDatabasePath + "/temp")
+                        OldMergeCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/temp")
                         OldMergeCur = OldMergeCon.cursor()
                                 
                         NewMergeCur.execute(u'SELECT id, stringid, english, comment, updated, status FROM Text WHERE updated=1')
@@ -2231,11 +2119,11 @@ class Scripts2(QtGui.QWidget):
                                 continue
             
                         # Transposing the local file
-                        fnew = open(configData.LocalDatabasePath + '/temp', 'rb')
+                        fnew = open(Globals.configData.LocalDatabasePath + '/temp', 'rb')
                         data = fnew.read()
                         fnew.close()
                         
-                        old = open(configData.LocalDatabasePath + '/{0}'.format(filename), 'wb')
+                        old = open(Globals.configData.LocalDatabasePath + '/{0}'.format(filename), 'wb')
                         old.write(data)
                         old.close()
 
@@ -2255,17 +2143,17 @@ class Scripts2(QtGui.QWidget):
                     CalculateCompletionForDatabase(filename)
 
                 # Fix up the changelog and upload
-                LogCon = sqlite3.connect(configData.LocalDatabasePath + "/ChangeLog")
-                LogCur = LogCon.cursor()
+                Globals.LogCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/ChangeLog")
+                Globals.LogCur = Globals.LogCon.cursor()
 
-                LogCur.execute('select Max(ID) as Highest from Log')
-                MaxID = LogCur.fetchall()[0][0]
+                Globals.LogCur.execute('select Max(ID) as Highest from Log')
+                MaxID = Globals.LogCur.fetchall()[0][0]
 
                 fileString = ''.join(["%s," % (k) for k in LogTable])[:-1]
                 print 'Uploaded: ', fileString
                 
-                LogCur.execute(u"insert into Log values({0}, '{1}', '{2}', {3})".format(MaxID + 1, fileString, self.author, "strftime('%s','now')"))
-                LogCon.commit()
+                Globals.LogCur.execute(u"insert into Log values({0}, '{1}', '{2}', {3})".format(MaxID + 1, fileString, self.author, "strftime('%s','now')"))
+                Globals.LogCon.commit()
 
                 print 'Uploading: ChangeLog'
                 changeLogUploadSuccess = False
@@ -2326,7 +2214,7 @@ class Scripts2(QtGui.QWidget):
         for i in range(1, 20):
             try:        
                 try:
-                    self.ftp = FTP(configData.FTPServer, configData.FTPUsername, configData.FTPPassword, "", 15)
+                    self.ftp = FTP(Globals.configData.FTPServer, Globals.configData.FTPUsername, Globals.configData.FTPPassword, "", 15)
                 except:
                     if i == 20:
                         print "FTP connection failed, revert didn't succeed.\nPlease try to revert again at a later date."
@@ -2337,15 +2225,15 @@ class Scripts2(QtGui.QWidget):
                     continue
                
                 self.ftp.cwd('/')
-                self.ftp.cwd(configData.RemoteDatabasePath)
+                self.ftp.cwd(Globals.configData.RemoteDatabasePath)
 
                 print "Re-getting changed files from server..."
                 for item in self.update:
-                    CursorGracesJapanese.execute("SELECT count(1) FROM descriptions WHERE filename = ?", [item])
-                    exists = CursorGracesJapanese.fetchall()[0][0]
+                    Globals.CursorGracesJapanese.execute("SELECT count(1) FROM descriptions WHERE filename = ?", [item])
+                    exists = Globals.CursorGracesJapanese.fetchall()[0][0]
                     if exists > 0:
-                        CursorGracesJapanese.execute("SELECT shortdesc FROM descriptions WHERE filename = ?", [item])
-                        desc = CursorGracesJapanese.fetchall()[0][0]
+                        Globals.CursorGracesJapanese.execute("SELECT shortdesc FROM descriptions WHERE filename = ?", [item])
+                        desc = Globals.CursorGracesJapanese.fetchall()[0][0]
                         print 'Downloading ' + desc + ' [' + item + ']...'
                     else:
                         print 'Downloading ' + item + '...'
@@ -2353,7 +2241,7 @@ class Scripts2(QtGui.QWidget):
                     
                     
                     self.DownloadFile(self.ftp, item, item)
-                    WipeUpdateCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(item))
+                    WipeUpdateCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(item))
                     WipeUpdateCur = WipeUpdateCon.cursor()
             
                     WipeUpdateCur.execute(u"update Text set updated=0")
@@ -2401,12 +2289,12 @@ class Scripts2(QtGui.QWidget):
         progress.setWindowModality(QtCore.Qt.WindowModal)
 
 
-        Archive = configDataGracesFolders[1][:] # Chat_MS
-        Archive.extend(configDataGracesFolders[2][:]) # Chat_SB
-        Archive.extend(configDataGracesFolders[-1][:]) # SysString.bin
+        Archive = Globals.configDataGracesFolders[1][:] # Chat_MS
+        Archive.extend(Globals.configDataGracesFolders[2][:]) # Chat_SB
+        Archive.extend(Globals.configDataGracesFolders[-1][:]) # SysString.bin
         Archive = (['TOG_SS_ChatName', 'TOG_SS_StringECommerce']) # Special Cased Sys Subs
-        Archive.extend(configDataGracesFolders[-2][:]) # Movie Subtitles
-        Archive.extend(configDataGracesFolders[-3][:]) # Special Strings
+        Archive.extend(Globals.configDataGracesFolders[-2][:]) # Movie Subtitles
+        Archive.extend(Globals.configDataGracesFolders[-3][:]) # Special Strings
 
         print 'Creating root (Chat, SysString, Subtitles, Special stuff)'
         self.MakeSCS(Archive, progress, 'Wii', rootFile)
@@ -2437,7 +2325,7 @@ class Scripts2(QtGui.QWidget):
 
         print 'Creating Map0'
         for CPK in Map0RCPK:
-            Archive = configDataGracesFolders[i]
+            Archive = Globals.configDataGracesFolders[i]
             self.MakeSCS(Archive, progress, 'Wii', map0File)
             i += 1
             
@@ -2450,7 +2338,7 @@ class Scripts2(QtGui.QWidget):
 
         print 'Creating Map1'
         for CPK in Map1RCPK:
-            Archive = configDataGracesFolders[i]
+            Archive = Globals.configDataGracesFolders[i]
             self.MakeSCS(Archive, progress, 'Wii', map1File)
             i += 1
 
@@ -2470,7 +2358,7 @@ class Scripts2(QtGui.QWidget):
 
         # Create the .scs files
         
-        JPCon = sqlite3.connect(configData.LocalDatabasePath + '/GracesJapanese')
+        JPCon = sqlite3.connect(Globals.configData.LocalDatabasePath + '/GracesJapanese')
         JPCur = JPCon.cursor()
 
         fileExceptions = ['GracesJapanese', 'NewChangeLog', 'None', 'ChangeLog', 'temp', '.DS_Store', 'endingData', 'Artes', 'Battle', 'Discovery', 'GradeShop-Missions', 'Item', 'MonsterBook', 'Skills', 'System', 'Tactics', 'Titles', 'Tutorial', 'soundTest', 'ArteNames', 'Skits', 'GracesFDump', 'S', 'CheckTags.bat', 'System.Data.SQLite.DLL', 'GraceNote_CheckTags.exe', 'sqlite3.exe', 'taglog.txt', 'CompletionPercentage']
@@ -2487,7 +2375,7 @@ class Scripts2(QtGui.QWidget):
                 continue
             print filename
 
-            OutCon = sqlite3.connect(configData.LocalDatabasePath + '/{0}'.format(filename))
+            OutCon = sqlite3.connect(Globals.configData.LocalDatabasePath + '/{0}'.format(filename))
             OutCur = OutCon.cursor()
 
             
@@ -2723,14 +2611,14 @@ class Scripts2(QtGui.QWidget):
 
 
         # Everyone loves progress bars!
-        progress = QtGui.QProgressDialog("Saving databases to SCS...", "Abort", 0, len(os.listdir(configData.LocalDatabasePath))+1)
+        progress = QtGui.QProgressDialog("Saving databases to SCS...", "Abort", 0, len(os.listdir(Globals.configData.LocalDatabasePath))+1)
         progress.setWindowModality(QtCore.Qt.WindowModal)
 
 
         # Create the .scs files
-        self.MakeSCS(os.listdir(configData.LocalDatabasePath), progress, 'Wii')
+        self.MakeSCS(os.listdir(Globals.configData.LocalDatabasePath), progress, 'Wii')
 
-        progress.setValue(len(os.listdir(configData.LocalDatabasePath))+1)
+        progress.setValue(len(os.listdir(Globals.configData.LocalDatabasePath))+1)
  
         
 
@@ -2754,8 +2642,8 @@ class Scripts2(QtGui.QWidget):
 
     
         # Chat  
-        Archive = configDataGracesFolders[1][:] # Chat_MS
-        Archive.extend(configDataGracesFolders[2][:]) # Chat_SB
+        Archive = Globals.configDataGracesFolders[1][:] # Chat_MS
+        Archive.extend(Globals.configDataGracesFolders[2][:]) # Chat_SB
         ArchiveLocation = 'chat' + os.sep + 'scs' + os.sep + 'JA' + os.sep
 
         for file in Archive:
@@ -2767,7 +2655,7 @@ class Scripts2(QtGui.QWidget):
             
 
         # SysString
-        Archive = (configDataGracesFolders[-1]) # SysString.bin
+        Archive = (Globals.configDataGracesFolders[-1]) # SysString.bin
         ArchiveLocation = 'sys' + os.sep + 'ja' + os.sep
         args.extend(["{0}{1}.bin".format(GracesPath, Archive[0]), "{0}{1}.bin".format(ArchiveLocation, Archive[0])])
         tempFile = open("{0}{1}.bin".format(GracesPath, Archive[0]))
@@ -2789,7 +2677,7 @@ class Scripts2(QtGui.QWidget):
 
 
         # Movies
-        Archive = (configDataGracesFolders[-2]) # Movie Subtitles
+        Archive = (Globals.configDataGracesFolders[-2]) # Movie Subtitles
         ArchiveLocation = 'movie' + os.sep + 'str' + os.sep + 'ja' + os.sep
 
         for file in Archive:
@@ -2803,7 +2691,7 @@ class Scripts2(QtGui.QWidget):
 
 
         # Special Strings
-        Archive = (configDataGracesFolders[-3]) # Special Stuff
+        Archive = (Globals.configDataGracesFolders[-3]) # Special Stuff
         ArchiveLocation = 'str' + os.sep + 'ja' + os.sep
 
         for file in Archive:
@@ -2875,7 +2763,7 @@ class Scripts2(QtGui.QWidget):
             if os.name != 'posix':
                 args = [str(Graceful), "4", "1", str(Map0R), CPK]
             
-            Archive = configDataGracesFolders[i]
+            Archive = Globals.configDataGracesFolders[i]
             i += 1
             ArchiveLocation = 'map' + os.sep + 'sce' + os.sep + 'R' + os.sep + 'ja' + os.sep
 
@@ -2911,7 +2799,7 @@ class Scripts2(QtGui.QWidget):
             if os.name != 'posix':
                 args = [str(Graceful), "4", "1", str(Map0R), CPK]
             
-            Archive = configDataGracesFolders[i]
+            Archive = Globals.configDataGracesFolders[i]
             i += 1
             ArchiveLocation = 'map' + os.sep + 'sce' + os.sep + 'R' + os.sep + 'ja' + os.sep
 
@@ -3130,14 +3018,14 @@ class Scripts2(QtGui.QWidget):
 
 
         # Everyone loves progress bars!
-        progress = QtGui.QProgressDialog("Saving databases to SCS...", "Abort", 0, len(os.listdir(configData.LocalDatabasePath))+1)
+        progress = QtGui.QProgressDialog("Saving databases to SCS...", "Abort", 0, len(os.listdir(Globals.configData.LocalDatabasePath))+1)
         progress.setWindowModality(QtCore.Qt.WindowModal)
 
 
         # Create the .scs files
-        self.MakeSCS(os.listdir(configData.LocalDatabasePath), progress, 'Wii')
+        self.MakeSCS(os.listdir(Globals.configData.LocalDatabasePath), progress, 'Wii')
 
-        progress.setValue(len(os.listdir(configData.LocalDatabasePath))+1)
+        progress.setValue(len(os.listdir(Globals.configData.LocalDatabasePath))+1)
  
         
 
@@ -3162,8 +3050,8 @@ class Scripts2(QtGui.QWidget):
         off = 0
 
         # Chat  
-        Archive = configDataGracesFolders[1][:] # Chat_MS
-        Archive.extend(configDataGracesFolders[2][:]) # Chat_SB
+        Archive = Globals.configDataGracesFolders[1][:] # Chat_MS
+        Archive.extend(Globals.configDataGracesFolders[2][:]) # Chat_SB
         ArchiveLocation = 'chat' + os.sep + 'scs' + os.sep + 'JA' + os.sep
 
         for file in Archive:
@@ -3175,7 +3063,7 @@ class Scripts2(QtGui.QWidget):
             
             
         # SysString        
-        Archive = (configDataGracesFolders[-1]) # SysString.bin
+        Archive = (Globals.configDataGracesFolders[-1]) # SysString.bin
         ArchiveLocation = 'sys' + os.sep + 'ja' + os.sep
         args.extend(["{0}{1}.bin".format(GracesPath, Archive[0]), "{0}{1}.bin".format(ArchiveLocation, Archive[0])])
         tempFile = open("{0}{1}.bin".format(GracesPath, Archive[0]))
@@ -3197,7 +3085,7 @@ class Scripts2(QtGui.QWidget):
                     
         
         # Movies
-        Archive = (configDataGracesFolders[-2]) # Movie Subtitles
+        Archive = (Globals.configDataGracesFolders[-2]) # Movie Subtitles
         ArchiveLocation = 'movie' + os.sep + 'str' + os.sep + 'ja' + os.sep
 
         for file in Archive:
@@ -3211,7 +3099,7 @@ class Scripts2(QtGui.QWidget):
 
 
         # Special Strings
-        Archive = (configDataGracesFolders[-3]) # Special Stuff
+        Archive = (Globals.configDataGracesFolders[-3]) # Special Stuff
         ArchiveLocation = 'str' + os.sep + 'ja' + os.sep
 
         for file in Archive:
@@ -3285,7 +3173,7 @@ class Scripts2(QtGui.QWidget):
             if os.name != 'posix':
                 args = [str(Graceful), "4", "1", str(Map0R), CPK]
             
-            Archive = configDataGracesFolders[i]
+            Archive = Globals.configDataGracesFolders[i]
             i += 1
             ArchiveLocation = 'map' + os.sep + 'sce' + os.sep + 'R' + os.sep + 'ja' + os.sep
 
@@ -3321,7 +3209,7 @@ class Scripts2(QtGui.QWidget):
             if os.name != 'posix':
                 args = [str(Graceful), "4", "1", str(Map1R), CPK]
             
-            Archive = configDataGracesFolders[i]
+            Archive = Globals.configDataGracesFolders[i]
             i += 1
             ArchiveLocation = 'map' + os.sep + 'sce' + os.sep + 'R' + os.sep + 'ja' + os.sep
 
@@ -3978,8 +3866,8 @@ class Scripts2(QtGui.QWidget):
 #            string = stringBuffer.decode('cp932', 'ignore')
 #            
 #            # Check to see if such a Japanese string exists
-#            CursorGracesJapanese.execute(u"select ID from Japanese where string=?", (unicode(string),))
-#            results = CursorGracesJapanese.fetchall()
+#            Globals.CursorGracesJapanese.execute(u"select ID from Japanese where string=?", (unicode(string),))
+#            results = Globals.CursorGracesJapanese.fetchall()
 ##            
 #            
 #            
@@ -3993,7 +3881,7 @@ class Scripts2(QtGui.QWidget):
 #            else:
 #                for entry in results:
 #                    for DBName in dolNames:
-#                        TmpCon = sqlite3.connect(configData.LocalDatabasePath + '/' + DBName)
+#                        TmpCon = sqlite3.connect(Globals.configData.LocalDatabasePath + '/' + DBName)
 #                        TmpCur = TmpCon.cursor()    
 #                        
 #                        TmpCur.execute(u"select english from Text where StringID=?", (unicode(entry[0]),))
@@ -4083,8 +3971,8 @@ class LocalChangelog(QtGui.QDialog):
         self.setWindowModality(False)        
         self.listwidget = QtGui.QListWidget()
         
-        LogCur.execute("select * from Log where File='{0}'".format(file))
-        templist = LogCur.fetchall()
+        Globals.LogCur.execute("select * from Log where File='{0}'".format(file))
+        templist = Globals.LogCur.fetchall()
         for entry in templist:
             self.listwidget.addItem('{0} on {1}'.format(entry[2], time.strftime('%a, %B %d at %H:%M %p', time.localtime(entry[3]))))
 
@@ -4116,8 +4004,8 @@ class GlobalChangelog(QtGui.QDialog):
         
         self.treewidget.setMinimumSize(450, 600)
         
-        LogCur.execute("SELECT * FROM Log ORDER BY Timestamp DESC")
-        templist = LogCur.fetchall()
+        Globals.LogCur.execute("SELECT * FROM Log ORDER BY Timestamp DESC")
+        templist = Globals.LogCur.fetchall()
         #templist.pop(0)
         for entry in templist:
             for filename in entry[1].split(','):
@@ -4167,7 +4055,7 @@ class DuplicateText(QtGui.QDialog):
         i = 0
         x = 0
         y = 0
-        for cat in configData.FileList[0]:
+        for cat in Globals.configData.FileList[0]:
             self.categories.append(QtGui.QCheckBox(cat))
             layout.addWidget(self.categories[i], y, x)
             i += 1
@@ -4247,18 +4135,18 @@ class DuplicateText(QtGui.QDialog):
         print 'Initializing container...'
         Table = []
         BlackList = []
-        CursorGracesJapanese.execute('SELECT MAX(ID) FROM Japanese')
-        maxid = int(CursorGracesJapanese.fetchall()[0][0])
+        Globals.CursorGracesJapanese.execute('SELECT MAX(ID) FROM Japanese')
+        maxid = int(Globals.CursorGracesJapanese.fetchall()[0][0])
         for i in xrange( maxid + 1 ):
             Table.append([0, set([])])
             BlackList.append(0)
 
         print 'Fetching debug information...'
-        CursorGracesJapanese.execute('SELECT ID FROM Japanese WHERE debug=1')
-        BlackListDB = CursorGracesJapanese.fetchall()
+        Globals.CursorGracesJapanese.execute('SELECT ID FROM Japanese WHERE debug=1')
+        BlackListDB = Globals.CursorGracesJapanese.fetchall()
         for id in BlackListDB:
             BlackList[int(id[0])] = 1
-        aList = configData.FileList
+        aList = Globals.configData.FileList
 
         i = 1
         print 'Processing databases...'
@@ -4267,7 +4155,7 @@ class DuplicateText(QtGui.QDialog):
                 for filename in aList[i]:
                     #print 'Processing ' + filename + '...'
 
-                    conC = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(filename))
+                    conC = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(filename))
                     curC = conC.cursor()
                     
                     curC.execute("SELECT StringID, English FROM Text")
@@ -4279,7 +4167,7 @@ class DuplicateText(QtGui.QDialog):
                         if BlackList[StringId] == 0:
                             Table[StringId][0] += 1
                             Table[StringId][1].add(item[1])
-#                    self.progressbar.setValue(self.progressbar.value() + (6250/len(configData.FileList[i])))
+#                    self.progressbar.setValue(self.progressbar.value() + (6250/len(Globals.configData.FileList[i])))
 #                    self.progressLabel.setText("Processing {0}".format(category))
 #                    self.progressLabel.update()
 #            self.progressbar.setValue(i * 6250)
@@ -4289,8 +4177,8 @@ class DuplicateText(QtGui.QDialog):
         i = 0
         for item in Table:
             if (self.exceptions.isChecked() == False and item[0] > 1) or (self.exceptions.isChecked() == True and (((item[0] > 1) and (len(item[1]) >= 2)) or ((item[0] > 1) and (item[1] == set(['']))))):
-                CursorGracesJapanese.execute('SELECT String FROM Japanese WHERE ID=?', (i, ))
-                JP = CursorGracesJapanese.fetchall()[0][0]
+                Globals.CursorGracesJapanese.execute('SELECT String FROM Japanese WHERE ID=?', (i, ))
+                JP = Globals.CursorGracesJapanese.fetchall()[0][0]
             
                 textOriginalJapaneseText = QtGui.QTreeWidgetItem(self.treewidget, [str(item[0]).zfill(3), VariableReplace(JP)])
                 textOriginalJapaneseText.setBackgroundColor(0, QtGui.QColor(212,236,255,255))
@@ -4319,7 +4207,7 @@ class DuplicateText(QtGui.QDialog):
         self.parent.massDialog.Search()
 
 def CalculateAllCompletionPercentagesForDatabase():
-    aList = configData.FileList
+    aList = Globals.configData.FileList
     
     
     for i in range(len(aList)-1):
@@ -4329,7 +4217,7 @@ def CalculateAllCompletionPercentagesForDatabase():
 def CalculateCompletionForDatabase(database):
     #print 'Calculating percentages for ' + database + '...'
     
-    tempCon = sqlite3.connect(configData.LocalDatabasePath + '/' + database)
+    tempCon = sqlite3.connect(Globals.configData.LocalDatabasePath + '/' + database)
     tempCur = tempCon.cursor()
     
     tempCur.execute("SELECT Count(1) from Text where status>=0")
@@ -4350,7 +4238,7 @@ def CalculateCompletionForDatabase(database):
     tempCur.execute("SELECT Count(1) FROM Text WHERE comment != ''")
     commentAmount = tempCur.fetchall()[0][0]
     
-    tempCon = sqlite3.connect(configData.LocalDatabasePath + '/CompletionPercentage')
+    tempCon = sqlite3.connect(Globals.configData.LocalDatabasePath + '/CompletionPercentage')
     tempCur = tempCon.cursor()
     
     tempCur.execute("SELECT Count(1) FROM Percentages WHERE Database = ?", [database])
@@ -4392,17 +4280,17 @@ class CompletionTable(QtGui.QDialog):
 
         self.treewidget.itemDoubleClicked.connect(self.JumpToFile)
 
-        progress = QtGui.QProgressDialog("Calculating percentages...", "Abort", 0, len(os.listdir(configData.LocalDatabasePath))+1)
+        progress = QtGui.QProgressDialog("Calculating percentages...", "Abort", 0, len(os.listdir(Globals.configData.LocalDatabasePath))+1)
         progress.setWindowModality(QtCore.Qt.WindowModal)
 
         bigTotal = 0
         bigTrans = 0
 
         i = 1
-        aList = configData.FileList
+        aList = Globals.configData.FileList
             
             
-        tempCon = sqlite3.connect(configData.LocalDatabasePath + '/CompletionPercentage')
+        tempCon = sqlite3.connect(Globals.configData.LocalDatabasePath + '/CompletionPercentage')
         tempCur = tempCon.cursor()
             
         for item in aList[0]:
@@ -4471,7 +4359,7 @@ class CompletionTable(QtGui.QDialog):
             i = i + 1
 
         self.treewidget.sortItems(0, 1)
-        progress.setValue(len(os.listdir(configData.LocalDatabasePath))+1)
+        progress.setValue(len(os.listdir(Globals.configData.LocalDatabasePath))+1)
         
         
         self.setWindowTitle('Current Phase: Translation, at {0:.2f}% completion'.format(float(bigTrans)/float(bigTotal)*100))
@@ -4487,19 +4375,19 @@ class CompletionTable(QtGui.QDialog):
 def TrueCount():
     
     i = 1
-    aList = configData.FileList[0]
+    aList = Globals.configData.FileList[0]
 
     for item in aList:
         typeset = set([])
     
         for name in aList[i]:
-            tempCon = sqlite3.connect(configData.LocalDatabasePath + '/' + name)
+            tempCon = sqlite3.connect(Globals.configData.LocalDatabasePath + '/' + name)
             tempCur = tempCon.cursor()
             
             tempCur.execute("SELECT StringID from Text")
             for thing in tempCur.fetchall():
-                CursorGracesJapanese.execute("SELECT COUNT(ID) from Japanese where debug == 0 and ID == ?", (thing[0],))
-                if CursorGracesJapanese.fetchall()[0][0] > 0:
+                Globals.CursorGracesJapanese.execute("SELECT COUNT(ID) from Japanese where debug == 0 and ID == ?", (thing[0],))
+                if Globals.CursorGracesJapanese.fetchall()[0][0] > 0:
                     typeset.add(thing[0])
                     
         print '{0}: {1} entries'.format(item, len(typeset))
@@ -4518,8 +4406,8 @@ class Statistics(QtGui.QDialog):
         self.setMinimumSize(400, 600)
         self.setMaximumWidth(400)
         
-        LogCur.execute("select * from Log")
-        LogList = LogCur.fetchall()
+        Globals.LogCur.execute("SELECT * FROM Log")
+        LogList = Globals.LogCur.fetchall()
         
         # Today Stats
         TodayGroup = QtGui.QGroupBox()
@@ -4809,16 +4697,16 @@ class MassReplace(QtGui.QDialog):
                 return
 
         MatchedEntries = []
-        aList = configData.FileList
+        aList = Globals.configData.FileList
         
         # turn on case sensitive checking
         if self.matchCase.isChecked():
-            CursorGracesJapanese.execute(u"PRAGMA case_sensitive_like = ON")
+            Globals.CursorGracesJapanese.execute(u"PRAGMA case_sensitive_like = ON")
 
         # any match within a string
         if self.matchExact.isChecked():
-            CursorGracesJapanese.execute(u"select ID from Japanese where string LIKE ?", ('%' + unicode(matchString) + '%', ))
-            JPmatches = set(CursorGracesJapanese.fetchall())
+            Globals.CursorGracesJapanese.execute(u"select ID from Japanese where string LIKE ?", ('%' + unicode(matchString) + '%', ))
+            JPmatches = set(Globals.CursorGracesJapanese.fetchall())
             SqlExpressionMatchString = '%' + unicode(matchString) + '%'
             TextSearchColumn = 'English'
             ReplacementType = 'Substr'
@@ -4830,8 +4718,8 @@ class MassReplace(QtGui.QDialog):
             ReplacementType = 'Substr'
         # match the entire entry
         elif self.matchEntry.isChecked():
-            CursorGracesJapanese.execute(u"select ID from Japanese where string LIKE ?", (unicode(matchString),))
-            JPmatches = set(CursorGracesJapanese.fetchall())
+            Globals.CursorGracesJapanese.execute(u"select ID from Japanese where string LIKE ?", (unicode(matchString),))
+            JPmatches = set(Globals.CursorGracesJapanese.fetchall())
             SqlExpressionMatchString = unicode(matchString)
             TextSearchColumn = 'English'
             ReplacementType = 'Entry'
@@ -4861,7 +4749,7 @@ class MassReplace(QtGui.QDialog):
         for i in range(1, len(aList)):
             for File in aList[i]:
                 if File.find(self.fileFilter.text()) >= 0:
-                    FilterCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(File))
+                    FilterCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(File))
                     FilterCur = FilterCon.cursor()
                     
                     if self.matchCase.isChecked():
@@ -4892,8 +4780,8 @@ class MassReplace(QtGui.QDialog):
                     
                     for item in TempList:
                         ENString = item[1]
-                        CursorGracesJapanese.execute('SELECT string FROM Japanese WHERE ID={0}'.format(item[2]))
-                        JPString = CursorGracesJapanese.fetchall()[0][0]
+                        Globals.CursorGracesJapanese.execute('SELECT string FROM Japanese WHERE ID={0}'.format(item[2]))
+                        JPString = Globals.CursorGracesJapanese.fetchall()[0][0]
                         MatchedEntries.append([File, item[0], ENString, JPString, item[3], item[4], GetDatabaseDescriptionString(File)])
 
                     if self.matchCase.isChecked():
@@ -4924,7 +4812,7 @@ class MassReplace(QtGui.QDialog):
         
         # turn case sensitiveness back off
         if self.matchCase.isChecked():
-            CursorGracesJapanese.execute(u"PRAGMA case_sensitive_like = OFF")
+            Globals.CursorGracesJapanese.execute(u"PRAGMA case_sensitive_like = OFF")
             
         self.tabwidget.addTab(newSearchTab, tabNameString)
         self.tabwidget.setCurrentIndex(self.tabwidget.count()-1)
@@ -4947,7 +4835,7 @@ class MassReplace(QtGui.QDialog):
                 databaseName = Iterator.value().data(0, 0)
                 entryID = int(Iterator.value().data(1, 0))
                 
-                IterCon = sqlite3.connect(configData.LocalDatabasePath + "/{0}".format(databaseName))
+                IterCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(databaseName))
                 IterCur = IterCon.cursor()
                 
                 #if self.matchCase.isChecked():
@@ -4958,15 +4846,13 @@ class MassReplace(QtGui.QDialog):
                 IterCur.execute("SELECT status FROM Text WHERE ID=?", (entryID,))
                 currentStatus = IterCur.fetchall()[0][0]
 
-                global ModeFlag
                 # if origin by typing or automatic:
-                if ModeFlag == 'Manual':
+                if Globals.ModeFlag == 'Manual':
                     # in manual mode: leave status alone, do not change, just fetch the existing one
                     updateStatusValue = currentStatus
                 else:
                     # in (semi)auto mode: change to current role, except when disabled by option and current role is lower than existing status
-                    global UpdateLowerStatusFlag
-                    if UpdateLowerStatusFlag == False:
+                    if Globals.UpdateLowerStatusFlag == False:
                         statuscheck = currentStatus
                         if statuscheck > self.parent.role:
                             updateStatusValue = statuscheck
@@ -4974,8 +4860,8 @@ class MassReplace(QtGui.QDialog):
                             updateStatusValue = self.parent.role
                     else:
                         updateStatusValue = self.parent.role
-                    # endif UpdateLowerStatusFlag
-                # endif ModeFlag
+                    # endif Globals.UpdateLowerStatusFlag
+                # endif Globals.ModeFlag
                 
                 
                 
@@ -5107,7 +4993,7 @@ class MyHighlighter( QtGui.QSyntaxHighlighter ):
                 continue
         self.setCurrentBlockState(state)
 
-        if enchanted == True:
+        if Globals.enchanted == True:
             if not self.dict:
                 return
      
@@ -5477,11 +5363,11 @@ SubstitutionTable = [
 
 
 def GetDatabaseDescriptionString(filename):
-    CursorGracesJapanese.execute("SELECT count(1) FROM descriptions WHERE filename = ?", [filename])
-    exists = CursorGracesJapanese.fetchall()[0][0]
+    Globals.CursorGracesJapanese.execute("SELECT count(1) FROM descriptions WHERE filename = ?", [filename])
+    exists = Globals.CursorGracesJapanese.fetchall()[0][0]
     if exists > 0:
-        CursorGracesJapanese.execute("SELECT shortdesc FROM descriptions WHERE filename = ?", [filename])
-        desc = CursorGracesJapanese.fetchall()[0][0]
+        Globals.CursorGracesJapanese.execute("SELECT shortdesc FROM descriptions WHERE filename = ?", [filename])
+        desc = Globals.CursorGracesJapanese.fetchall()[0][0]
         return desc
     else:
         return filename

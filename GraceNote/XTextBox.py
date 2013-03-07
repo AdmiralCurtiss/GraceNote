@@ -1,7 +1,14 @@
 from PyQt4 import QtCore, QtGui
 import sqlite3
 import Globals
+from HUDLayout import *
 
+try:
+    from PyQt4.phonon import Phonon
+    Globals.Audio = True
+except ImportError:
+    print "Your Qt installation does not have Phonon support.\nPhonon is required to play audio clips."
+    Globals.Audio = False
 
 class XTextBox(QtGui.QTextEdit):
 
@@ -79,7 +86,7 @@ class XTextBox(QtGui.QTextEdit):
             self.role = 1
             
             
-        if enchanted == True:
+        if Globals.enchanted == True:
             self.dict = enchant.Dict("en_GB")
             if os.path.isfile('Resources/proper_nouns.txt'):
                 customWordFile = file('Resources/proper_nouns.txt', 'rb')
@@ -98,7 +105,7 @@ class XTextBox(QtGui.QTextEdit):
         self.footer = footer
         
     def refreshFooter(self, text, prepend):
-        if FooterVisibleFlag == False:
+        if Globals.FooterVisibleFlag == False:
             return
             
         feedCount = text.count('\f')
@@ -159,11 +166,11 @@ class XTextBox(QtGui.QTextEdit):
     def lookupAudioHash(self, name):
         
         if configData.UseGracesVoiceHash == False:
-            if EnglishVoiceLanguageFlag == True:
+            if Globals.EnglishVoiceLanguageFlag == True:
                 return configData.VoicePathEnPrefix + name + configData.VoicePathEnPostfix
             return configData.VoicePathJpPrefix + name + configData.VoicePathJpPostfix
         
-        if HashTableExists == False:
+        if Globals.HashTableExists == False:
             return ''
         
         temphash = 0
@@ -178,7 +185,7 @@ class XTextBox(QtGui.QTextEdit):
             index = hashtable[8].index(temphash)
             filename = 'VOSCE16' + '_' + str(index+1).zfill(5)
         
-        if EnglishVoiceLanguageFlag == True:
+        if Globals.EnglishVoiceLanguageFlag == True:
             return configData.VoicePathEnPrefix + filename + configData.VoicePathEnPostfix
         return configData.VoicePathJpPrefix + filename + configData.VoicePathJpPostfix
 
@@ -212,7 +219,7 @@ class XTextBox(QtGui.QTextEdit):
         
 
     def mousePressEvent(self, event):
-        if enchanted == True:
+        if Globals.enchanted == True:
             if event.button() == QtCore.Qt.RightButton:
                 event = QtGui.QMouseEvent(QtCore.QEvent.MouseButtonPress, event.pos(),
                     QtCore.Qt.LeftButton, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier)
@@ -296,7 +303,7 @@ class XTextBox(QtGui.QTextEdit):
                     popup_menu.insertMenu(popup_menu.actions()[0], menu)
 
             # Enchant
-            if enchanted == True:
+            if Globals.enchanted == True:
                 if not self.dict.check(text):
                     spell_menu = QtGui.QMenu('Spelling Suggestions')
                     for word in self.dict.suggest(text):
