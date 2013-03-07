@@ -12,6 +12,10 @@
     <OutputPath>.</OutputPath>
     <Name>GraceNote</Name>
     <RootNamespace>GraceNote</RootNamespace>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <CommandLineArguments>config_danganronpa-bestof.xml</CommandLineArguments>
+    <InterpreterPath />
+    <InterpreterArguments />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -24,8 +28,10 @@
   <ItemGroup>
     <Compile Include="GraceNote.py" />
     <Compile Include="GraceNote\Config.py" />
+    <Compile Include="GraceNote\Globals.py" />
     <Compile Include="GraceNote\hashtable.py" />
     <Compile Include="GraceNote\Scripts.py" />
+    <Compile Include="GraceNote\XTextBox.py" />
     <Compile Include="GraceTools\Enemies.py" />
     <Compile Include="GraceTools\Font.py" />
     <Compile Include="GraceTools\GraceTools.py" />
