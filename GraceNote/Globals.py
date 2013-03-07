@@ -157,7 +157,7 @@ def Sub(string, subsection):
 def VariableReplace(string):
     string = re.sub(u"'+", "'", unicode(string))
     string = re.sub('(.|\r)\(.*?\)', VariableSwap, unicode(string), re.DOTALL)
-    string = re.sub(u"\x0A", u"?\x0A", unicode(string))
+    string = re.sub(u"\x0A", u"↵\x0A", unicode(string))
     string = re.sub(u"\x0C", u"<Feed>\x0A", unicode(string))
     return string
     
@@ -166,11 +166,12 @@ def VariableRemove(string):
     string = re.sub(u"'+", "''", unicode(string))
     string = re.sub(u"<Feed>\x0A", u"\x0C", unicode(string))
     string = re.sub(u"<Feed>", u"\x0C", unicode(string))
-    string = re.sub(u"?\x0A", u"\x0A", unicode(string))
-    string = re.sub(u"?", u"\x0A", unicode(string))
+    string = re.sub(u"↵\x0A", u"\x0A", unicode(string))
+    string = re.sub(u"↵", u"\x0A", unicode(string))
     string = re.sub(u'<.*?>', VariableSwap, unicode(string), re.DOTALL)
     return string
         
+
 
 
 
@@ -222,7 +223,7 @@ SubstitutionTable = [
     ['$t4', 'Down Arrow'],
     ['$u4', 'Left Arrow'],
     ['$v4', 'Right Arrow'],
-    ['$?1', 'Bottle']
+    ['$‾1', 'Bottle']
 ],
 
 [ # 0x9
@@ -335,7 +336,7 @@ SubstitutionTable = [
     ['$q', '1'],
     ['$a1', '2'],
     ['$U1', '3'],
-    ['$?1', '3.25'],
+    ['$‾1', '3.25'],
     ['$w2', '3.75'],
     ['$K2', '4'],
     ['$A3', '5']
@@ -357,6 +358,4 @@ SubstitutionTable = [
 ]
 
 ]
-
-
 
