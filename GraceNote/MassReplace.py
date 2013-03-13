@@ -173,8 +173,9 @@ class MassReplace(QtGui.QDialog):
         if not self.matchEntry.isChecked():
             if len(matchString) == 1:
                 if ord(matchString) <= 0x20:
-                    reply = QtGui.QMessageBox.information(self, "Incorrect Search Usage", "Warning:\n\nYour search can not be only a space, a form feed, a newline, or a tab.")
-                    return
+                    reply = QtGui.QMessageBox.question(self, "Questionable Search Usage", "Warning:\n\nYour search only consists of a space, a form feed, a newline, or a tab.\nAre you sure you want to search for this?", QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
+                    if reply != QtGui.QMessageBox.Yes:
+                        return
             elif len(matchString) == 0:
                 reply = QtGui.QMessageBox.information(self, "Incorrect Search Usage", "Warning:\n\nYour search can not be empty. Please enter text in the search bar.")
                 return
@@ -308,8 +309,9 @@ class MassReplace(QtGui.QDialog):
         Iterator = QtGui.QTreeWidgetItemIterator(currentTab)
 
         if len(self.replacement.toPlainText()) == 0:
-            reply = QtGui.QMessageBox.information(self, "Incorrect Search Usage", "Warning:\n\nYour replacement can not be empty. Please enter text in the search bar.")
-            return
+            reply = QtGui.QMessageBox.question(self, "Questionable Replacement", "Warning:\n\nYour replacement is empty.\nDo you really want to replace with nothing?", QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
+            if reply != QtGui.QMessageBox.Yes:
+                return
                 
         while Iterator.value():
         
