@@ -18,15 +18,12 @@ sip.setapi('QVariant', 2)
 ################################################
 
 import Globals
-Globals.commentsAvailableLabel = False
-
-
 from PyQt4 import QtCore, QtGui
 import sqlite3
 import os, sys, re, time, struct, platform
-import shutil, base64
+import shutil
 import ftplib
-from ftplib import FTP
+#from ftplib import FTP
 from binascii import hexlify, unhexlify
 import subprocess
 import codecs
@@ -45,64 +42,62 @@ from DuplicateText import *
 import CompletionTable
 from ImageViewerWindow import *
 
-# load config
-try:
-    Globals.configfile = sys.argv[1]
-except:
-    Globals.configfile = 'config.xml'
-print 'Loading configuration: ' + Globals.configfile
-Globals.configData = Configuration(Globals.configfile)
 
-# load graces folder config if it's available
-try:
-    Globals.configDataGracesFolders = Configuration('config_graces_byfolder.xml').FileList
-except:
-    Globals.configDataGracesFolders = [[]]
+def SetupEnvironment():
+    Globals.commentsAvailableLabel = False
 
-if os.path.exists('hashtable.py'):
-    from hashtable import hashtable
-    Globals.HashTableExists = True
-else:
-    Globals.HashTableExists = False
+    # load config
+    try:
+        Globals.configfile = sys.argv[1]
+        print 'Loading configuration: ' + Globals.configfile
+        Globals.configData = Configuration(Globals.configfile)
+    except:
+        print 'Failed, fallback to default config.xml'
+        Globals.configfile = 'config.xml'
+        Globals.configData = Configuration(Globals.configfile)
 
-# create CompletionPercentage if it doesn't exist
-if not os.path.exists(Globals.configData.LocalDatabasePath + '/CompletionPercentage'):
-    CreateConnection = sqlite3.connect(Globals.configData.LocalDatabasePath + '/CompletionPercentage')
-    CreateCursor = CreateConnection.cursor()
-    CreateCursor.execute("CREATE TABLE Percentages (Database TEXT PRIMARY KEY, entries INT, translation INT, editing1 INT, editing2 INT, editing3 INT, comments INT)")
-    CreateConnection.commit()
+    # load graces folder config if it's available
+    try:
+        Globals.configDataGracesFolders = Configuration('config_graces_byfolder.xml').FileList
+    except:
+        Globals.configDataGracesFolders = [['none'], ['none']]
 
-try:
-    import enchant
-    Globals.enchanted = True
-except ImportError:
-    Globals.enchanted = False
-    print 'No pyenchant found. Spell checking will not be available.'
+    if os.path.exists('hashtable.py'):
+        from hashtable import hashtable
+        Globals.HashTableExists = True
+    else:
+        Globals.HashTableExists = False
+
+    # create CompletionPercentage if it doesn't exist
+    if not os.path.exists(Globals.configData.LocalDatabasePath + '/CompletionPercentage'):
+        CreateConnection = sqlite3.connect(Globals.configData.LocalDatabasePath + '/CompletionPercentage')
+        CreateCursor = CreateConnection.cursor()
+        CreateCursor.execute("CREATE TABLE Percentages (Database TEXT PRIMARY KEY, entries INT, translation INT, editing1 INT, editing2 INT, editing3 INT, comments INT)")
+        CreateConnection.commit()
+
+    try:
+        import enchant
+        Globals.enchanted = True
+    except ImportError:
+        Globals.enchanted = False
+        print 'No pyenchant found. Spell checking will not be available.'
 
 
-os.chdir(os.path.dirname(os.path.abspath(sys.argv[0])))
+    os.chdir(os.path.dirname(os.path.abspath(sys.argv[0])))
 
-Globals.ConnectionGracesJapanese = sqlite3.connect(Globals.configData.LocalDatabasePath + '/GracesJapanese')
-Globals.CursorGracesJapanese = Globals.ConnectionGracesJapanese.cursor()
+    Globals.ConnectionGracesJapanese = sqlite3.connect(Globals.configData.LocalDatabasePath + '/GracesJapanese')
+    Globals.CursorGracesJapanese = Globals.ConnectionGracesJapanese.cursor()
 
-Globals.LogCon = sqlite3.connect(Globals.configData.LocalDatabasePath + '/ChangeLog')
-Globals.LogCur = Globals.LogCon.cursor()
+    Globals.LogCon = sqlite3.connect(Globals.configData.LocalDatabasePath + '/ChangeLog')
+    Globals.LogCur = Globals.LogCon.cursor()
 
-Globals.EnglishVoiceLanguageFlag = False
-Globals.UpdateLowerStatusFlag = False
-Globals.ModeFlag = 'Semi-Auto'
-Globals.AmountEditingWindows = 5
-Globals.WriteDatabaseStorageToHddOnEntryChange = False
-Globals.FooterVisibleFlag = False
-
-class SpellAction(QtGui.QAction):
-    correct = QtCore.pyqtSignal(unicode)
- 
-    def __init__(self, *args):
-        QtGui.QAction.__init__(self, *args)
- 
-        self.triggered.connect(lambda x: self.correct.emit(
-            unicode(self.text())))
+    Globals.EnglishVoiceLanguageFlag = False
+    Globals.UpdateLowerStatusFlag = False
+    Globals.ModeFlag = 'Semi-Auto'
+    Globals.AmountEditingWindows = 5
+    Globals.WriteDatabaseStorageToHddOnEntryChange = False
+    Globals.FooterVisibleFlag = False
+    return
 
 class SearchAction(QtGui.QAction):
  
@@ -827,7 +822,7 @@ class Scripts2(QtGui.QWidget):
         self.PopulateModel(Globals.configData.FileList)
         
     def VoiceLanguageSwap(self):
-        if Globals.EnglishVoiceLanguageFlag == True:
+        if Globals.EnglishVoiceLanguageFlag:
             self.voiceLangAct.setText('Japanese Voices')
             Globals.EnglishVoiceLanguageFlag = False
             self.settings.setValue('voicelanguage', 'JP')
@@ -837,7 +832,7 @@ class Scripts2(QtGui.QWidget):
             self.settings.setValue('voicelanguage', 'EN')
         
     def UpdateLowerStatusSwap(self):
-        if Globals.UpdateLowerStatusFlag == True:
+        if Globals.UpdateLowerStatusFlag:
             self.updateLowerStatusAct.setText('Not updating lower status')
             Globals.UpdateLowerStatusFlag = False
             self.settings.setValue('updatelowerstatus', 'False')
@@ -847,7 +842,7 @@ class Scripts2(QtGui.QWidget):
             self.settings.setValue('updatelowerstatus', 'True')
             
     def DisplayFooterSwap(self):
-        if Globals.FooterVisibleFlag == True:
+        if Globals.FooterVisibleFlag:
             self.displayFooterAct.setText('Footer disabled')
             Globals.FooterVisibleFlag = False
             self.settings.setValue('footervisible', 'False')
@@ -857,7 +852,7 @@ class Scripts2(QtGui.QWidget):
             self.settings.setValue('footervisible', 'True')
 
     def ChangeWriteDatabaseStorageToHddBehavior(self):
-        if Globals.WriteDatabaseStorageToHddOnEntryChange == True:
+        if Globals.WriteDatabaseStorageToHddOnEntryChange:
             self.writeDatabaseStorageToHddAct.setText('Not writing on Entry change')
             Globals.WriteDatabaseStorageToHddOnEntryChange = False
             self.settings.setValue('writeonentrychange', 'False')
@@ -904,7 +899,7 @@ class Scripts2(QtGui.QWidget):
             self.settings.setValue('toolstyle', 2)
         
     def toggleIcon(self, bool):
-        if bool == True:
+        if bool:
             self.twoupAct.setIcon(QtGui.QIcon('icons/oneup.png'))
             self.twoupAct.setText('One up')
 
@@ -996,7 +991,7 @@ class Scripts2(QtGui.QWidget):
             try:
                 
                 try:
-                    ftp = FTP(Globals.configData.FTPServer, Globals.configData.FTPUsername, Globals.configData.FTPPassword, "", 15)
+                    ftp = ftplib.FTP(Globals.configData.FTPServer, Globals.configData.FTPUsername, Globals.configData.FTPPassword, "", 15)
                 except:
                     if i == 20:
                         print '20 errors is enough, this is not gonna work'
@@ -1015,7 +1010,7 @@ class Scripts2(QtGui.QWidget):
                         
                 changes = self.DownloadFile(ftp, 'ChangeLog', 'NewChangeLog')
                 
-                if changes == False:
+                if not changes:
                     "This isn't going to work, is it? Try again later."
                     self.cleanupAndQuit() 
 
@@ -1123,7 +1118,7 @@ class Scripts2(QtGui.QWidget):
                 if size == localsize:
                     success = True
                     break
-            if success == False:
+            if not success:
                 "Looks like {0} won't download. Moving on, I suppose.".format(source)
                 return False
                 
@@ -1149,7 +1144,7 @@ class Scripts2(QtGui.QWidget):
             fnew.close()
             size = ftp.size(dest)
             if size == localsize:
-                if confirmUpload == True:
+                if confirmUpload:
                     self.DownloadFile(ftp, dest, 'uploadConfirmTemp')
                     success = filecmp.cmp(Globals.configData.LocalDatabasePath + '/{0}'.format(source), Globals.configData.LocalDatabasePath + '/uploadConfirmTemp')
                 else:
@@ -1157,7 +1152,7 @@ class Scripts2(QtGui.QWidget):
                     break
             else:
                 print 'Failed uploading {0}, retrying...'.format(dest)
-        if success == False:
+        if not success:
             "Looks like {0} won't upload. Better talk to Tempus about it.".format(dest)
             return dest
             
@@ -1244,7 +1239,7 @@ class Scripts2(QtGui.QWidget):
         index = self.tree.currentIndex()
         parent = self.treemodel.data(self.tree.currentIndex().parent())
 
-        if self.treemodel.hasChildren(index) == True:
+        if self.treemodel.hasChildren(index):
             return
 
         databasefilename = self.treemodel.itemFromIndex(index).statusTip()
@@ -1278,7 +1273,7 @@ class Scripts2(QtGui.QWidget):
             entryDisplayString = 'Entry ' + str(i+1).zfill(5) + ' [' + str(TempStatus) + ']'
             
             identifyString = ''
-            if ContainsIDString == True:
+            if ContainsIDString:
                 try:
                     tmp = str(TempList[i][6])
                     identifyString = tmp
@@ -1308,9 +1303,9 @@ class Scripts2(QtGui.QWidget):
                 if self.author == 'ruta':
                     additem.setBackground(QtGui.QBrush(QtGui.QColor(255,225,180)))             
     
-            if (TempDebug == 1) and (self.debug.isChecked() == False):
+            if (TempDebug == 1) and (not self.debug.isChecked()):
                 pass
-            elif (TempDebug == 1) and (self.debug.isChecked() == True):
+            elif (TempDebug == 1) and (self.debug.isChecked()):
                 additem.setCheckState(QtCore.Qt.Checked)
                 additem.setWhatsThis("d") #debug
                 self.entrymodel.appendRow(additem)
@@ -1324,7 +1319,7 @@ class Scripts2(QtGui.QWidget):
                 
             self.text.append([TempENG, TempJPN, TempCOM, TempDebug, TempStatus, identifyString])
             
-        if containsComments == True:
+        if containsComments:
             Globals.commentsAvailableLabel.setText(databasefilename + " | Comments exist!")
         else:
             Globals.commentsAvailableLabel.setText(databasefilename)
@@ -1340,9 +1335,9 @@ class Scripts2(QtGui.QWidget):
         string = ''
         i = 1
         for entry in self.text:
-            if entry[3] == 0 or self.debug.isChecked() == True:
+            if entry[3] == 0 or self.debug.isChecked():
                 string = string + 'Entry {0}\n'.format(i)
-                if replaceVariables == True:
+                if replaceVariables:
                     string = string + Globals.VariableReplace(entry[0])
                 else:
                     string = string + entry[0]
@@ -1441,7 +1436,7 @@ class Scripts2(QtGui.QWidget):
                     ORIDString = ORIDString + " OR StringID='" + str(match[0]) + "'"
                     
                 try:
-                    if self.debug.isChecked() == True:
+                    if self.debug.isChecked():
                         FilterCur.execute(u"select ID, English, StringID from Text where english LIKE ? {0}".format(ORIDString), ('%' + unicode(matchString) + '%', ))
                     else:
                         FilterCur.execute(u"select ID, English, StringID from Text where status>=0 AND english LIKE ? {0}".format(ORIDString), ('%' + unicode(matchString) + '%', ))
@@ -1493,18 +1488,18 @@ class Scripts2(QtGui.QWidget):
         popup_menu.exec_(self.filter.mapToGlobal(QtCore.QPoint(0,self.filter.height())))
 
 
-    def JumpToEntry(self, file, entry):
+    def JumpToEntry(self, databaseName, entry):
         self.WriteDatabaseStorageToHdd()
         
-        if file == '':
-            file = self.currentlyOpenDatabase
+        if databaseName == '':
+            databaseName = self.currentlyOpenDatabase
         self.tree.collapseAll()
         for i in xrange(self.treemodel.rowCount()):
             category = self.treemodel.item(i)
 
             for p in xrange(category.rowCount()):
             
-                if category.child(p).statusTip() == file:
+                if category.child(p).statusTip() == databaseName:
                     treeExpand = self.treemodel.indexFromItem(category)
                     self.tree.expand(treeExpand)
                     treeIndex = self.treemodel.indexFromItem(category.child(p))
@@ -1527,7 +1522,7 @@ class Scripts2(QtGui.QWidget):
 
     def DebugFilter(self, bool):
         self.PopulateEntryList()
-        if bool == True:
+        if bool:
             self.debug.setIcon(QtGui.QIcon('icons/debugon.png'))
         else:
             self.debug.setIcon(QtGui.QIcon('icons/debugoff.png'))
@@ -1566,7 +1561,7 @@ class Scripts2(QtGui.QWidget):
     def ShowMassReplace(self):
         self.WriteDatabaseStorageToHdd()
         
-        if self.massDialogOpened == False:
+        if not self.massDialogOpened:
             self.massDialog = MassReplace(self)
             self.massDialogOpened = True
         self.massDialog.show()
@@ -1594,7 +1589,7 @@ class Scripts2(QtGui.QWidget):
     def ShowDuplicateText(self):
         self.WriteDatabaseStorageToHdd()
         
-        if self.duplicateTextDialogOpened == False:
+        if not self.duplicateTextDialogOpened:
             self.dupeDialog = DuplicateText(self)
             self.duplicateTextDialogOpened = True
 
@@ -1624,7 +1619,7 @@ class Scripts2(QtGui.QWidget):
         SaveCur = SaveCon.cursor()
         SaveCur.execute("select StringID from Text where ID={0}".format(selectedRow+1))
         NextID = SaveCur.fetchall()[0][0]
-        if DebugState == True:
+        if DebugState:
             Globals.CursorGracesJapanese.execute("UPDATE Japanese SET debug = 1 WHERE ID = {0} AND debug != 1".format(NextID))
             SaveCur.execute("UPDATE Text SET status = -1, updated = 1 WHERE ID = {0} AND status != -1".format(selectedRow+1))
             self.entrymodel.item(index.row()).setWhatsThis("d")
@@ -1638,7 +1633,7 @@ class Scripts2(QtGui.QWidget):
         
 
         # color
-        if DebugState == False:
+        if not DebugState:
             SaveCur.execute("select status from Text where ID={0}".format(selectedRow+1))
             status = SaveCur.fetchall()[0][0]
             if status >= self.role:
@@ -1700,7 +1695,7 @@ class Scripts2(QtGui.QWidget):
             CommandOriginButton = True
         
         
-        if CommandOriginButton == True:
+        if CommandOriginButton:
             # if origin a button: always set to argument
             updateStatusValue = role
         elif self.state == "COM":
@@ -1713,7 +1708,7 @@ class Scripts2(QtGui.QWidget):
                 updateStatusValue = self.text[textBox.currentEntry - 1][4]
             else:
                 # in (semi)auto mode: change to current role, except when disabled by option and current role is lower than existing status
-                if Globals.UpdateLowerStatusFlag == False:
+                if not Globals.UpdateLowerStatusFlag:
                     statuscheck = self.text[textBox.currentEntry - 1][4]
                     if statuscheck > role:
                         updateStatusValue = statuscheck
@@ -1772,7 +1767,7 @@ class Scripts2(QtGui.QWidget):
         self.databaseWriteStorage.clear()
 
     def PopulateTextEdit(self):
-        if Globals.WriteDatabaseStorageToHddOnEntryChange == True:
+        if Globals.WriteDatabaseStorageToHddOnEntryChange:
             self.WriteDatabaseStorageToHdd()
                 
         index = self.entry.currentIndex()
@@ -1830,7 +1825,7 @@ class Scripts2(QtGui.QWidget):
                 self.regularEditingTextBoxes[i].setReadOnly(True)
 
         # audio clip check
-        if Globals.Audio == True:
+        if Globals.Audio:
             lengthEditingBoxes = len(self.textEditingBoxes)
             for i in range(lengthEditingBoxes):
                 if self.regularEditingTextBoxes[i].currentEntry == -1:
@@ -1856,7 +1851,7 @@ class Scripts2(QtGui.QWidget):
         twoupTypeHelper.append('C')
         for i in range(len(self.textEditingBoxes)):
             self.regularEditingTextBoxes[i].setText(textEntries1[i])
-            if self.twoupAct.isChecked() == True:
+            if self.twoupAct.isChecked():
                 self.twoupEditingTextBoxes[i].setText(textEntries2[i])
                 
             if self.regularEditingTextBoxes[i].currentEntry >= 0:
@@ -1946,7 +1941,7 @@ class Scripts2(QtGui.QWidget):
         for ftperrorcount in range(1, 20):
             try:        
                 try:
-                    self.ftp = FTP(Globals.configData.FTPServer, Globals.configData.FTPUsername, Globals.configData.FTPPassword, "", 15)
+                    self.ftp = ftplib.FTP(Globals.configData.FTPServer, Globals.configData.FTPUsername, Globals.configData.FTPPassword, "", 15)
                 except:
                     if ftperrorcount >= 20:
                         print "Warning:\n\nYour computer is currently offline, and will not be able to recieve updates or save to the server. Your progress will instead be saved for uploading upon re-establishment of a network connection, and any text you enter will be preserved automatically until such time."
@@ -2081,7 +2076,7 @@ class Scripts2(QtGui.QWidget):
                 for changeup in range(1, 20):
                     try:
                         result = self.UploadFile(self.ftp, 'ChangeLog', 'ChangeLog', False)
-                        if result != True:
+                        if isinstance(result, str) or not result:
                             if changeup >= 20:
                                 print "ERROR:\n\nChangelog has not been uploaded, please retry immediately."
                                 break
@@ -2097,7 +2092,7 @@ class Scripts2(QtGui.QWidget):
                             break
                         print 'Error uploading Changelog, retrying...'
                         continue
-                if changeLogUploadSuccess == False:
+                if not changeLogUploadSuccess:
                     return
                 
                 # Everything is done.
@@ -2112,7 +2107,7 @@ class Scripts2(QtGui.QWidget):
                 self.settings.setValue('update', self.update)
                 self.settings.sync()
                 
-                if autoRestartAfter == True:
+                if autoRestartAfter:
                     self.SavetoServer()
                 break
             except ftplib.all_errors:
@@ -2135,7 +2130,7 @@ class Scripts2(QtGui.QWidget):
         for i in range(1, 20):
             try:        
                 try:
-                    self.ftp = FTP(Globals.configData.FTPServer, Globals.configData.FTPUsername, Globals.configData.FTPPassword, "", 15)
+                    self.ftp = ftplib.FTP(Globals.configData.FTPServer, Globals.configData.FTPUsername, Globals.configData.FTPPassword, "", 15)
                 except:
                     if i == 20:
                         print "FTP connection failed, revert didn't succeed.\nPlease try to revert again at a later date."
@@ -2315,8 +2310,8 @@ class Scripts2(QtGui.QWidget):
                     string = unicode(string).replace(u" ", u"_")
                     string = unicode(string).replace(u"　", u"_")
                     string = unicode(string).encode('cp932', 'ignore')
-                    if string.endswith('\x00') != True:
-                        string = string + '\x00'        
+                    if not string.endswith('\x00'):
+                        string = string + '\x00'
                     stringlist.append(string)
                 else:
                     JPCur.execute("select string from Japanese where ID={0}".format(TempList[i][1]))
