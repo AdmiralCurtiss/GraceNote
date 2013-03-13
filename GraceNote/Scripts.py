@@ -2321,8 +2321,8 @@ class Scripts2(QtGui.QWidget):
                     string = unicode(string).replace(u" ", u"_")
                     string = unicode(string).replace(u"　", u"_")
                     string = unicode(string).encode('cp932', 'ignore')
-                    if string.endswith('\x00') != True:
-                        string = string + '\x00'        
+                    if not string.endswith('\x00'):
+                        string = string + '\x00'
                     stringlist.append(string)
         
         

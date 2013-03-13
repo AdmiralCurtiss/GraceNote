@@ -380,9 +380,9 @@ class MassReplace(QtGui.QDialog):
         if item.childCount() > 0:
             return
 
-        file = item.data(0, 0)
+        databaseName = item.data(0, 0)
         entryno = item.data(1, 0)
-        self.parent.JumpToEntry(file, entryno)
+        self.parent.JumpToEntry(databaseName, entryno)
         self.parent.show()
         self.parent.raise_()
         self.parent.activateWindow()

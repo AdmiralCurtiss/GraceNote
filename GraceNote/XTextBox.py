@@ -99,7 +99,6 @@ class XTextBox(QtGui.QTextEdit):
                 for word in customWordFile.xreadlines():
                     self.dict.add_to_session(word.strip())
                 customWordFile.close()
-            self.dict.add_to_session
             self.highlighter = CustomHighlighter(self.document(), 'something')
             self.highlighter.setDict(self.dict)
         
