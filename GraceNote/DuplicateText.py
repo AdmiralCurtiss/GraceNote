@@ -2,6 +2,7 @@
 
 from PyQt4 import QtCore, QtGui
 import Globals
+import sqlite3
 
 class DuplicateText(QtGui.QDialog):
 
@@ -123,14 +124,14 @@ class DuplicateText(QtGui.QDialog):
         print 'Fetching debug information...'
         Globals.CursorGracesJapanese.execute('SELECT ID FROM Japanese WHERE debug=1')
         BlackListDB = Globals.CursorGracesJapanese.fetchall()
-        for id in BlackListDB:
-            BlackList[int(id[0])] = 1
+        for ID in BlackListDB:
+            BlackList[int(ID[0])] = 1
         aList = Globals.configData.FileList
 
         i = 1
         print 'Processing databases...'
         for category in self.categories:
-            if category.isChecked() == True:
+            if category.isChecked():
                 for filename in aList[i]:
                     #print 'Processing ' + filename + '...'
 
@@ -155,7 +156,7 @@ class DuplicateText(QtGui.QDialog):
         print 'Displaying entries...'
         i = 0
         for item in Table:
-            if (self.exceptions.isChecked() == False and item[0] > 1) or (self.exceptions.isChecked() == True and (((item[0] > 1) and (len(item[1]) >= 2)) or ((item[0] > 1) and (item[1] == set(['']))))):
+            if ((not self.exceptions.isChecked()) and item[0] > 1) or (self.exceptions.isChecked() and (((item[0] > 1) and (len(item[1]) >= 2)) or ((item[0] > 1) and (item[1] == set(['']))))):
                 Globals.CursorGracesJapanese.execute('SELECT String FROM Japanese WHERE ID=?', (i, ))
                 JP = Globals.CursorGracesJapanese.fetchall()[0][0]
             

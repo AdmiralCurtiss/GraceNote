@@ -2,6 +2,7 @@
 
 from PyQt4 import QtCore, QtGui
 import Globals
+import re
 
 class CustomHighlighter( QtGui.QSyntaxHighlighter ):
 
@@ -40,35 +41,35 @@ class CustomHighlighter( QtGui.QSyntaxHighlighter ):
 
     def highlightBlock( self, text ):
         state = self.previousBlockState()
-        len = text.length()
+        length = text.length()
         start = 0
         pos = 0
-        while pos<len:
-            if  state==self.stateDic['normalState']:
-                while pos < len :
-                    if  text.mid(pos, 1) == u'<' :
-                        if text.mid(pos, 2) == u'<C' :
+        while pos < length:
+            if state == self.stateDic['normalState']:
+                while pos < length:
+                    if  text.mid(pos, 1) == u'<':
+                        if text.mid(pos, 2) == u'<C':
                             state = self.stateDic['inPrefix']
-                        else :
+                        else:
                             state = self.stateDic['inPostfix']
                         break
-                    else :
+                    else:
                         pos=pos+1
                 continue
-            if  state==self.stateDic['inPrefix'] :
+            if state == self.stateDic['inPrefix']:
                 start = pos
-                while pos < len :
+                while pos < length:
                     if  text.mid(pos, 1) == u'>' :
                         pos=pos+1
                         state = self.stateDic['inName']
                         break
-                    else :
+                    else:
                         pos=pos+1
                 self.setFormat(start, pos - start, self.m_formats['prefix'])
                 continue
-            if  state==self.stateDic['inPostfix'] :
+            if state == self.stateDic['inPostfix']:
                 start = pos
-                while pos < len :
+                while pos < length :
                     if  text.mid(pos, 1) == u'>':
                         pos=pos+1
                         state = self.stateDic['normalState']
@@ -79,7 +80,7 @@ class CustomHighlighter( QtGui.QSyntaxHighlighter ):
                 continue
             if  state==self.stateDic['inName'] :
                 start = pos
-                while pos < len :
+                while pos < length :
                     if  text.mid(pos, 1) == u'<':
                         if text.mid(pos, 2) == u'<C' :
                             state = self.stateDic['inPrefix']
@@ -92,22 +93,22 @@ class CustomHighlighter( QtGui.QSyntaxHighlighter ):
                 continue
         self.setCurrentBlockState(state)
 
-        if Globals.enchanted == True:
+        if Globals.enchanted:
             if not self.dict:
                 return
      
             text = unicode(text)
      
-            format = QtGui.QTextCharFormat()
-            format.setUnderlineColor(QtCore.Qt.red)
-            format.setUnderlineStyle(QtGui.QTextCharFormat.SpellCheckUnderline)
+            charFormat = QtGui.QTextCharFormat()
+            charFormat.setUnderlineColor(QtCore.Qt.red)
+            charFormat.setUnderlineStyle(QtGui.QTextCharFormat.SpellCheckUnderline)
           
             for word_object in re.finditer(self.WORDS, text):
                 if ord(word_object.group()[0]) > 0x79:
                     continue
                 if not self.dict.check(word_object.group()):
                     self.setFormat(word_object.start(),
-                        word_object.end() - word_object.start(), format)
+                        word_object.end() - word_object.start(), charFormat)
 
                 
                 

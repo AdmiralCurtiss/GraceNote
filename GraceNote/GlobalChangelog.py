@@ -40,6 +40,6 @@ class GlobalChangelog(QtGui.QDialog):
         self.setLayout(layout)
 
     def JumpToFile(self, item, column):
-        file = item.data(2, 0)
-        self.parent.JumpToEntry(file, 1)
+        databaseName = item.data(2, 0)
+        self.parent.JumpToEntry(databaseName, 1)
 

@@ -3,6 +3,7 @@
 import sys
 sys.path.append('GraceNote')
 from Scripts import *
+Scripts.SetupEnvironment()
 from MainWindow import *
 
 

@@ -65,8 +65,8 @@ class Configuration:
             files = category.getElementsByTagName('File')
             
             newfiles = []
-            for file in files:
-                newfiles.append(file.getAttribute('name'))
+            for filename in files:
+                newfiles.append(filename.getAttribute('name'))
             self.FileList.append(newfiles)
             
         return

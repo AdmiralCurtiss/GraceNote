@@ -335,7 +335,7 @@ class MassReplace(QtGui.QDialog):
                     updateStatusValue = currentStatus
                 else:
                     # in (semi)auto mode: change to current role, except when disabled by option and current role is lower than existing status
-                    if Globals.UpdateLowerStatusFlag == False:
+                    if not Globals.UpdateLowerStatusFlag:
                         statuscheck = currentStatus
                         if statuscheck > self.parent.role:
                             updateStatusValue = statuscheck

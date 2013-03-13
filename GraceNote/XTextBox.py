@@ -5,6 +5,8 @@ import Globals
 import sqlite3
 from HUDLayout import *
 import re
+import os
+from CustomHighlighter import *
 
 try:
     from PyQt4.phonon import Phonon
@@ -35,7 +37,7 @@ class XTextBox(QtGui.QTextEdit):
 
         self.buttons = []
 
-        if Globals.Audio == True:
+        if Globals.Audio:
             self.audioOutput = Phonon.AudioOutput(Phonon.MusicCategory)
             self.player = Phonon.MediaObject()
             Phonon.createPath(self.player, self.audioOutput)
@@ -89,7 +91,8 @@ class XTextBox(QtGui.QTextEdit):
             self.role = 1
             
             
-        if Globals.enchanted == True:
+        if Globals.enchanted:
+            import enchant
             self.dict = enchant.Dict("en_GB")
             if os.path.isfile('Resources/proper_nouns.txt'):
                 customWordFile = file('Resources/proper_nouns.txt', 'rb')
@@ -108,7 +111,7 @@ class XTextBox(QtGui.QTextEdit):
         self.footer = footer
         
     def refreshFooter(self, text, prepend):
-        if Globals.FooterVisibleFlag == False:
+        if not Globals.FooterVisibleFlag:
             return
             
         feedCount = text.count('\f')
@@ -168,29 +171,31 @@ class XTextBox(QtGui.QTextEdit):
                         
     def lookupAudioHash(self, name):
         
-        if configData.UseGracesVoiceHash == False:
-            if Globals.EnglishVoiceLanguageFlag == True:
-                return configData.VoicePathEnPrefix + name + configData.VoicePathEnPostfix
-            return configData.VoicePathJpPrefix + name + configData.VoicePathJpPostfix
+        if not Globals.configData.UseGracesVoiceHash:
+            if Globals.EnglishVoiceLanguageFlag:
+                return Globals.configData.VoicePathEnPrefix + name + Globals.configData.VoicePathEnPostfix
+            return Globals.configData.VoicePathJpPrefix + name + Globals.configData.VoicePathJpPostfix
         
-        if Globals.HashTableExists == False:
+        if not Globals.HashTableExists:
             return ''
         
+        import hashtable
+
         temphash = 0
         for i in name:
             temphash = ((temphash * 137) + ord(i)) % 0x100000000
         
         if name[:2] == 'VS':
-            index = hashtable[int(name[2])-1].index(temphash)
+            index = hashtable.hashtable[int(name[2])-1].index(temphash)
             filename = 'VOSCE0' + name[2] + '_' + str(index+1).zfill(5)
         
         elif name[:2] == 'VA':
-            index = hashtable[8].index(temphash)
+            index = hashtable.hashtable[8].index(temphash)
             filename = 'VOSCE16' + '_' + str(index+1).zfill(5)
         
-        if Globals.EnglishVoiceLanguageFlag == True:
-            return configData.VoicePathEnPrefix + filename + configData.VoicePathEnPostfix
-        return configData.VoicePathJpPrefix + filename + configData.VoicePathJpPostfix
+        if Globals.EnglishVoiceLanguageFlag:
+            return Globals.configData.VoicePathEnPrefix + filename + Globals.configData.VoicePathEnPostfix
+        return Globals.configData.VoicePathJpPrefix + filename + Globals.configData.VoicePathJpPostfix
 
     def playAudio(self):
     
@@ -210,7 +215,7 @@ class XTextBox(QtGui.QTextEdit):
             self.player.play()
 
     def textChangedSignal(self):
-        if self.modified == True:
+        if self.modified:
             self.manualEdit.emit(5, self, self.footer)
             
     def modifyTrue(self, set):
@@ -222,7 +227,7 @@ class XTextBox(QtGui.QTextEdit):
         
 
     def mousePressEvent(self, event):
-        if Globals.enchanted == True:
+        if Globals.enchanted:
             if event.button() == QtCore.Qt.RightButton:
                 event = QtGui.QMouseEvent(QtCore.QEvent.MouseButtonPress, event.pos(),
                     QtCore.Qt.LeftButton, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier)
@@ -306,7 +311,7 @@ class XTextBox(QtGui.QTextEdit):
                     popup_menu.insertMenu(popup_menu.actions()[0], menu)
 
             # Enchant
-            if Globals.enchanted == True:
+            if Globals.enchanted:
                 if not self.dict.check(text):
                     spell_menu = QtGui.QMenu('Spelling Suggestions')
                     for word in self.dict.suggest(text):
@@ -394,9 +399,9 @@ class XTextBox(QtGui.QTextEdit):
         ['vs-i', 'Suru Verb (irregular)'],
         ['vs-s', 'Suru Verb (special)'],
         ['vs', 'Noun with ~suru'],
-        ['vt', 'Transitive Verb']]
+        ['vt', 'Transitive Verb'],
         ['v1', 'Ichidan verb'],
-        ['v5', 'Verb'],
+        ['v5', 'Verb']]
 
 
         for thing in thinglist:
@@ -409,7 +414,7 @@ class XTextBox(QtGui.QTextEdit):
         
         i = 1
         loop = True
-        while loop == True:
+        while loop:
             if NewString.count('({0})'.format(i)) == 1:
                 if NewString.count('({0})'.format(i+1)) == 1:
                     cookielist.append(NewString[NewString.find('({0})'.format(i))+4:NewString.find('({0})'.format(i+1))])
@@ -457,7 +462,7 @@ class XTextBox(QtGui.QTextEdit):
 
 
     def transTogglem(self):
-        if self.one == False:
+        if not self.one:
             self.translate.setIcon(QtGui.QIcon('icons/tlon.png'))
             self.one = True
             self.manualEdit.emit(1, self, self.footer)
@@ -468,7 +473,7 @@ class XTextBox(QtGui.QTextEdit):
 
             
     def checkTogglem(self):
-        if self.two == False:
+        if not self.two:
             self.tlCheck.setIcon(QtGui.QIcon('icons/oneon.png'))
             self.two = True
             self.manualEdit.emit(2, self, self.footer)
@@ -479,7 +484,7 @@ class XTextBox(QtGui.QTextEdit):
 
 
     def rewriteTogglem(self):
-        if self.three == False:
+        if not self.three:
             self.rewrite.setIcon(QtGui.QIcon('icons/twoon.png'))
             self.three = True
             self.manualEdit.emit(3, self, self.footer)
@@ -490,7 +495,7 @@ class XTextBox(QtGui.QTextEdit):
 
 
     def grammarTogglem(self):
-        if self.four == False:
+        if not self.four:
             self.grammar.setIcon(QtGui.QIcon('icons/threeon.png'))
             self.four = True
             self.manualEdit.emit(4, self, self.footer)
@@ -539,4 +544,13 @@ class XTextBox(QtGui.QTextEdit):
         else:
             self.jpflag.setIcon(QtGui.QIcon('icons/japanflag.png'))
             self.role = 1
+
+class SpellAction(QtGui.QAction):
+    correct = QtCore.pyqtSignal(unicode)
+ 
+    def __init__(self, *args):
+        QtGui.QAction.__init__(self, *args)
+ 
+        self.triggered.connect(lambda x: self.correct.emit(
+            unicode(self.text())))
 
