@@ -116,7 +116,7 @@ class MassReplace(QtGui.QDialog):
         treewidget = QtGui.QTreeWidget()
         
         treewidget.setColumnCount(6)
-        treewidget.setHeaderLabels(['File', 'Entry', 'Info', 'Replace', 'E String', 'J String', 'Replacement Type', 'Status', 'Database Name'])
+        treewidget.setHeaderLabels(['Database Desc.', 'Entry', 'Info', 'Replace', 'E String', 'J String', 'Replacement Type', 'Status', 'Database Name'])
         treewidget.setSortingEnabled(True)
         
         treewidget.setColumnWidth(0, 120)
@@ -281,18 +281,23 @@ class MassReplace(QtGui.QDialog):
             
         for item in MatchedEntries:
             try:
+                filename = item[0]
+                entryID = item[1]
                 englishString = Globals.VariableReplace(item[2])
                 japaneseString = Globals.VariableReplace(item[3])
-                
+                infoString = item[4]
+                status = item[5]
+                databaseDescriptor = item[6]
+                                
                 if checkForExceptions:
                     if exceptString in englishString:
                         continue
                     
-                treeItem = QtGui.QTreeWidgetItem([item[0], str(item[1]), str(item[4]), "", englishString, japaneseString, ReplacementType, str(int(item[5])), item[6]])
+                treeItem = QtGui.QTreeWidgetItem([databaseDescriptor, str(entryID), str(infoString), "", englishString, japaneseString, ReplacementType, str(int(status)), filename])
                 treeItem.setCheckState(3, QtCore.Qt.Checked)
                 newSearchTab.addTopLevelItem(treeItem)
             except:
-                print("Mass Replace: Failed adding file [" + item[0] + "], entry [" + str(item[1]) + "]")
+                print("Mass Replace: Failed adding file [" + filename + "], entry [" + str(entryID) + "]")
         
         # turn case sensitiveness back off
         if self.matchCase.isChecked():
@@ -317,7 +322,7 @@ class MassReplace(QtGui.QDialog):
         
             if Iterator.value().checkState(3) == 2:
                 
-                databaseName = Iterator.value().data(0, 0)
+                databaseName = Iterator.value().data(8, 0)
                 entryID = int(Iterator.value().data(1, 0))
                 
                 IterCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(databaseName))
@@ -325,8 +330,6 @@ class MassReplace(QtGui.QDialog):
                 
                 #if self.matchCase.isChecked():
                 #    IterCur.execute(u"PRAGMA case_sensitive_like = ON")
-                
-                
                 
                 IterCur.execute("SELECT status FROM Text WHERE ID=?", (entryID,))
                 currentStatus = IterCur.fetchall()[0][0]
@@ -347,8 +350,6 @@ class MassReplace(QtGui.QDialog):
                         updateStatusValue = self.parent.role
                     # endif Globals.UpdateLowerStatusFlag
                 # endif Globals.ModeFlag
-                
-                
                 
                 ReplacementType = Iterator.value().data(6, 0)
                 if ReplacementType == 'Substr':
@@ -382,7 +383,7 @@ class MassReplace(QtGui.QDialog):
         if item.childCount() > 0:
             return
 
-        databaseName = item.data(0, 0)
+        databaseName = item.data(8, 0)
         entryno = item.data(1, 0)
         self.parent.JumpToEntry(databaseName, entryno)
         self.parent.show()
