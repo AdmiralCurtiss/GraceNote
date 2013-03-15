@@ -20,16 +20,12 @@ sip.setapi('QVariant', 2)
 import Globals
 from PyQt4 import QtCore, QtGui
 import sqlite3
-import os, sys, re, time, struct, platform
-import shutil
-import ftplib
-#from ftplib import FTP
+import os, sys, re, time, platform
 from binascii import hexlify, unhexlify
 import subprocess
 import codecs
 from Config import *
 from collections import deque
-import filecmp
 
 from MainWindow import *
 from XTextBox import *
@@ -41,7 +37,8 @@ from Statistics import *
 from DuplicateText import *
 import CompletionTable
 from ImageViewerWindow import *
-
+import GracesCreation
+import NetworkHandler
 
 def SetupEnvironment():
     Globals.commentsAvailableLabel = False
@@ -220,7 +217,7 @@ class Scripts2(QtGui.QWidget):
 
 
         # Grab the changes
-        self.RetrieveModifiedFiles(self.splashScreen)
+        NetworkHandler.RetrieveModifiedFiles(self, self.splashScreen)
 
         self.splashScreen.destroyScreen()
         
@@ -374,14 +371,14 @@ class Scripts2(QtGui.QWidget):
         
         
         self.saveAct = QtGui.QAction(QtGui.QIcon('icons/upload.png'), 'Save', None)
-        self.saveAct.triggered.connect(self.SavetoServer)
+        self.saveAct.triggered.connect(self.CallSavetoServer)
         self.saveAct.setShortcut(QtGui.QKeySequence('Ctrl+S'))
 
         self.revertAct = QtGui.QAction(QtGui.QIcon('icons/save.png'), 'Revert', None)
-        self.revertAct.triggered.connect(self.RevertFromServer)
+        self.revertAct.triggered.connect(self.CallRevertFromServer)
         
         self.updateAct = QtGui.QAction(QtGui.QIcon('icons/save.png'), 'Update', None)
-        self.updateAct.triggered.connect(self.RetrieveModifiedFiles)
+        self.updateAct.triggered.connect(self.CallRetrieveModifiedFiles)
         self.updateAct.setShortcut(QtGui.QKeySequence('Ctrl+U'))
 
         self.refreshCompleteAct = QtGui.QAction(QtGui.QIcon('icons/refresh.png'), 'Refresh Completion Database', None)
@@ -392,23 +389,23 @@ class Scripts2(QtGui.QWidget):
         self.recalcFilesToBeUploadedAct.triggered.connect(self.RecalculateFilesToBeUploaded)
 
         self.patchAct = QtGui.QAction(QtGui.QIcon('icons/patch.png'), 'Patch Live', None)
-        self.patchAct.triggered.connect(self.SavetoPatch)
+        self.patchAct.triggered.connect(self.CallSavetoPatch)
         self.patchAct.setShortcut(QtGui.QKeySequence('Ctrl+P'))
 
         self.patchdolAct = QtGui.QAction(QtGui.QIcon('icons/patchdol.png'), 'Patch Embedded Strings', None)
-        self.patchdolAct.triggered.connect(self.PatchDol)
+        self.patchdolAct.triggered.connect(self.CallPatchDol)
         self.patchdolAct.setShortcut(QtGui.QKeySequence('Ctrl+Alt+P'))
 
         self.patchzeroAct = QtGui.QAction(QtGui.QIcon('icons/patchv0.png'), 'Patch XML', None)
-        self.patchzeroAct.triggered.connect(self.SavetoXML)
+        self.patchzeroAct.triggered.connect(self.CallSavetoXML)
         self.patchzeroAct.setShortcut(QtGui.QKeySequence('Ctrl+Shift+P'))
 
         self.patchtwoAct = QtGui.QAction(QtGui.QIcon('icons/patchv2.png'), 'Patch Bugfix XML', None)
-        self.patchtwoAct.triggered.connect(self.SavetoBugfixXML)
+        self.patchtwoAct.triggered.connect(self.CallSavetoBugfixXML)
         self.patchtwoAct.setShortcut(QtGui.QKeySequence('Ctrl+Shift+Alt+P'))
 
         self.patchfDemoAct = QtGui.QAction(QtGui.QIcon('icons/patchv0.png'), 'Patch Graces f Demo XML', None)
-        self.patchfDemoAct.triggered.connect(self.SavetoGracesfDemoXML)
+        self.patchfDemoAct.triggered.connect(self.CallSavetoGracesfDemoXML)
         self.patchfDemoAct.setShortcut(QtGui.QKeySequence('Ctrl+Alt+F'))
 
         self.globalAct = QtGui.QAction(QtGui.QIcon('icons/global.png'), 'Global Changelog', None)
@@ -1743,6 +1740,37 @@ class Scripts2(QtGui.QWidget):
         print 'Done searching for databases with unsaved changes!'
         return
     
+    def CallSavetoServer(self):
+        NetworkHandler.SavetoServer(self)
+        return
+    
+    def CallRevertFromServer(self):
+        NetworkHandler.RevertFromServer(self)
+        return
+
+    def CallRetrieveModifiedFiles(self):
+        NetworkHandler.RetrieveModifiedFiles(self, None)
+        return
+
+    def CallSavetoPatch(self):
+        GracesCreation.SavetoPatch(self)
+        return
+
+    def CallPatchDol(self):
+        GracesCreation.PatchDol(self)
+        return
+
+    def CallSavetoXML(self):
+        GracesCreation.SavetoXML(self)
+        return
+
+    def CallSavetoBugfixXML(self):
+        GracesCreation.SavetoBugfixXML(self)
+        return
+
+    def CallSavetoGracesfDemoXML(self):
+        GracesCreation.SavetoGracesfDemoXML(self)
+        return
 
 
 def TrueCount():
