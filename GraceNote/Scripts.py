@@ -259,6 +259,7 @@ class Scripts2(QtGui.QWidget):
         self.regularEditingTextBoxes = []
         self.twoupEditingTextBoxes = []
         self.textEditingBoxes = []
+        self.textEditingTitles = []
         self.textEditingFooters = []
         self.twoupEditingFooters = []
         for i in range(Globals.AmountEditingWindows):
@@ -284,19 +285,19 @@ class Scripts2(QtGui.QWidget):
             
             # create layout
             tmplayout = QtGui.QGridLayout()
-            tmplayout.addWidget(tb1, 1, 1, 1, 1)
-            tmplayout.addWidget(tb2, 1, 2, 1, 1)
+            title = QtGui.QLabel('')
+            tmplayout.addWidget(title, 1, 1, 1, 2)
+            tmplayout.addWidget(tb1, 2, 1, 1, 1)
+            tmplayout.addWidget(tb2, 2, 2, 1, 1)
             if Globals.FooterVisibleFlag:
-                tmplayout.addWidget(footer, 2, 1, 1, 2)
-                tmplayout.addWidget(footer2, 3, 1, 1, 2)
-            
-            # create QGroupBox
-            tmpqgrpbox = QtGui.QGroupBox()
+                tmplayout.addWidget(footer , 3, 1, 1, 2)
+                tmplayout.addWidget(footer2, 4, 1, 1, 2)
+
+            tmpqgrpbox = QtGui.QWidget()
             tmpqgrpbox.setLayout(tmplayout)
-            tmpqgrpbox.setTitle("-----")
-            if Globals.FooterVisibleFlag:
-                tmpqgrpbox.setFlat(True)
+            
             self.textEditingBoxes.append(tmpqgrpbox)
+            self.textEditingTitles.append(title)
             
         # ------------------------------------------------------ #
 
@@ -1044,8 +1045,8 @@ class Scripts2(QtGui.QWidget):
 
         for editbox in self.regularEditingTextBoxes:
             editbox.setText('')
-        for txtbox in self.textEditingBoxes:
-            txtbox.setTitle('-----')
+        for txtttle in self.textEditingTitles:
+            txtttle.setText('-----')
         for footer in self.textEditingFooters:
             footer.setText('')
         for footer in self.twoupEditingFooters:
@@ -1682,11 +1683,11 @@ class Scripts2(QtGui.QWidget):
                 self.twoupEditingTextBoxes[i].setText(textEntries2[i])
                 
             if self.regularEditingTextBoxes[i].currentEntry >= 0:
-                self.textEditingBoxes[i].setTitle("Entry {0}: {1}".format(rowBoxes[i]+1, commentTexts[i]))
+                self.textEditingTitles[i].setText("Entry {0}: {1}".format(rowBoxes[i]+1, commentTexts[i]))
                 self.regularEditingTextBoxes[i].refreshFooter(textEntries1raw[i], self.state[0] + ': ')
                 self.twoupEditingTextBoxes[i].refreshFooter(textEntries2raw[i], twoupTypeHelper[self.twoupEditingTextBoxes[i].role] + ': ')
             else:
-                self.textEditingBoxes[i].setTitle("-----")
+                self.textEditingTitles[i].setText("-----")
                 self.textEditingFooters[i].setText('')
                 self.twoupEditingFooters[i].setText('')
             
