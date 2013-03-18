@@ -973,6 +973,7 @@ class Scripts2(QtGui.QWidget):
             i += 1
         Globals.ConnectionGracesJapanese.commit()
 
+    # fills in the database list to the left
     def PopulateModel(self, FileList):
         self.WriteDatabaseStorageToHdd()
         
@@ -1028,7 +1029,7 @@ class Scripts2(QtGui.QWidget):
                 cat.appendRow(newrow)
             i = i + 1
 
-                
+    # fills in the entry list to the right        
     def PopulateEntryList(self):
         self.WriteDatabaseStorageToHdd()
         
@@ -1580,6 +1581,7 @@ class Scripts2(QtGui.QWidget):
         
         self.databaseWriteStorage.clear()
 
+    # fills in the textboxes in the middle
     def PopulateTextEdit(self):
         if Globals.WriteDatabaseStorageToHddOnEntryChange:
             self.WriteDatabaseStorageToHdd()
@@ -1651,6 +1653,17 @@ class Scripts2(QtGui.QWidget):
                     self.regularEditingTextBoxes[i].clearPlaybackButtons()
                 else:
                     self.regularEditingTextBoxes[i].makePlaybackButtons(AudioClips)
+
+        # check for terms
+        lengthEditingBoxes = len(self.textEditingBoxes)
+        self.termTooltips = []
+        for i in range(lengthEditingBoxes):
+            japanese = self.text[rowBoxes[i]][1]
+            tooltip = ''
+            for term in Globals.configData.Terms:
+                if japanese.find(term.JP) > -1:
+                    tooltip = tooltip + term.JP + ' -> ' + term.EN + '\n'
+            self.termTooltips.append(tooltip)
 
         # inform media boxes
         centerPanel = 1

@@ -22,6 +22,7 @@ class Configuration:
     VoiceEntryOffset = 0
     
     Images = []
+    Terms = []
     
     FileList = []
     
@@ -55,6 +56,17 @@ class Configuration:
                 self.Images.append(newImage)
         except:
             self.Images = []
+        
+        try:
+            self.Terms = []
+            terms = mainNode.getElementsByTagName('Terms')[0].getElementsByTagName('Term')
+            for term in terms:
+                newTerm = ImageMediumStruct()
+                newTerm.JP = term.getAttribute('JP')
+                newTerm.EN = term.getAttribute('EN')
+                self.Terms.append(newTerm)
+        except:
+            self.Terms = []
         
         self.FileList = [ [] ]
         categories = mainNode.getElementsByTagName('Categories')[0].getElementsByTagName('Category')
