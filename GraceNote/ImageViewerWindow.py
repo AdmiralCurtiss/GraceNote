@@ -26,7 +26,7 @@ class ImageViewerWindow(QtGui.QDialog):
         for param in parameters:
             splitparams = param.split(' ')
             
-            pixmap = QtGui.QPixmap( os.getcwd() + '/' + self.medium.path.format(*splitparams) )
+            pixmap = QtGui.QPixmap( self.medium.path.format(*splitparams) )
             piclabel = QtGui.QLabel()
             piclabel.setPixmap(pixmap)
             self.layout.addWidget(piclabel)

@@ -254,12 +254,15 @@ class Scripts2(QtGui.QWidget):
         self.entrysort.setSourceModel(self.entrymodel)
         self.entry.setModel(self.entrysort)
 
+        self.termInEntryIcon = QtGui.QPixmap( 'icons/pictogram-din-m000-general.png' )
+        self.termInEntryIcon = self.termInEntryIcon.scaled(13, 13, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation);
 
         # Text Edits
         self.regularEditingTextBoxes = []
         self.twoupEditingTextBoxes = []
         self.textEditingBoxes = []
         self.textEditingTitles = []
+        self.textEditingTermIcons = []
         self.textEditingFooters = []
         self.twoupEditingFooters = []
         for i in range(Globals.AmountEditingWindows):
@@ -286,7 +289,16 @@ class Scripts2(QtGui.QWidget):
             # create layout
             tmplayout = QtGui.QGridLayout()
             title = QtGui.QLabel('')
-            tmplayout.addWidget(title, 1, 1, 1, 2)
+            termicon = QtGui.QLabel('')
+
+            htitlelayout = QtGui.QHBoxLayout()
+            htitlelayout.addWidget(termicon)
+            htitlelayout.addWidget(title)
+            htitlelayout.setContentsMargins(0, 0, 0, 0)
+            titlelayoutwgt = QtGui.QWidget()
+            titlelayoutwgt.setLayout(htitlelayout)
+
+            tmplayout.addWidget(titlelayoutwgt, 1, 1, 1, 2)
             tmplayout.addWidget(tb1, 2, 1, 1, 1)
             tmplayout.addWidget(tb2, 2, 2, 1, 1)
             if Globals.FooterVisibleFlag:
@@ -295,9 +307,14 @@ class Scripts2(QtGui.QWidget):
 
             tmpqgrpbox = QtGui.QWidget()
             tmpqgrpbox.setLayout(tmplayout)
+
+            termicon.setPixmap(self.termInEntryIcon)
+            termicon.hide()
+            termicon.setFixedSize(13, 13)
             
             self.textEditingBoxes.append(tmpqgrpbox)
             self.textEditingTitles.append(title)
+            self.textEditingTermIcons.append(termicon)
             
         # ------------------------------------------------------ #
 
@@ -1046,7 +1063,7 @@ class Scripts2(QtGui.QWidget):
         for editbox in self.regularEditingTextBoxes:
             editbox.setText('')
         for txtttle in self.textEditingTitles:
-            txtttle.setText('-----')
+            txtttle.setText('')
         for footer in self.textEditingFooters:
             footer.setText('')
         for footer in self.twoupEditingFooters:
@@ -1663,8 +1680,8 @@ class Scripts2(QtGui.QWidget):
             tooltip = ''
             for term in Globals.configData.Terms:
                 if japanese.find(term.JP) > -1:
-                    tooltip = tooltip + term.JP + ' -> ' + term.EN + '\n'
-            self.termTooltips.append(tooltip)
+                    tooltip = tooltip + '[' + term.JP + '] translates to [' + term.EN + ']\n'
+            self.termTooltips.append(tooltip.strip())
 
         # inform media boxes
         centerPanel = 1
@@ -1686,10 +1703,18 @@ class Scripts2(QtGui.QWidget):
                 self.textEditingTitles[i].setText("Entry {0}: {1}".format(rowBoxes[i]+1, commentTexts[i]))
                 self.regularEditingTextBoxes[i].refreshFooter(textEntries1raw[i], self.state[0] + ': ')
                 self.twoupEditingTextBoxes[i].refreshFooter(textEntries2raw[i], twoupTypeHelper[self.twoupEditingTextBoxes[i].role] + ': ')
+                if self.termTooltips[i] != '':
+                    self.textEditingTermIcons[i].setToolTip( 'Terminology in this Entry:\n' + self.termTooltips[i] )
+                    self.textEditingTermIcons[i].show()
+                else:
+                    self.textEditingTermIcons[i].setToolTip('')
+                    self.textEditingTermIcons[i].hide()
             else:
-                self.textEditingTitles[i].setText("-----")
+                self.textEditingTitles[i].setText('')
                 self.textEditingFooters[i].setText('')
                 self.twoupEditingFooters[i].setText('')
+                self.textEditingTermIcons[i].setToolTip('')
+                self.textEditingTermIcons[i].hide()
             
 
         # auto-update in Auto mode
