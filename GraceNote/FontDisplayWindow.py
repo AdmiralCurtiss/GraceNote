@@ -2,7 +2,7 @@
 
 from PyQt4 import QtCore, QtGui
 import Globals
-#import re
+import re
 import os
 
 class FontDisplayWindow(QtGui.QDialog):
@@ -20,13 +20,47 @@ class FontDisplayWindow(QtGui.QDialog):
     def drawText(self, text):
         self.clearInfo()
 
-        img = QtGui.QImage(400, 100, QtGui.QImage.Format_ARGB32_Premultiplied)
-        img.fill(0xFFFFFFFF)
-        painter = QtGui.QPainter(img)
+        # remove variables from the string
+        text = text.replace('\f', '\n')
+        text = re.sub('<[A-Za-z0-9 :;.,-_]*>', '', Globals.VariableReplace(text))
+
         currentX = 0
         currentY = 0
+        maxX = 0
+        maxY = 0
+        
+        # calculate image size
         for char in text:
             try:
+                if char == '\n':
+                    maxX = max(maxX, currentX)
+                    currentX = 0
+                    continue
+                glyph = Globals.configData.Font[char]
+                currentX += glyph.width
+                maxY = max(glyph.height, maxY)
+            except:
+                pass
+        maxX = max(maxX, currentX)
+        currentX = 0
+        currentY = 0
+
+        if maxX <= 0 or maxY <= 0:
+            return
+
+        # create image big enough to hold the text
+        linecount = text.count('\n') + 1
+        img = QtGui.QImage(maxX, maxY * linecount, QtGui.QImage.Format_ARGB32_Premultiplied)
+        img.fill(0xFFFFFFFF)
+        painter = QtGui.QPainter(img)
+        
+        # draw chars into the image
+        for char in text:
+            try:
+                if char == '\n':
+                    currentY += maxY
+                    currentX = 0
+                    continue
                 glyph = Globals.configData.Font[char]
                 painter.drawImage(currentX, currentY, glyph.img, glyph.x, glyph.y, glyph.width, glyph.height)
                 currentX += glyph.width

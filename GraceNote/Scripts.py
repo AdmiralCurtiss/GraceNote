@@ -1577,7 +1577,10 @@ class Scripts2(QtGui.QWidget):
             self.text[textBox.currentEntry - 1][0] = GoodString
         elif self.state == "COM":
             self.text[textBox.currentEntry - 1][2] = GoodString
-            
+        
+        # should probably make this optional
+        self.fontWindow.drawText( GoodString )
+
         return
 
     def WriteDatabaseStorageToHdd(self):
