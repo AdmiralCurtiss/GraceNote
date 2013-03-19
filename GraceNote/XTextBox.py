@@ -7,13 +7,10 @@ from HUDLayout import *
 import re
 import os
 from CustomHighlighter import *
-
 try:
     from PyQt4.phonon import Phonon
-    Globals.Audio = True
 except ImportError:
-    print "Your Qt installation does not have Phonon support.\nPhonon is required to play audio clips."
-    Globals.Audio = False
+    pass
 
 class XTextBox(QtGui.QTextEdit):
 

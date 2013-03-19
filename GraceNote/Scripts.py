@@ -44,6 +44,13 @@ import NetworkHandler
 def SetupEnvironment():
     Globals.commentsAvailableLabel = False
 
+    try:
+        from PyQt4.phonon import Phonon
+        Globals.Audio = True
+    except ImportError:
+        print "Your Qt installation does not have Phonon support.\nPhonon is required to play audio clips."
+        Globals.Audio = False
+
     # load config
     try:
         Globals.configfile = sys.argv[1]
