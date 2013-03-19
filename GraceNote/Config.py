@@ -49,10 +49,6 @@ class Configuration:
         self.VoicePathEnPostfix = mainNode.getAttribute('VoicePathEnPostfix')
         self.VoiceEntryOffset = int(mainNode.getAttribute('VoiceEntryOffset'))
         
-        self.LoadTerms(mainNode)
-        self.LoadFont(mainNode)
-        self.LoadImages(mainNode)
-        
         self.FileList = [ [] ]
         categories = mainNode.getElementsByTagName('Categories')[0].getElementsByTagName('Category')
         categorycounter = 0
@@ -65,9 +61,16 @@ class Configuration:
             for filename in files:
                 newfiles.append(filename.getAttribute('name'))
             self.FileList.append(newfiles)
-            
+        
+        self.mainNode = mainNode
+        
         return
 
+    def DelayedLoad(self):
+        self.LoadTerms(self.mainNode)
+        self.LoadFont(self.mainNode)
+        self.LoadImages(self.mainNode)
+        
     def LoadFont(self, mainNode):
         try:
             self.Font = {}

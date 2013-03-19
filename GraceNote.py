@@ -5,7 +5,7 @@ sys.path.append('GraceNote')
 from Scripts import *
 Scripts.SetupEnvironment()
 from MainWindow import *
-
+import Globals
 
 if __name__ == '__main__':
 
@@ -36,6 +36,8 @@ if __name__ == '__main__':
             print 'Cleared retained files!'
     except:
         pass
+
+    Globals.configData.DelayedLoad()
 
     window = MainWindow()
     
