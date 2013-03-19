@@ -36,7 +36,8 @@ from LocalChangelog import *
 from Statistics import *
 from DuplicateText import *
 import CompletionTable
-from ImageViewerWindow import *
+import ImageViewerWindow
+import FontDisplayWindow
 import GracesCreation
 import NetworkHandler
 
@@ -725,6 +726,7 @@ class Scripts2(QtGui.QWidget):
         self.duplicateTextDialogOpened = False
         
         self.openMediumWindows()
+        self.openFontWindow()
         
     def openMediumWindows(self):
         self.media = {}
@@ -735,10 +737,16 @@ class Scripts2(QtGui.QWidget):
             self.openImageWindow(img)
     
     def openImageWindow(self, img):
-        self.media[img.name] = ImageViewerWindow(self, img)
+        self.media[img.name] = ImageViewerWindow.ImageViewerWindow(self, img)
         self.media[img.name].show()
         self.media[img.name].raise_()
         self.media[img.name].activateWindow()
+
+    def openFontWindow(self):
+        self.fontWindow = FontDisplayWindow.FontDisplayWindow(self)
+        self.fontWindow.show()
+        self.fontWindow.raise_()
+        self.fontWindow.activateWindow()
 
     def cleanupAndQuit(self):
         self.WriteDatabaseStorageToHdd()
@@ -1688,6 +1696,9 @@ class Scripts2(QtGui.QWidget):
         for name, medium in self.media.iteritems():
             #print self.text[rowBoxes[centerPanel] + medium.medium.offs][t]
             medium.refreshInfo( Globals.VariableReplace(self.text[rowBoxes[centerPanel] + medium.medium.offs][t]) )
+
+        # inform font box
+        self.fontWindow.drawText( self.text[rowBoxes[centerPanel]][t] )
                     
         # put text into textboxes, display entry number
         twoupTypeHelper = []

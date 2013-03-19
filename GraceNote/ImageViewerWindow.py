@@ -2,10 +2,10 @@
 
 from PyQt4 import QtCore, QtGui
 #import Globals
-#import re
+import re
 import os
 
-class FontDisplayWindow(QtGui.QDialog):
+class ImageViewerWindow(QtGui.QDialog):
 
     def __init__(self, parent, image):
         super(ImageViewerWindow, self).__init__()
@@ -40,18 +40,5 @@ class FontDisplayWindow(QtGui.QDialog):
             sip.delete(old_layout)
         self.layout = QtGui.QVBoxLayout(self.scroll)
         self.setLayout(self.layout)
-    
-    def tempTextStuff(self):
-        feedCount = text.count('\f')
-        sanitizedText = re.sub('<CLT[ 0-9]+>', '', text.replace("''", "'"))
-        splitOnFeeds = sanitizedText.split('\f')
-        splitOnLines = sanitizedText.replace('\f', '\n').split('\n')
-        longestLineChars = 0
-        for s in splitOnLines:
-            longestLineChars = max(longestLineChars, len(s))
-        highestBoxNewlines = 0
-        for s in splitOnFeeds:
-            highestBoxNewlines = max(highestBoxNewlines, s.count('\n')+1)
-        self.footer.setText(prepend + 'Textboxes: ' + str(feedCount+1) + ' / Highest Box: ' + str(highestBoxNewlines) + ' lines / Longest Line: ' + str(longestLineChars) + ' chars')
 
 

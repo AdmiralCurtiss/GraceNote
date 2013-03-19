@@ -1,8 +1,12 @@
 ﻿# -*- coding: utf-8 -*-
 
 from xml.dom import minidom
+from PyQt4 import QtCore, QtGui
 
 class ImageMediumStruct():
+    def __init__(self):
+        return
+class GlyphStruct():
     def __init__(self):
         return
 
@@ -23,7 +27,8 @@ class Configuration:
     
     Images = []
     Terms = []
-    
+    Font = {}
+
     FileList = []
     
     def __init__(self, configfilename):
@@ -44,29 +49,9 @@ class Configuration:
         self.VoicePathEnPostfix = mainNode.getAttribute('VoicePathEnPostfix')
         self.VoiceEntryOffset = int(mainNode.getAttribute('VoiceEntryOffset'))
         
-        try:
-            self.Images = []
-            imgs = mainNode.getElementsByTagName('Images')[0].getElementsByTagName('Image')
-            for img in imgs:
-                newImage = ImageMediumStruct()
-                newImage.name = img.getAttribute('Name')
-                newImage.var = img.getAttribute('Variable')
-                newImage.path = img.getAttribute('Path')
-                newImage.offs = int(img.getAttribute('Offset'))
-                self.Images.append(newImage)
-        except:
-            self.Images = []
-        
-        try:
-            self.Terms = []
-            terms = mainNode.getElementsByTagName('Terms')[0].getElementsByTagName('Term')
-            for term in terms:
-                newTerm = ImageMediumStruct()
-                newTerm.JP = term.getAttribute('JP')
-                newTerm.EN = term.getAttribute('EN')
-                self.Terms.append(newTerm)
-        except:
-            self.Terms = []
+        self.LoadTerms(mainNode)
+        self.LoadFont(mainNode)
+        self.LoadImages(mainNode)
         
         self.FileList = [ [] ]
         categories = mainNode.getElementsByTagName('Categories')[0].getElementsByTagName('Category')
@@ -82,3 +67,50 @@ class Configuration:
             self.FileList.append(newfiles)
             
         return
+
+    def LoadFont(self, mainNode):
+        try:
+            self.Font = {}
+            imgs = mainNode.getElementsByTagName('Font')[0].getElementsByTagName('Image')
+            for img in imgs:
+                path = img.getAttribute('Path')
+                image = QtGui.QImage(path)
+                glyphs = img.getElementsByTagName('Glyph')
+                
+                for glyph in glyphs:
+                    newGlyph = GlyphStruct()
+                    newGlyph.img = image
+                    newGlyph.x = int(glyph.getAttribute('x'))
+                    newGlyph.y = int(glyph.getAttribute('y'))
+                    newGlyph.width = int(glyph.getAttribute('width'))
+                    newGlyph.height = int(glyph.getAttribute('height'))
+                    self.Font[glyph.getAttribute('char')] = newGlyph
+        except:
+            self.Font = {}
+        return
+
+    def LoadImages(self, mainNode):
+        try:
+            self.Images = []
+            imgs = mainNode.getElementsByTagName('Images')[0].getElementsByTagName('Image')
+            for img in imgs:
+                newImage = ImageMediumStruct()
+                newImage.name = img.getAttribute('Name')
+                newImage.var = img.getAttribute('Variable')
+                newImage.path = img.getAttribute('Path')
+                newImage.offs = int(img.getAttribute('Offset'))
+                self.Images.append(newImage)
+        except:
+            self.Images = []
+
+    def LoadTerms(self, mainNode):
+        try:
+            self.Terms = []
+            terms = mainNode.getElementsByTagName('Terms')[0].getElementsByTagName('Term')
+            for term in terms:
+                newTerm = ImageMediumStruct()
+                newTerm.JP = term.getAttribute('JP')
+                newTerm.EN = term.getAttribute('EN')
+                self.Terms.append(newTerm)
+        except:
+            self.Terms = []
