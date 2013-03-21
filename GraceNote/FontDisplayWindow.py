@@ -20,9 +20,10 @@ class FontDisplayWindow(QtGui.QDialog):
     def drawText(self, text):
         self.clearInfo()
 
-        # remove variables from the string
         text = text.replace('\f', '\n')
-        text = re.sub('<[A-Za-z0-9 :;.,-_]*>', '', Globals.VariableReplace(text))
+        text = Globals.VariableReplace(text)
+        for old, new in Globals.configData.FontReplacements.iteritems():
+            text = text.replace(old, new)
 
         currentX = 0
         currentY = 0
@@ -55,15 +56,21 @@ class FontDisplayWindow(QtGui.QDialog):
         painter = QtGui.QPainter(img)
         
         # draw chars into the image
+        stopDrawing = False
         for char in text:
             try:
                 if char == '\n':
                     currentY += maxY
                     currentX = 0
                     continue
-                glyph = Globals.configData.Font[char]
-                painter.drawImage(currentX, currentY, glyph.img, glyph.x, glyph.y, glyph.width, glyph.height)
-                currentX += glyph.width
+                if char == '<':
+                    stopDrawing = True
+                elif char == '>':
+                    stopDrawing = False
+                if not stopDrawing:
+                    glyph = Globals.configData.Font[char]
+                    painter.drawImage(currentX, currentY, glyph.img, glyph.x, glyph.y, glyph.width, glyph.height)
+                    currentX += glyph.width
             except:
                 pass
         painter.end()

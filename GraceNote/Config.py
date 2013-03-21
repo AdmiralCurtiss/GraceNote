@@ -28,6 +28,7 @@ class Configuration:
     Images = []
     Terms = []
     Font = {}
+    FontReplacements = {}
 
     FileList = []
     
@@ -73,8 +74,8 @@ class Configuration:
         
     def LoadFont(self, mainNode):
         try:
-            self.Font = {}
             imgs = mainNode.getElementsByTagName('Font')[0].getElementsByTagName('Image')
+            self.Font = {}
             for img in imgs:
                 path = img.getAttribute('Path')
                 image = QtGui.QImage(path)
@@ -90,6 +91,17 @@ class Configuration:
                     self.Font[glyph.getAttribute('char')] = newGlyph
         except:
             self.Font = {}
+
+        try:
+            repls = mainNode.getElementsByTagName('Font')[0].getElementsByTagName('Replacement')
+            self.FontReplacements = {}
+            for rep in repls:
+                o = rep.getAttribute('old')
+                n = rep.getAttribute('new')
+                self.FontReplacements[o] = n
+        except:
+            self.FontReplacements = {}
+
         return
 
     def LoadImages(self, mainNode):
