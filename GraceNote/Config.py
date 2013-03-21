@@ -11,6 +11,8 @@ class GlyphStruct():
         return
 
 class Configuration:
+    ID = 'Graces'
+
     LocalDatabasePath = ''
     RemoteDatabasePath = ''
     
@@ -35,6 +37,12 @@ class Configuration:
     def __init__(self, configfilename):
         dom = minidom.parse(configfilename)
         mainNode = dom.getElementsByTagName('GraceNoteConfig')[0]
+
+        try:
+            self.ID = mainNode.getAttribute('ID')
+        except:
+            self.ID = 'Graces'
+
         self.LocalDatabasePath = mainNode.getAttribute('LocalDatabasePath')
         self.RemoteDatabasePath = mainNode.getAttribute('RemoteDatabasePath')
         self.FTPServer = mainNode.getAttribute('FTPServer')

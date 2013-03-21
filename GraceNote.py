@@ -28,12 +28,6 @@ if __name__ == '__main__':
     
             app.setPalette(palette)
             print 'Sakura Dream Mode Activated'
-            
-        if sys.argv[1] == '-clearFiles':
-            settings = QtCore.QSettings("GracesTranslation", "Grace Note")
-            settings.setValue('update', set([]))
-            settings.sync()
-            print 'Cleared retained files!'
     except:
         pass
 

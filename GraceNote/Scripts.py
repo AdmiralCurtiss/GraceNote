@@ -149,7 +149,7 @@ class Scripts2(QtGui.QWidget):
 #        TrueCount()
              
         # Settings
-        self.settings = QtCore.QSettings("GracesTranslation", "Grace Note")
+        self.settings = QtCore.QSettings("GraceNote", Globals.configData.ID)
         if not self.settings.contains('author'):
             text, ok = QtGui.QInputDialog.getText(self, "Enter your Name", "Author name:", QtGui.QLineEdit.Normal)
             if ok and text != '':
@@ -1139,16 +1139,14 @@ class Scripts2(QtGui.QWidget):
             additem.setStatusTip(identifyString)
             
             if TempStatus >= self.role:
-                additem.setBackground(QtGui.QBrush(QtGui.QColor(220, 255, 220)))
+                additem.setBackground(QtGui.QBrush(QtGui.QColor(160, 255, 160)))
                 if self.author == 'ruta':
                     additem.setBackground(QtGui.QBrush(QtGui.QColor(255, 235, 245)))
-                elif self.author == 'Pikachu025':
-                    additem.setBackground(QtGui.QBrush(QtGui.QColor(0, 150, 0)))
 
             if TempStatus == -1:
                 additem.setBackground(QtGui.QBrush(QtGui.QColor(255, 220, 220)))
                 if self.author == 'ruta':
-                    additem.setBackground(QtGui.QBrush(QtGui.QColor(255,225,180)))             
+                    additem.setBackground(QtGui.QBrush(QtGui.QColor(255, 225, 180)))             
     
             if (TempDebug == 1) and (not self.debug.isChecked()):
                 pass
