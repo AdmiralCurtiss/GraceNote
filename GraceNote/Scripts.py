@@ -279,7 +279,6 @@ class Scripts2(QtGui.QWidget):
             tb2 = XTextBox('jp', self)
             tb2.hide()
             tb2.setReadOnly(True)
-            CustomHighlighter(tb2, 'something')
             if self.settings.contains('font'):
                 size = int(self.settings.value('font'))
                 tb1.setFontPointSize(size)

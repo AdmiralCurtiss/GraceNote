@@ -4,93 +4,109 @@ from PyQt4 import QtCore, QtGui
 import Globals
 import re
 
+class State():
+    Normal = -1
+    SpellCheckFail = 1
+    Tag = 2
+    Parameter = 3
+
 class CustomHighlighter( QtGui.QSyntaxHighlighter ):
 
     WORDS = u'(?iu)[\w\']+'
     
-    def __init__( self, parent, theme ):
-        self.dict = None
+    def __init__( self, parent ):
         QtGui.QSyntaxHighlighter.__init__( self, parent )
+        self.dict = None
         self.parent = parent
-        self.stateDic={'normalState':-1,'inPrefix':0,'inPostfix':1,'inName':2}
-        self.m_formats= {'othtag':0,'postfix':1,'prefix':2,'name':3}
-        #init formats
-        darkBlue = QtGui.QColor()
-        darkBlue.setNamedColor("darkBlue")
-        darkRed = QtGui.QColor()
-        darkRed.setNamedColor("darkRed")
-        darkGreen = QtGui.QColor()
-        darkGreen.setNamedColor("darkGreen")
-        entityFmt = QtGui.QTextCharFormat()
-        entityFmt.setForeground( darkBlue )
-        entityFmt.setFontWeight( QtGui.QFont.Bold )
-        self.setFormatFor('othtag',entityFmt)
-        tagFmt = QtGui.QTextCharFormat()
-        tagFmt.setForeground( darkGreen )
-        tagFmt.setFontWeight( QtGui.QFont.Bold )
-        self.setFormatFor('postfix',tagFmt)
-        commentFmt = QtGui.QTextCharFormat()
-        commentFmt.setForeground( darkRed )
-        commentFmt.setFontWeight( QtGui.QFont.Bold )
-        self.setFormatFor('prefix',commentFmt)
-        nameFmt = QtGui.QTextCharFormat()
-        nameFmt.setForeground( darkRed )
-        nameFmt.setFontWeight( QtGui.QFont.Bold )
-        self.setFormatFor('name',entityFmt)
+        self.Formats = {}
 
+        #init formats
+        defaultFormat = QtGui.QTextCharFormat()
+        self.setFormatFor( State.Normal, defaultFormat )
+
+        tagFormat = QtGui.QTextCharFormat()
+        tagFormat.setForeground( QtGui.QColor("darkGreen") )
+        tagFormat.setFontWeight( QtGui.QFont.Bold )
+        self.setFormatFor( State.Tag, tagFormat )
+
+        parameterFormat = QtGui.QTextCharFormat()
+        parameterFormat.setForeground( QtGui.QColor("darkBlue") )
+        parameterFormat.setFontWeight( QtGui.QFont.Bold )
+        self.setFormatFor( State.Parameter, parameterFormat )
+
+        spellCheckFormat = QtGui.QTextCharFormat()
+        spellCheckFormat.setUnderlineColor( QtCore.Qt.red )
+        spellCheckFormat.setUnderlineStyle( QtGui.QTextCharFormat.SpellCheckUnderline )
+        self.setFormatFor( State.SpellCheckFail, spellCheckFormat )
+
+        # DANGAN RONPA COLORS
+        cltFormat = QtGui.QTextCharFormat()
+        cltFormat.setForeground( QtGui.QColor(141, 22, 220) )
+        self.setFormatFor( 1001, cltFormat )
+        cltFormat = QtGui.QTextCharFormat()
+        cltFormat.setForeground( QtGui.QColor(111, 40, 165) )
+        self.setFormatFor( 1002, cltFormat )
+        cltFormat = QtGui.QTextCharFormat()
+        cltFormat.setForeground( QtGui.QColor(193, 174, 0) )
+        self.setFormatFor( 1003, cltFormat )
+        cltFormat = QtGui.QTextCharFormat()
+        cltFormat.setForeground( QtGui.QColor(22, 130, 152) )
+        self.setFormatFor( 1004, cltFormat )
+        cltFormat = QtGui.QTextCharFormat()
+        cltFormat.setForeground( QtGui.QColor(255, 150, 0) )
+        cltFormat.setFontWeight( QtGui.QFont.Bold )
+        self.setFormatFor( 1009, cltFormat )
+        cltFormat = QtGui.QTextCharFormat()
+        cltFormat.setForeground( QtGui.QColor(55, 140, 34) )
+        self.setFormatFor( 1023, cltFormat )
+        cltFormat = QtGui.QTextCharFormat()
+        cltFormat.setForeground( QtGui.QColor(255, 80, 255) )
+        cltFormat.setFontWeight( QtGui.QFont.Bold )
+        self.setFormatFor( 1026, cltFormat )
+        cltFormat = QtGui.QTextCharFormat()
+        cltFormat.setForeground( QtGui.QColor(243, 32, 0) )
+        self.setFormatFor( 1027, cltFormat )
 
     def highlightBlock( self, text ):
-        state = self.previousBlockState()
         length = text.length()
-        start = 0
         pos = 0
+        lastTagStart = 0
+        state = self.previousBlockState()
+
         while pos < length:
-            if state == self.stateDic['normalState']:
-                while pos < length:
-                    if  text.mid(pos, 1) == u'<':
-                        if text.mid(pos, 2) == u'<C':
-                            state = self.stateDic['inPrefix']
-                        else:
-                            state = self.stateDic['inPostfix']
-                        break
-                    else:
-                        pos=pos+1
-                continue
-            if state == self.stateDic['inPrefix']:
-                start = pos
-                while pos < length:
-                    if  text.mid(pos, 1) == u'>' :
-                        pos=pos+1
-                        state = self.stateDic['inName']
-                        break
-                    else:
-                        pos=pos+1
-                self.setFormat(start, pos - start, self.m_formats['prefix'])
-                continue
-            if state == self.stateDic['inPostfix']:
-                start = pos
-                while pos < length :
-                    if  text.mid(pos, 1) == u'>':
-                        pos=pos+1
-                        state = self.stateDic['normalState']
-                        break
-                    else :
-                        pos=pos+1
-                self.setFormat(start, pos - start, self.m_formats['postfix'])
-                continue
-            if  state==self.stateDic['inName'] :
-                start = pos
-                while pos < length :
-                    if  text.mid(pos, 1) == u'<':
-                        if text.mid(pos, 2) == u'<C' :
-                            state = self.stateDic['inPrefix']
-                        else :
-                            state = self.stateDic['inPostfix']
-                        break
-                    else :
-                        pos=pos+1
-                self.setFormat(start, pos - start, self.m_formats['name'])
-                continue
+            c = text.mid(pos, 1)
+            if c == u'<': # a tag
+                self.setFormat(lastTagStart, pos - lastTagStart, self.Formats[state])
+                lastTagStart = pos
+                state = State.Tag
+            elif c == u':' and state == State.Tag: # a tag's parameter
+                self.setFormat(lastTagStart, pos - lastTagStart + 1, self.Formats[state]) # format start of tag until this ':', including the ':'
+                lastTagStart = pos + 1 # next start has to be after the current ':'
+                state = State.Parameter
+            elif c == u'>': # the end of a tag
+                self.setFormat(lastTagStart, pos - lastTagStart, self.Formats[state]) # format text since last tag
+                self.setFormat(pos, 1, self.Formats[State.Tag]) # format this '>'
+                lastTagStart = pos + 1
+                state = State.Normal
+
+                # DANGAN RONPA SPECIFIC, generalizable if we have a generic "tag name" for color though
+                # Colors text between <CLT> tags <CLT 0> <CLT 00>
+                try:
+                    clt = text.mid(pos - 6, 4)
+                    number = -1
+                    if clt == '<CLT':
+                        number = int(text.mid(pos - 1, 1))
+                    elif clt == 'CLT ':
+                        number = int(text.mid(pos - 2, 2))
+                    number += 1000
+                    if self.Formats.has_key(number):
+                        state = number
+                except:
+                    state = State.Normal
+                # DANGAN RONPA SPECIFIC END
+
+            pos += 1
+        self.setFormat(lastTagStart, length - lastTagStart, self.Formats[state])
         self.setCurrentBlockState(state)
 
         if Globals.enchanted:
@@ -99,26 +115,21 @@ class CustomHighlighter( QtGui.QSyntaxHighlighter ):
      
             text = unicode(text)
      
-            charFormat = QtGui.QTextCharFormat()
-            charFormat.setUnderlineColor(QtCore.Qt.red)
-            charFormat.setUnderlineStyle(QtGui.QTextCharFormat.SpellCheckUnderline)
-          
             for word_object in re.finditer(self.WORDS, text):
                 if ord(word_object.group()[0]) > 0x79:
                     continue
                 if not self.dict.check(word_object.group()):
-                    self.setFormat(word_object.start(),
-                        word_object.end() - word_object.start(), charFormat)
+                    self.setFormat(word_object.start(), word_object.end() - word_object.start(), self.Formats[State.SpellCheckFail])
 
                 
                 
-    def setFormatFor( self,cons,qformat):
-        self.m_formats[cons]=qformat
+    def setFormatFor( self, key, fmt ):
+        self.Formats[key] = fmt
         self.rehighlight()
 
 
-    def getFormatFor( self, cons):
-        return self.m_formats[cons]
+    def getFormatFor( self, key ):
+        return self.Formats[key]
 
 
     def setDict(self, dict):

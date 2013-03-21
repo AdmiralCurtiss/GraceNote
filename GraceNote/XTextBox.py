@@ -88,6 +88,8 @@ class XTextBox(QtGui.QTextEdit):
             self.role = 1
             
             
+        self.highlighter = CustomHighlighter(self)
+
         if Globals.enchanted:
             import enchant
             self.dict = enchant.Dict("en_GB")
@@ -96,7 +98,6 @@ class XTextBox(QtGui.QTextEdit):
                 for word in customWordFile.xreadlines():
                     self.dict.add_to_session(word.strip())
                 customWordFile.close()
-            self.highlighter = CustomHighlighter(self.document(), 'something')
             self.highlighter.setDict(self.dict)
         
         self.textChanged.connect(self.textChangedSignal)
