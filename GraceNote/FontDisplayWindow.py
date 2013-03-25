@@ -65,12 +65,12 @@ class FontDisplayWindow(QtGui.QDialog):
                     continue
                 if char == '<':
                     stopDrawing = True
-                elif char == '>':
-                    stopDrawing = False
                 if not stopDrawing:
                     glyph = Globals.configData.Font[char]
                     painter.drawImage(currentX, currentY, glyph.img, glyph.x, glyph.y, glyph.width, glyph.height)
                     currentX += glyph.width
+                if char == '>':
+                    stopDrawing = False
             except:
                 pass
         painter.end()
