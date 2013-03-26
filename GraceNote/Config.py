@@ -31,6 +31,7 @@ class Configuration:
     Terms = []
     Font = {}
     FontReplacements = {}
+    FontLines = []
 
     FileList = []
     
@@ -109,6 +110,20 @@ class Configuration:
                 self.FontReplacements[o] = n
         except:
             self.FontReplacements = {}
+
+        try:
+            lines = mainNode.getElementsByTagName('Font')[0].getElementsByTagName('Line')
+            self.FontLines = []
+            for line in lines:
+                #Line style="|" x="200" y="0" color="red" name="Textbox End" />
+                newLine = GlyphStruct()
+                newLine.style = int(line.getAttribute('style'))
+                newLine.x = int(line.getAttribute('x'))
+                newLine.y = int(line.getAttribute('y'))
+                newLine.color = line.getAttribute('color')
+                self.FontLines.append(newLine)
+        except:
+            self.FontLines = []
 
         return
 

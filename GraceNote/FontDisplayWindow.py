@@ -54,7 +54,7 @@ class FontDisplayWindow(QtGui.QDialog):
         img = QtGui.QImage(maxX, maxY * linecount, QtGui.QImage.Format_ARGB32_Premultiplied)
         img.fill(0xFFFFFFFF)
         painter = QtGui.QPainter(img)
-        
+
         # draw chars into the image
         stopDrawing = False
         for char in text:
@@ -73,6 +73,25 @@ class FontDisplayWindow(QtGui.QDialog):
                     stopDrawing = False
             except:
                 pass
+
+        # draw lines into the image
+        for line in Globals.configData.FontLines:
+            try:
+                if line.style == 2:
+                    x1 = line.x
+                    y1 = line.y
+                    x2 = line.x
+                    y2 = img.height() - 1
+                elif line.style == 6:
+                    x1 = line.x
+                    y1 = line.y
+                    x2 = img.width() - 1
+                    y2 = line.y
+                painter.setPen( QtGui.QColor( line.color ) )
+                painter.drawLine(x1, y1, x2, y2)
+            except:
+                pass
+        
         painter.end()
 
         piclabel = QtGui.QLabel()
