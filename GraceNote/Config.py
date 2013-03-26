@@ -121,6 +121,7 @@ class Configuration:
                 newLine.x = int(line.getAttribute('x'))
                 newLine.y = int(line.getAttribute('y'))
                 newLine.color = line.getAttribute('color')
+                newLine.name = line.getAttribute('name')
                 self.FontLines.append(newLine)
         except:
             self.FontLines = []

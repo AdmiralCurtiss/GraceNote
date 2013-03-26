@@ -46,6 +46,9 @@ class FontDisplayWindow(QtGui.QDialog):
         currentX = 0
         currentY = 0
 
+        for line in Globals.configData.FontLines:
+            maxX = max(maxX, line.x + 1)
+
         if maxX <= 0 or maxY <= 0:
             return
 
@@ -75,6 +78,7 @@ class FontDisplayWindow(QtGui.QDialog):
                 pass
 
         # draw lines into the image
+        tooltip = ''
         for line in Globals.configData.FontLines:
             try:
                 if line.style == 2:
@@ -89,13 +93,16 @@ class FontDisplayWindow(QtGui.QDialog):
                     y2 = line.y
                 painter.setPen( QtGui.QColor( line.color ) )
                 painter.drawLine(x1, y1, x2, y2)
+                tooltip += line.name + '\n'
             except:
                 pass
         
         painter.end()
 
         piclabel = QtGui.QLabel()
-        piclabel.setPixmap(QtGui.QPixmap.fromImage(img))
+        pix = QtGui.QPixmap.fromImage(img)
+        piclabel.setPixmap( pix )
+        piclabel.setToolTip( tooltip )
         self.layout.addWidget(piclabel)
     
     def clearInfo(self):
