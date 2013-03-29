@@ -108,8 +108,8 @@ class FontDisplayWindow(QtGui.QDialog):
                 
                 if not stopDrawing:
                     glyph = currentFont[char]
-                    painter.drawImage(currentX, currentY, glyph.img, glyph.x, glyph.y, glyph.width, glyph.height)
-                    painter.fillRect( currentX, currentY, glyph.width, glyph.height, currentColor )
+                    painter.drawImage(currentX, currentY + ( maxY - glyph.height ), glyph.img, glyph.x, glyph.y, glyph.width, glyph.height)
+                    painter.fillRect( currentX, currentY + ( maxY - glyph.height ), glyph.width, glyph.height, currentColor )
                     currentX += glyph.width
 
             except:
@@ -144,6 +144,9 @@ class FontDisplayWindow(QtGui.QDialog):
         piclabel.setToolTip( tooltip )
         self.layout.addWidget(piclabel)
     
+    def renderText(self, text, painter):
+        return
+
     def clearInfo(self):
         if self.layout is not None:
             old_layout = self.layout
