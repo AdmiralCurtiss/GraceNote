@@ -122,7 +122,6 @@ class Configuration:
             lines = mainNode.getElementsByTagName('Fonts')[0].getElementsByTagName('Line')
             self.FontLines = []
             for line in lines:
-                #Line style="|" x="200" y="0" color="red" name="Textbox End" />
                 newLine = GlyphStruct()
                 newLine.style = int(line.getAttribute('style'))
                 newLine.x = int(line.getAttribute('x'))
@@ -141,6 +140,10 @@ class Configuration:
                 trigger = fmt.getAttribute('Trigger')
                 newFormat.Font = fmt.getAttribute('Font')
                 newFormat.Color = self.GetColor(fmt)
+                if fmt.hasAttribute('Scale'):
+                    newFormat.Scale = float(fmt.getAttribute('Scale'))
+                else:
+                    newFormat.Scale = 1.0
                 self.FontFormatting[trigger] = newFormat
         except:
             self.FontFormatting = {}

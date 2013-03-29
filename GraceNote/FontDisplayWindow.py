@@ -1,9 +1,9 @@
 ﻿# -*- coding: utf-8 -*-
 
-from PyQt4 import QtCore, QtGui
+from PyQt4 import QtCore, QtGui, Qt
 import Globals
 import re
-import os
+from Config import GlyphStruct
 
 class FontDisplayWindow(QtGui.QDialog):
 
@@ -25,37 +25,17 @@ class FontDisplayWindow(QtGui.QDialog):
         for old, new in Globals.configData.FontReplacements.iteritems():
             text = text.replace(old, new)
 
-        currentX = 0
-        currentY = 0
         maxX = 0
         maxY = 0
         currentFont = Globals.configData.Fonts['default']
         
         # DANGAN RONPA SPECIFIC
         if re.match('e0[0-9]_1[0-9][0-9]_001.lin', databaseDesc):
-            NonstopFlag = True
             currentFont = Globals.configData.Fonts['nonstop']
-        else:
-            NonstopFlag = False
         # END DANGAN RONPA SPECIFIC
-        
-        currentColor = QtGui.QColor('white')
-        
+
         # calculate image size
-        for char in text:
-            try:
-                if char == '\n':
-                    maxX = max(maxX, currentX)
-                    currentX = 0
-                    continue
-                glyph = currentFont[char]
-                currentX += glyph.width
-                maxY = max(glyph.height, maxY)
-            except:
-                pass
-        maxX = max(maxX, currentX)
-        currentX = 0
-        currentY = 0
+        maxX, maxY = self.renderText(text, None, 0, currentFont)
 
         for line in Globals.configData.FontLines:
             maxX = max(maxX, line.x + 1)
@@ -71,49 +51,7 @@ class FontDisplayWindow(QtGui.QDialog):
         painter.setCompositionMode( QtGui.QPainter.CompositionMode_Multiply )
 
         # draw chars into the image
-        stopDrawing = False
-        stopDrawList = []
-        for char in text:
-            try:
-                if char == '\n':
-                    currentY += maxY
-                    currentX = 0
-                    continue
-
-                if char == '>':
-                    stopDrawing = False
-                    stopDrawText = ''.join(stopDrawList)
-
-                    if Globals.configData.FontFormatting.has_key(stopDrawText):
-                        fmt = Globals.configData.FontFormatting[stopDrawText]
-                        currentFont = Globals.configData.Fonts[fmt.Font]
-
-                        # DANGAN RONPA SPECIFIC
-                        if stopDrawText == 'CLT' and NonstopFlag:
-                            currentFont = Globals.configData.Fonts['nonstop']
-                        # END DANGAN RONPA SPECIFIC
-
-                        currentColor = fmt.Color
-        
-                    stopDrawList = []
-                    continue
-                
-                if stopDrawing:
-                    stopDrawList.append(char)
-                    continue
-
-                if char == '<':
-                    stopDrawing = True
-                    continue
-                
-                if not stopDrawing:
-                    glyph = currentFont[char]
-                    painter.drawImage(currentX, currentY + ( maxY - glyph.height ), glyph.img, glyph.x, glyph.y, glyph.width, glyph.height)
-                    painter.fillRect( currentX, currentY + ( maxY - glyph.height ), glyph.width, glyph.height, currentColor )
-                    currentX += glyph.width
-
-            except:
-                pass
+        self.renderText(text, painter, maxY, currentFont)
 
         # draw lines into the image
         tooltip = ''
@@ -144,8 +82,76 @@ class FontDisplayWindow(QtGui.QDialog):
         piclabel.setToolTip( tooltip )
         self.layout.addWidget(piclabel)
     
-    def renderText(self, text, painter):
-        return
+    def renderText(self, text, painter, lineHeight, defaultFont):
+
+        currentFont = defaultFont
+        currentColor = QtGui.QColor('white')
+        currentScale = 1.0
+        currentX = 0
+        currentY = 0
+        maxX = 0
+        maxY = 0
+        stopDrawing = False
+        stopDrawList = []
+
+        for char in text:
+            try:
+                if char == '\n':
+                    currentY += lineHeight
+                    maxX = max(maxX, currentX)
+                    currentX = 0
+                    continue
+
+                if char == '>':
+                    stopDrawing = False
+                    stopDrawText = ''.join(stopDrawList)
+
+                    if Globals.configData.FontFormatting.has_key(stopDrawText):
+                        fmt = Globals.configData.FontFormatting[stopDrawText]
+                        currentFont = Globals.configData.Fonts[fmt.Font]
+
+                        # DANGAN RONPA SPECIFIC
+                        if stopDrawText == 'CLT':
+                            currentFont = defaultFont
+                        # END DANGAN RONPA SPECIFIC
+
+                        currentColor = fmt.Color
+                        currentScale = fmt.Scale
+        
+                    stopDrawList = []
+                    continue
+                
+                if stopDrawing:
+                    stopDrawList.append(char)
+                    continue
+
+                if char == '<':
+                    stopDrawing = True
+                    continue
+                
+                if not stopDrawing:
+                    glyph = currentFont[char]
+
+                    if currentScale != 1.0:
+                        newGlyph = GlyphStruct()
+                        newGlyph.img = glyph.img.copy(glyph.x, glyph.y, glyph.width, glyph.height).scaled(glyph.width * currentScale, glyph.height * currentScale, Qt.Qt.IgnoreAspectRatio, Qt.Qt.SmoothTransformation)
+                        newGlyph.x = 0
+                        newGlyph.y = 0
+                        newGlyph.width = newGlyph.img.width()
+                        newGlyph.height = newGlyph.img.height()
+                        glyph = newGlyph
+
+                    if painter is not None: # actually render
+                        painter.drawImage(currentX, currentY + ( lineHeight - glyph.height ), glyph.img, glyph.x, glyph.y, glyph.width, glyph.height)
+                        painter.fillRect( currentX, currentY + ( lineHeight - glyph.height ), glyph.width, glyph.height, currentColor )
+                        currentX += glyph.width
+                    else: # just calculate the image size
+                        currentX += glyph.width
+                        maxY = max(glyph.height, maxY)
+            except:
+                pass
+        maxX = max(maxX, currentX)
+        return maxX, maxY
 
     def clearInfo(self):
         if self.layout is not None:
@@ -157,17 +163,3 @@ class FontDisplayWindow(QtGui.QDialog):
         self.layout = QtGui.QVBoxLayout(self.scroll)
         self.setLayout(self.layout)
     
-    def tempTextStuff(self):
-        feedCount = text.count('\f')
-        sanitizedText = re.sub('<CLT[ 0-9]+>', '', text.replace("''", "'"))
-        splitOnFeeds = sanitizedText.split('\f')
-        splitOnLines = sanitizedText.replace('\f', '\n').split('\n')
-        longestLineChars = 0
-        for s in splitOnLines:
-            longestLineChars = max(longestLineChars, len(s))
-        highestBoxNewlines = 0
-        for s in splitOnFeeds:
-            highestBoxNewlines = max(highestBoxNewlines, s.count('\n')+1)
-        self.footer.setText(prepend + 'Textboxes: ' + str(feedCount+1) + ' / Highest Box: ' + str(highestBoxNewlines) + ' lines / Longest Line: ' + str(longestLineChars) + ' chars')
-
-
