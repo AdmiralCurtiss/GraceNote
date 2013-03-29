@@ -17,7 +17,7 @@ class FontDisplayWindow(QtGui.QDialog):
         self.layout = QtGui.QVBoxLayout(self.scroll)
         self.setLayout(self.layout)
         
-    def drawText(self, text):
+    def drawText(self, text, databaseDesc): # database desc is only passed for Dangan Ronpa!! can be removed in generic GN version
         self.clearInfo()
 
         text = text.replace('\f', '\n')
@@ -29,6 +29,17 @@ class FontDisplayWindow(QtGui.QDialog):
         currentY = 0
         maxX = 0
         maxY = 0
+        currentFont = Globals.configData.Fonts['default']
+        
+        # DANGAN RONPA SPECIFIC
+        if re.match('e0[0-9]_1[0-9][0-9]_001.lin', databaseDesc):
+            NonstopFlag = True
+            currentFont = Globals.configData.Fonts['nonstop']
+        else:
+            NonstopFlag = False
+        # END DANGAN RONPA SPECIFIC
+        
+        currentColor = QtGui.QColor('white')
         
         # calculate image size
         for char in text:
@@ -37,7 +48,7 @@ class FontDisplayWindow(QtGui.QDialog):
                     maxX = max(maxX, currentX)
                     currentX = 0
                     continue
-                glyph = Globals.configData.Font[char]
+                glyph = currentFont[char]
                 currentX += glyph.width
                 maxY = max(glyph.height, maxY)
             except:
@@ -57,28 +68,56 @@ class FontDisplayWindow(QtGui.QDialog):
         img = QtGui.QImage(maxX, maxY * linecount, QtGui.QImage.Format_ARGB32_Premultiplied)
         img.fill(0xFFFFFFFF)
         painter = QtGui.QPainter(img)
+        painter.setCompositionMode( QtGui.QPainter.CompositionMode_Multiply )
 
         # draw chars into the image
         stopDrawing = False
+        stopDrawList = []
         for char in text:
             try:
                 if char == '\n':
                     currentY += maxY
                     currentX = 0
                     continue
-                if char == '<':
-                    stopDrawing = True
-                if not stopDrawing:
-                    glyph = Globals.configData.Font[char]
-                    painter.drawImage(currentX, currentY, glyph.img, glyph.x, glyph.y, glyph.width, glyph.height)
-                    currentX += glyph.width
+
                 if char == '>':
                     stopDrawing = False
+                    stopDrawText = ''.join(stopDrawList)
+
+                    if Globals.configData.FontFormatting.has_key(stopDrawText):
+                        fmt = Globals.configData.FontFormatting[stopDrawText]
+                        currentFont = Globals.configData.Fonts[fmt.Font]
+
+                        # DANGAN RONPA SPECIFIC
+                        if stopDrawText == 'CLT' and NonstopFlag:
+                            currentFont = Globals.configData.Fonts['nonstop']
+                        # END DANGAN RONPA SPECIFIC
+
+                        currentColor = fmt.Color
+        
+                    stopDrawList = []
+                    continue
+                
+                if stopDrawing:
+                    stopDrawList.append(char)
+                    continue
+
+                if char == '<':
+                    stopDrawing = True
+                    continue
+                
+                if not stopDrawing:
+                    glyph = currentFont[char]
+                    painter.drawImage(currentX, currentY, glyph.img, glyph.x, glyph.y, glyph.width, glyph.height)
+                    painter.fillRect( currentX, currentY, glyph.width, glyph.height, currentColor )
+                    currentX += glyph.width
+
             except:
                 pass
 
         # draw lines into the image
         tooltip = ''
+        painter.setCompositionMode( QtGui.QPainter.CompositionMode_Source )
         for line in Globals.configData.FontLines:
             try:
                 if line.style == 2:
@@ -91,7 +130,7 @@ class FontDisplayWindow(QtGui.QDialog):
                     y1 = line.y
                     x2 = img.width() - 1
                     y2 = line.y
-                painter.setPen( QtGui.QColor( line.color ) )
+                painter.setPen( line.color )
                 painter.drawLine(x1, y1, x2, y2)
                 tooltip += line.name + '\n'
             except:

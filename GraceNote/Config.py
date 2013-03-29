@@ -29,9 +29,10 @@ class Configuration:
     
     Images = []
     Terms = []
-    Font = {}
+    Fonts = {}
     FontReplacements = {}
     FontLines = []
+    FontFormatting = {}
 
     FileList = []
     
@@ -83,26 +84,32 @@ class Configuration:
         
     def LoadFont(self, mainNode):
         try:
-            imgs = mainNode.getElementsByTagName('Font')[0].getElementsByTagName('Image')
-            self.Font = {}
-            for img in imgs:
-                path = img.getAttribute('Path')
-                image = QtGui.QImage(path)
-                glyphs = img.getElementsByTagName('Glyph')
+            fonts = mainNode.getElementsByTagName('Fonts')[0].getElementsByTagName('Font')
+            self.Fonts = {}
+            for font in fonts:
+                imgs = font.getElementsByTagName('Image')
+                fontname = font.getAttribute('name')
+                currentFont = {}
+                for img in imgs:
+                    path = img.getAttribute('Path')
+                    image = QtGui.QImage(path)
+                    glyphs = img.getElementsByTagName('Glyph')
                 
-                for glyph in glyphs:
-                    newGlyph = GlyphStruct()
-                    newGlyph.img = image
-                    newGlyph.x = int(glyph.getAttribute('x'))
-                    newGlyph.y = int(glyph.getAttribute('y'))
-                    newGlyph.width = int(glyph.getAttribute('width'))
-                    newGlyph.height = int(glyph.getAttribute('height'))
-                    self.Font[glyph.getAttribute('char')] = newGlyph
+                    for glyph in glyphs:
+                        newGlyph = GlyphStruct()
+                        newGlyph.img = image
+                        newGlyph.x = int(glyph.getAttribute('x'))
+                        newGlyph.y = int(glyph.getAttribute('y'))
+                        newGlyph.width = int(glyph.getAttribute('width'))
+                        newGlyph.height = int(glyph.getAttribute('height'))
+                        currentFont[glyph.getAttribute('char')] = newGlyph
+
+                self.Fonts[fontname] = currentFont
         except:
-            self.Font = {}
+            self.Fonts = {}
 
         try:
-            repls = mainNode.getElementsByTagName('Font')[0].getElementsByTagName('Replacement')
+            repls = mainNode.getElementsByTagName('Fonts')[0].getElementsByTagName('Replacement')
             self.FontReplacements = {}
             for rep in repls:
                 o = rep.getAttribute('old')
@@ -112,7 +119,7 @@ class Configuration:
             self.FontReplacements = {}
 
         try:
-            lines = mainNode.getElementsByTagName('Font')[0].getElementsByTagName('Line')
+            lines = mainNode.getElementsByTagName('Fonts')[0].getElementsByTagName('Line')
             self.FontLines = []
             for line in lines:
                 #Line style="|" x="200" y="0" color="red" name="Textbox End" />
@@ -120,13 +127,33 @@ class Configuration:
                 newLine.style = int(line.getAttribute('style'))
                 newLine.x = int(line.getAttribute('x'))
                 newLine.y = int(line.getAttribute('y'))
-                newLine.color = line.getAttribute('color')
+                newLine.color = self.GetColor( line )
                 newLine.name = line.getAttribute('name')
                 self.FontLines.append(newLine)
         except:
             self.FontLines = []
 
+        try:
+            formats = mainNode.getElementsByTagName('Fonts')[0].getElementsByTagName('Formatting')
+            self.FontFormatting = {}
+            for fmt in formats:
+                newFormat = GlyphStruct()
+                trigger = fmt.getAttribute('Trigger')
+                newFormat.Font = fmt.getAttribute('Font')
+                newFormat.Color = self.GetColor(fmt)
+                self.FontFormatting[trigger] = newFormat
+        except:
+            self.FontFormatting = {}
+
         return
+
+    def GetColor(self, node):
+        if node.hasAttribute('color'):
+            return QtGui.QColor( node.getAttribute('color') )
+        elif node.hasAttribute('colorR') and node.hasAttribute('colorG') and node.hasAttribute('colorB'):
+            return QtGui.QColor( int(node.getAttribute('colorR')), int(node.getAttribute('colorG')), int(node.getAttribute('colorB')) )
+        else:
+            return QtGui.QColor( 'white' )
 
     def LoadImages(self, mainNode):
         try:

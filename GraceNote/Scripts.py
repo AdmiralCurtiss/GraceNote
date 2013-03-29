@@ -1586,7 +1586,7 @@ class Scripts2(QtGui.QWidget):
             self.text[textBox.currentEntry - 1][2] = GoodString
         
         # should probably make this optional
-        self.fontWindow.drawText( GoodString )
+        self.fontWindow.drawText( GoodString, Globals.GetDatabaseDescriptionString(str(databasefilename)) )
 
         return
 
@@ -1708,7 +1708,8 @@ class Scripts2(QtGui.QWidget):
             medium.refreshInfo( Globals.VariableReplace(self.text[rowBoxes[centerPanel] + medium.medium.offs][t]) )
 
         # inform font box
-        self.fontWindow.drawText( self.text[rowBoxes[centerPanel]][t] )
+        databasefilename = self.treemodel.itemFromIndex(self.tree.currentIndex()).statusTip()
+        self.fontWindow.drawText( self.text[rowBoxes[centerPanel]][t], Globals.GetDatabaseDescriptionString(str(databasefilename)) )
                     
         # put text into textboxes, display entry number
         twoupTypeHelper = []
