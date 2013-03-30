@@ -158,6 +158,7 @@ class Scripts2(QtGui.QWidget):
         self.update = self.settings.value('update')
         self.databaseWriteStorage = deque()
         self.currentTreeIndex = None
+        self.currentOpenedEntryIndexes = None
        
         #self.update = ['DRBO2397','DRBO2400','DRBO2403','DRBO2408','DRBO2411','DRBO2414','DRBO2417','DRBO2420','DRBO2602','DRBO2605','DRBO2610','DRBO2613','DRBO2616','DRBO2619','DRBO2624','DRBO2627','DRBO2630','DRBO2893','DRBO2898','DRBO2901','DRBO2906','DRBO2909','DRBO2912','DRBO2915','DRBO2918','DRBO2921','DRBO2924','DRBO2927','DRBO3079','DRBO3082','DRBO3085','DRBO3090','DRBO3097','DRBO3100','DRBO3105','DRBO3108','DRBO3353','DRBO3356','DRBO3363','DRBO3368','DRBO3371','DRBO3374','DRBO3377','DRBO3380','DRBO3385','DRBO3526','DRBO3531','DRBO3534','DRBO3537','DRBO3540','DRBO3547','DRBO3550','DRBO3565','DRBO3569','DRBO3576']
 
@@ -1074,6 +1075,18 @@ class Scripts2(QtGui.QWidget):
                 
         return
 
+    def FormatEntryListItemColor(self, item, status):
+        if status >= self.role:
+            item.setBackground(QtGui.QBrush(QtGui.QColor(160, 255, 160)))
+            if self.author == 'ruta':
+                item.setBackground(QtGui.QBrush(QtGui.QColor(255, 235, 245)))
+
+        if status == -1:
+            item.setBackground(QtGui.QBrush(QtGui.QColor(255, 220, 220)))
+            if self.author == 'ruta':
+                item.setBackground(QtGui.QBrush(QtGui.QColor(255, 225, 180)))             
+
+
     # fills in the entry list to the right        
     def PopulateEntryList(self):
         self.WriteDatabaseStorageToHdd()
@@ -1084,6 +1097,7 @@ class Scripts2(QtGui.QWidget):
             editbox.iconToggle(0)
 
         self.entrymodel.clear()
+        self.currentOpenedEntryIndexes = None
         
         self.text = []
 
@@ -1156,16 +1170,8 @@ class Scripts2(QtGui.QWidget):
             additem = QtGui.QStandardItem(entryDisplayString)
             additem.setCheckable(True)
             additem.setStatusTip(identifyString)
-            
-            if TempStatus >= self.role:
-                additem.setBackground(QtGui.QBrush(QtGui.QColor(160, 255, 160)))
-                if self.author == 'ruta':
-                    additem.setBackground(QtGui.QBrush(QtGui.QColor(255, 235, 245)))
-
-            if TempStatus == -1:
-                additem.setBackground(QtGui.QBrush(QtGui.QColor(255, 220, 220)))
-                if self.author == 'ruta':
-                    additem.setBackground(QtGui.QBrush(QtGui.QColor(255, 225, 180)))             
+    
+            self.FormatEntryListItemColor(additem, TempStatus)        
     
             if (TempDebug == 1) and (not self.debug.isChecked()):
                 pass
@@ -1194,6 +1200,16 @@ class Scripts2(QtGui.QWidget):
             index = self.entrysort.index(0, 0)
         self.entry.setCurrentIndex(index)
         self.entry.selectionModel().select(index, QtGui.QItemSelectionModel.SelectionFlags(3))
+
+
+    def FormatCurrentlyOpenedEntryIndexes(self):
+        ## DOESNT WORK YET since I can't figure out how to get the QStandardItem() from the self.entrymodel again
+        return
+        #if self.currentOpenedEntryIndexes is not None:
+        #    for i in self.currentOpenedEntryIndexes:
+        #        idx = self.entrymodel.itemFromIndex(i)
+        #        print '???'
+
         
     def GetFullText(self, replaceVariables):
         string = ''
@@ -1662,13 +1678,19 @@ class Scripts2(QtGui.QWidget):
         for i in range(len(self.textEditingBoxes)):
             commentTexts.append('')
 
+        self.FormatCurrentlyOpenedEntryIndexes()
+
         # boxes here
         rowBoxes = []
+        self.currentOpenedEntryIndexes = []
         for i in range(len(self.textEditingBoxes)):
             try:
-                entrytextdisplay = self.entrysort.data(index.sibling(index.row()+(i-1), index.column()))
+                idx = index.sibling(index.row()+(i-1), index.column())
+                entrytextdisplay = self.entrysort.data(idx)
+
                 if entrytextdisplay != None:
                     rowBoxes.append( int(entrytextdisplay[6:11])-1 )
+                    self.currentOpenedEntryIndexes.append( idx )
                 else:
                     rowBoxes.append( -2 )
             except:
