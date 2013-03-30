@@ -1717,12 +1717,15 @@ class Scripts2(QtGui.QWidget):
         lengthEditingBoxes = len(self.textEditingBoxes)
         self.termTooltips = []
         for i in range(lengthEditingBoxes):
-            japanese = self.text[rowBoxes[i]][1]
-            tooltip = ''
-            for term in Globals.configData.Terms:
-                if japanese.find(term.JP) > -1:
-                    tooltip = tooltip + '[' + term.JP + '] translates to [' + term.EN + ']\n'
-            self.termTooltips.append(tooltip.strip())
+            if rowBoxes[i] >= 0:
+                japanese = self.text[rowBoxes[i]][1]
+                tooltip = ''
+                for term in Globals.configData.Terms:
+                    if japanese.find(term.JP) > -1:
+                        tooltip = tooltip + '[' + term.JP + '] translates to [' + term.EN + ']\n'
+                self.termTooltips.append(tooltip.strip())
+            else:
+                self.termTooltips.append('')
 
         # inform media boxes
         centerPanel = 1
