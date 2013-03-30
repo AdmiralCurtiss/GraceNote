@@ -1210,6 +1210,142 @@ class Scripts2(QtGui.QWidget):
         #        idx = self.entrymodel.itemFromIndex(i)
         #        print '???'
 
+    # fills in the textboxes in the middle
+    def PopulateTextEdit(self):
+        if Globals.WriteDatabaseStorageToHddOnEntryChange:
+            self.WriteDatabaseStorageToHdd()
+                
+        index = self.entry.currentIndex()
+        row = index.row()
+
+        if index == None or row == -1:
+            return
+        
+        if self.state == 'ENG':
+            t = 0
+        elif self.state == 'JPN':
+            t = 1
+        elif self.state == 'COM':
+            t = 2
+        
+        commentTexts = []
+        for i in range(len(self.textEditingBoxes)):
+            commentTexts.append('')
+
+        self.FormatCurrentlyOpenedEntryIndexes()
+
+        # boxes here
+        rowBoxes = []
+        self.currentOpenedEntryIndexes = []
+        for i in range(len(self.textEditingBoxes)):
+            try:
+                idx = index.sibling(index.row()+(i-1), index.column())
+                entrytextdisplay = self.entrysort.data(idx)
+
+                if entrytextdisplay != None:
+                    rowBoxes.append( int(entrytextdisplay[6:11])-1 )
+                    self.currentOpenedEntryIndexes.append( idx )
+                else:
+                    rowBoxes.append( -2 )
+            except:
+                rowBoxes.append( -2 )
+        
+        textEntries1 = []
+        textEntries1raw = []
+        textEntries2 = []
+        textEntries2raw = []
+        for i in range(len(self.textEditingBoxes)):
+            if rowBoxes[i] >= 0:
+                textEntries1.append( Globals.VariableReplace(self.text[rowBoxes[i]][t]) )
+                textEntries1raw.append( self.text[rowBoxes[i]][t] )
+                textEntries2.append( Globals.VariableReplace(self.text[rowBoxes[i]][self.twoupEditingTextBoxes[i].role]) )
+                textEntries2raw.append( self.text[rowBoxes[i]][self.twoupEditingTextBoxes[i].role] )
+                commentTexts[i] = self.text[rowBoxes[i]][5] + '     '
+                if self.text[rowBoxes[i]][2] != '':
+                    commentTexts[i] = commentTexts[i] + 'Comment Available'
+                self.regularEditingTextBoxes[i].iconToggle(self.text[rowBoxes[i]][4])
+                self.regularEditingTextBoxes[i].currentEntry = rowBoxes[i] + 1
+                self.regularEditingTextBoxes[i].setReadOnly(False)
+            else:
+                textEntries1.append( '' )
+                textEntries1raw.append( '' )
+                textEntries2.append( '' )
+                textEntries2raw.append( '' )
+                self.regularEditingTextBoxes[i].iconToggle(0)
+                self.regularEditingTextBoxes[i].currentEntry = -1
+                self.regularEditingTextBoxes[i].setReadOnly(True)
+
+        # audio clip check
+        if Globals.Audio:
+            lengthEditingBoxes = len(self.textEditingBoxes)
+            for i in range(lengthEditingBoxes):
+                if self.regularEditingTextBoxes[i].currentEntry == -1:
+                    continue
+                AudioSearchText = Globals.VariableReplace(self.text[rowBoxes[i] + Globals.configData.VoiceEntryOffset][t])
+                AudioClips = re.findall('<Audio: (.*?)>', AudioSearchText, re.DOTALL)
+                AudioClips = AudioClips + re.findall('<Voice: (.*?)>', AudioSearchText, re.DOTALL)
+                if AudioClips == []:
+                    self.regularEditingTextBoxes[i].clearPlaybackButtons()
+                else:
+                    self.regularEditingTextBoxes[i].makePlaybackButtons(AudioClips)
+
+        # check for terms
+        lengthEditingBoxes = len(self.textEditingBoxes)
+        self.termTooltips = []
+        for i in range(lengthEditingBoxes):
+            if rowBoxes[i] >= 0:
+                japanese = self.text[rowBoxes[i]][1]
+                tooltip = ''
+                for term in Globals.configData.Terms:
+                    if japanese.find(term.JP) > -1:
+                        tooltip = tooltip + '[' + term.JP + '] translates to [' + term.EN + ']\n'
+                self.termTooltips.append(tooltip.strip())
+            else:
+                self.termTooltips.append('')
+
+        # inform media boxes
+        centerPanel = 1
+        for name, medium in self.media.iteritems():
+            #print self.text[rowBoxes[centerPanel] + medium.medium.offs][t]
+            medium.refreshInfo( Globals.VariableReplace(self.text[rowBoxes[centerPanel] + medium.medium.offs][t]) )
+
+        # inform font box
+        databasefilename = self.treemodel.itemFromIndex(self.tree.currentIndex()).statusTip()
+        self.fontWindow.drawText( self.text[rowBoxes[centerPanel]][t], Globals.GetDatabaseDescriptionString(str(databasefilename)) )
+                    
+        # put text into textboxes, display entry number
+        twoupTypeHelper = []
+        twoupTypeHelper.append('E')
+        twoupTypeHelper.append('J')
+        twoupTypeHelper.append('C')
+        for i in range(len(self.textEditingBoxes)):
+            self.regularEditingTextBoxes[i].setText(textEntries1[i])
+            if self.twoupAct.isChecked():
+                self.twoupEditingTextBoxes[i].setText(textEntries2[i])
+                
+            if self.regularEditingTextBoxes[i].currentEntry >= 0:
+                self.textEditingTitles[i].setText("Entry {0}: {1}".format(rowBoxes[i]+1, commentTexts[i]))
+                self.regularEditingTextBoxes[i].refreshFooter(textEntries1raw[i], self.state[0] + ': ')
+                self.twoupEditingTextBoxes[i].refreshFooter(textEntries2raw[i], twoupTypeHelper[self.twoupEditingTextBoxes[i].role] + ': ')
+                if self.termTooltips[i] != '':
+                    self.textEditingTermIcons[i].setToolTip( 'Terminology in this Entry:\n' + self.termTooltips[i] )
+                    self.textEditingTermIcons[i].show()
+                else:
+                    self.textEditingTermIcons[i].setToolTip('')
+                    self.textEditingTermIcons[i].hide()
+            else:
+                self.textEditingTitles[i].setText('')
+                self.textEditingFooters[i].setText('')
+                self.twoupEditingFooters[i].setText('')
+                self.textEditingTermIcons[i].setToolTip('')
+                self.textEditingTermIcons[i].hide()
+            
+
+        # auto-update in Auto mode
+        if Globals.ModeFlag == 'Auto':
+            for i in range(len(self.textEditingBoxes)):
+                self.regularEditingTextBoxes[i].manualEdit.emit(5, self.regularEditingTextBoxes[i], self.textEditingFooters[i])
+
         
     def GetFullText(self, replaceVariables):
         string = ''
@@ -1655,142 +1791,6 @@ class Scripts2(QtGui.QWidget):
             CompletionTable.CalculateCompletionForDatabase(str(db))
 
         self.databaseWriteStorage.clear()
-
-    # fills in the textboxes in the middle
-    def PopulateTextEdit(self):
-        if Globals.WriteDatabaseStorageToHddOnEntryChange:
-            self.WriteDatabaseStorageToHdd()
-                
-        index = self.entry.currentIndex()
-        row = index.row()
-
-        if index == None or row == -1:
-            return
-        
-        if self.state == 'ENG':
-            t = 0
-        elif self.state == 'JPN':
-            t = 1
-        elif self.state == 'COM':
-            t = 2
-        
-        commentTexts = []
-        for i in range(len(self.textEditingBoxes)):
-            commentTexts.append('')
-
-        self.FormatCurrentlyOpenedEntryIndexes()
-
-        # boxes here
-        rowBoxes = []
-        self.currentOpenedEntryIndexes = []
-        for i in range(len(self.textEditingBoxes)):
-            try:
-                idx = index.sibling(index.row()+(i-1), index.column())
-                entrytextdisplay = self.entrysort.data(idx)
-
-                if entrytextdisplay != None:
-                    rowBoxes.append( int(entrytextdisplay[6:11])-1 )
-                    self.currentOpenedEntryIndexes.append( idx )
-                else:
-                    rowBoxes.append( -2 )
-            except:
-                rowBoxes.append( -2 )
-        
-        textEntries1 = []
-        textEntries1raw = []
-        textEntries2 = []
-        textEntries2raw = []
-        for i in range(len(self.textEditingBoxes)):
-            if rowBoxes[i] >= 0:
-                textEntries1.append( Globals.VariableReplace(self.text[rowBoxes[i]][t]) )
-                textEntries1raw.append( self.text[rowBoxes[i]][t] )
-                textEntries2.append( Globals.VariableReplace(self.text[rowBoxes[i]][self.twoupEditingTextBoxes[i].role]) )
-                textEntries2raw.append( self.text[rowBoxes[i]][self.twoupEditingTextBoxes[i].role] )
-                commentTexts[i] = self.text[rowBoxes[i]][5] + '     '
-                if self.text[rowBoxes[i]][2] != '':
-                    commentTexts[i] = commentTexts[i] + 'Comment Available'
-                self.regularEditingTextBoxes[i].iconToggle(self.text[rowBoxes[i]][4])
-                self.regularEditingTextBoxes[i].currentEntry = rowBoxes[i] + 1
-                self.regularEditingTextBoxes[i].setReadOnly(False)
-            else:
-                textEntries1.append( '' )
-                textEntries1raw.append( '' )
-                textEntries2.append( '' )
-                textEntries2raw.append( '' )
-                self.regularEditingTextBoxes[i].iconToggle(0)
-                self.regularEditingTextBoxes[i].currentEntry = -1
-                self.regularEditingTextBoxes[i].setReadOnly(True)
-
-        # audio clip check
-        if Globals.Audio:
-            lengthEditingBoxes = len(self.textEditingBoxes)
-            for i in range(lengthEditingBoxes):
-                if self.regularEditingTextBoxes[i].currentEntry == -1:
-                    continue
-                AudioSearchText = Globals.VariableReplace(self.text[rowBoxes[i] + Globals.configData.VoiceEntryOffset][t])
-                AudioClips = re.findall('<Audio: (.*?)>', AudioSearchText, re.DOTALL)
-                AudioClips = AudioClips + re.findall('<Voice: (.*?)>', AudioSearchText, re.DOTALL)
-                if AudioClips == []:
-                    self.regularEditingTextBoxes[i].clearPlaybackButtons()
-                else:
-                    self.regularEditingTextBoxes[i].makePlaybackButtons(AudioClips)
-
-        # check for terms
-        lengthEditingBoxes = len(self.textEditingBoxes)
-        self.termTooltips = []
-        for i in range(lengthEditingBoxes):
-            if rowBoxes[i] >= 0:
-                japanese = self.text[rowBoxes[i]][1]
-                tooltip = ''
-                for term in Globals.configData.Terms:
-                    if japanese.find(term.JP) > -1:
-                        tooltip = tooltip + '[' + term.JP + '] translates to [' + term.EN + ']\n'
-                self.termTooltips.append(tooltip.strip())
-            else:
-                self.termTooltips.append('')
-
-        # inform media boxes
-        centerPanel = 1
-        for name, medium in self.media.iteritems():
-            #print self.text[rowBoxes[centerPanel] + medium.medium.offs][t]
-            medium.refreshInfo( Globals.VariableReplace(self.text[rowBoxes[centerPanel] + medium.medium.offs][t]) )
-
-        # inform font box
-        databasefilename = self.treemodel.itemFromIndex(self.tree.currentIndex()).statusTip()
-        self.fontWindow.drawText( self.text[rowBoxes[centerPanel]][t], Globals.GetDatabaseDescriptionString(str(databasefilename)) )
-                    
-        # put text into textboxes, display entry number
-        twoupTypeHelper = []
-        twoupTypeHelper.append('E')
-        twoupTypeHelper.append('J')
-        twoupTypeHelper.append('C')
-        for i in range(len(self.textEditingBoxes)):
-            self.regularEditingTextBoxes[i].setText(textEntries1[i])
-            if self.twoupAct.isChecked():
-                self.twoupEditingTextBoxes[i].setText(textEntries2[i])
-                
-            if self.regularEditingTextBoxes[i].currentEntry >= 0:
-                self.textEditingTitles[i].setText("Entry {0}: {1}".format(rowBoxes[i]+1, commentTexts[i]))
-                self.regularEditingTextBoxes[i].refreshFooter(textEntries1raw[i], self.state[0] + ': ')
-                self.twoupEditingTextBoxes[i].refreshFooter(textEntries2raw[i], twoupTypeHelper[self.twoupEditingTextBoxes[i].role] + ': ')
-                if self.termTooltips[i] != '':
-                    self.textEditingTermIcons[i].setToolTip( 'Terminology in this Entry:\n' + self.termTooltips[i] )
-                    self.textEditingTermIcons[i].show()
-                else:
-                    self.textEditingTermIcons[i].setToolTip('')
-                    self.textEditingTermIcons[i].hide()
-            else:
-                self.textEditingTitles[i].setText('')
-                self.textEditingFooters[i].setText('')
-                self.twoupEditingFooters[i].setText('')
-                self.textEditingTermIcons[i].setToolTip('')
-                self.textEditingTermIcons[i].hide()
-            
-
-        # auto-update in Auto mode
-        if Globals.ModeFlag == 'Auto':
-            for i in range(len(self.textEditingBoxes)):
-                self.regularEditingTextBoxes[i].manualEdit.emit(5, self.regularEditingTextBoxes[i], self.textEditingFooters[i])
 
         
     def SwapEnglish(self):
