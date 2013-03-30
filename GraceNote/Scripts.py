@@ -139,7 +139,6 @@ class Scripts2(QtGui.QWidget):
         self.splashScreen.show()
         self.splashScreen.raise_()
         self.splashScreen.activateWindow()
-        
 
         # Current Variables
         self.state = 'ENG'
@@ -158,7 +157,8 @@ class Scripts2(QtGui.QWidget):
         self.author = self.settings.value('author')
         self.update = self.settings.value('update')
         self.databaseWriteStorage = deque()
-        
+        self.currentTreeIndex = None
+       
         #self.update = ['DRBO2397','DRBO2400','DRBO2403','DRBO2408','DRBO2411','DRBO2414','DRBO2417','DRBO2420','DRBO2602','DRBO2605','DRBO2610','DRBO2613','DRBO2616','DRBO2619','DRBO2624','DRBO2627','DRBO2630','DRBO2893','DRBO2898','DRBO2901','DRBO2906','DRBO2909','DRBO2912','DRBO2915','DRBO2918','DRBO2921','DRBO2924','DRBO2927','DRBO3079','DRBO3082','DRBO3085','DRBO3090','DRBO3097','DRBO3100','DRBO3105','DRBO3108','DRBO3353','DRBO3356','DRBO3363','DRBO3368','DRBO3371','DRBO3374','DRBO3377','DRBO3380','DRBO3385','DRBO3526','DRBO3531','DRBO3534','DRBO3537','DRBO3540','DRBO3547','DRBO3550','DRBO3565','DRBO3569','DRBO3576']
 
         if self.update == None:
@@ -851,6 +851,7 @@ class Scripts2(QtGui.QWidget):
         self.WriteDatabaseStorageToHdd()
         
         Globals.configData = Configuration(Globals.configfile)
+        Globals.configData.DelayedLoad()
         self.PopulateModel(Globals.configData.FileList)
         
     def VoiceLanguageSwap(self):
@@ -1024,45 +1025,54 @@ class Scripts2(QtGui.QWidget):
             for item in FileList[i]:
                 newrow = QtGui.QStandardItem()
                 newrow.setStatusTip(item)
-                newrow.setText(Globals.GetDatabaseDescriptionString(item))
                 
                 # color based on completion / comments exist
-                PercentageCursor.execute("SELECT Count(1) FROM Percentages WHERE Database = ?", [item])
-                exists = PercentageCursor.fetchall()[0][0]
-                if exists > 0:
-                    PercentageCursor.execute("SELECT entries, translation, editing1, editing2, editing3, comments FROM Percentages WHERE Database = ?", [item])
-                    rows = PercentageCursor.fetchall()
-                    totalDB = rows[0][0]
-                    translated = rows[0][self.role]
-                    phase1 = rows[0][1]
-                    phase2 = rows[0][2]
-                    phase3 = rows[0][3]
-                    phase4 = rows[0][4]
-                    commentAmount = rows[0][5]
-                    
-                    if translated >= totalDB:
-                        newrow.setBackground(QtGui.QBrush(QtGui.QColor(160, 255, 160)));
-                    else:
-                        newrow.setBackground(QtGui.QBrush(QtGui.QColor(255, 160, 160)));
-                    
-                    dbPhase = 0
-                    if totalDB == phase1:
-                        if totalDB == phase2:
-                            if totalDB == phase3:
-                                if totalDB == phase4:
-                                    dbPhase = dbPhase + 1
-                                dbPhase = dbPhase + 1
-                            dbPhase = dbPhase + 1
-                        dbPhase = dbPhase + 1
-                        
-                    if commentAmount > 0:
-                        newrow.setText('[' + str(dbPhase) + 'C] ' + newrow.text())
-                    else:
-                        newrow.setText('[' + str(dbPhase) + '] ' + newrow.text())
-                # color/comments end
-                
+                self.FormatDatabaseListItem(item, newrow, PercentageCursor)
+
                 cat.appendRow(newrow)
             i = i + 1
+
+    def FormatDatabaseListItem(self, databaseName, treeItem, PercentageCursor = None):
+        if PercentageCursor is None:
+            PercentageConnection = sqlite3.connect(Globals.configData.LocalDatabasePath + "/CompletionPercentage")
+            PercentageCursor = PercentageConnection.cursor()
+
+        treeItem.setText(Globals.GetDatabaseDescriptionString(databaseName))
+        PercentageCursor.execute("SELECT Count(1) FROM Percentages WHERE Database = ?", [databaseName])
+        exists = PercentageCursor.fetchall()[0][0]
+        if exists > 0:
+            PercentageCursor.execute("SELECT entries, translation, editing1, editing2, editing3, comments FROM Percentages WHERE Database = ?", [databaseName])
+            rows = PercentageCursor.fetchall()
+            totalDB = rows[0][0]
+            translated = rows[0][self.role]
+            phase1 = rows[0][1]
+            phase2 = rows[0][2]
+            phase3 = rows[0][3]
+            phase4 = rows[0][4]
+            commentAmount = rows[0][5]
+                    
+            if translated >= totalDB:
+                treeItem.setBackground(QtGui.QBrush(QtGui.QColor(160, 255, 160)));
+            else:
+                treeItem.setBackground(QtGui.QBrush(QtGui.QColor(255, 160, 160)));
+                    
+            dbPhase = 0
+            if totalDB == phase1:
+                if totalDB == phase2:
+                    if totalDB == phase3:
+                        if totalDB == phase4:
+                            dbPhase = dbPhase + 1
+                        dbPhase = dbPhase + 1
+                    dbPhase = dbPhase + 1
+                dbPhase = dbPhase + 1
+                        
+            if commentAmount > 0:
+                treeItem.setText('[' + str(dbPhase) + 'C] ' + treeItem.text())
+            else:
+                treeItem.setText('[' + str(dbPhase) + '] ' + treeItem.text())
+        # color/comments end
+                
+        return
 
     # fills in the entry list to the right        
     def PopulateEntryList(self):
@@ -1086,14 +1096,20 @@ class Scripts2(QtGui.QWidget):
         for footer in self.twoupEditingFooters:
             footer.setText('')
 
-        index = self.tree.currentIndex()
-        parent = self.treemodel.data(self.tree.currentIndex().parent())
+        # refresh the string & color in the list to the left of the entry we just changed from
+        if self.currentTreeIndex is not None:
+            treeItem = self.treemodel.itemFromIndex(self.currentTreeIndex)
+            self.FormatDatabaseListItem(self.currentlyOpenDatabase, treeItem)
 
+        index = self.tree.currentIndex()
+        databasefilename = self.treemodel.itemFromIndex(index).statusTip()
+        parent = self.treemodel.data(index.parent())
         if self.treemodel.hasChildren(index):
+            self.currentTreeIndex = None
             return
 
-        databasefilename = self.treemodel.itemFromIndex(index).statusTip()
-        self.currentlyOpenDatabase = databasefilename
+        self.currentTreeIndex = index
+        self.currentlyOpenDatabase = str(databasefilename)
         SaveCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(databasefilename))
         SaveCur = SaveCon.cursor()
         
@@ -1347,7 +1363,7 @@ class Scripts2(QtGui.QWidget):
 
             for p in xrange(category.rowCount()):
             
-                if category.child(p).statusTip() == databaseName:
+                if str(category.child(p).statusTip()) == databaseName:
                     treeExpand = self.treemodel.indexFromItem(category)
                     self.tree.expand(treeExpand)
                     treeIndex = self.treemodel.indexFromItem(category.child(p))
@@ -1602,19 +1618,26 @@ class Scripts2(QtGui.QWidget):
         # sort by time of entry creation so order of inserts is preserved (necessary eg. if changing both english and comment on same entry
         sortedStorage = sorted(self.databaseWriteStorage, key=lambda DatabaseEntryStruct: DatabaseEntryStruct.timestamp)
         
+        databasesWrittenTo = set()
+
         #DatabaseEntryStruct(cleanString, databaseName, entry, role, state)
         for d in sortedStorage:
             if lastDatabase != d.databaseName: # open up new DB connectin if neccesary, otherwise just reuse the old one
                 self.update.add(str(d.databaseName))
                 SaveCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(d.databaseName))
                 SaveCur = SaveCon.cursor()
-                
+                lastDatabase = d.databaseName
+                databasesWrittenTo.add(d.databaseName)
+            
             if d.state == 'ENG':
                 SaveCur.execute(u"update Text set english=?, updated=1, status=? where ID=?", (d.cleanString, d.role, d.entry))
             elif d.state == "COM":
                 SaveCur.execute(u"update Text set comment=?, updated=1, status=? where ID=?", (d.cleanString, d.role, d.entry))
             SaveCon.commit()
         
+        for db in databasesWrittenTo:
+            CompletionTable.CalculateCompletionForDatabase(str(db))
+
         self.databaseWriteStorage.clear()
 
     # fills in the textboxes in the middle
