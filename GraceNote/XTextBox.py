@@ -213,7 +213,7 @@ class XTextBox(QtGui.QTextEdit):
 
     def textChangedSignal(self):
         if self.modified:
-            self.manualEdit.emit(5, self, self.footer)
+            self.manualEdit.emit(-1, self, self.footer)
             
     def modifyTrue(self, set):
         self.modified = set

@@ -1344,7 +1344,7 @@ class Scripts2(QtGui.QWidget):
         # auto-update in Auto mode
         if Globals.ModeFlag == 'Auto':
             for i in range(len(self.textEditingBoxes)):
-                self.regularEditingTextBoxes[i].manualEdit.emit(5, self.regularEditingTextBoxes[i], self.textEditingFooters[i])
+                self.regularEditingTextBoxes[i].manualEdit.emit(-2, self.regularEditingTextBoxes[i], self.textEditingFooters[i])
 
         
     def GetFullText(self, replaceVariables):
@@ -1694,6 +1694,7 @@ class Scripts2(QtGui.QWidget):
         if self.treemodel.hasChildren(treeindex):
             return
         
+        CommandOriginAutoMode = ( role == -2 )
         
                         
         #index = self.entry.currentIndex()
@@ -1704,7 +1705,7 @@ class Scripts2(QtGui.QWidget):
             
         GoodString = Globals.VariableRemove(textBox.toPlainText())
 
-        if role == 5:
+        if role < 0:
             CommandOriginButton = False
             role = self.role
         else:
@@ -1754,7 +1755,8 @@ class Scripts2(QtGui.QWidget):
             self.text[textBox.currentEntry - 1][2] = GoodString
         
         # should probably make this optional
-        self.fontWindow.drawText( GoodString, Globals.GetDatabaseDescriptionString(str(databasefilename)) )
+        if not CommandOriginAutoMode:
+            self.fontWindow.drawText( GoodString, Globals.GetDatabaseDescriptionString(str(databasefilename)) )
 
         return
 
