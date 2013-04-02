@@ -177,12 +177,13 @@ class Font(QtGui.QWidget):
                     rbearOutline = rbearing + 1
 
 
-                    fontMetrics += struct.pack('>8B', lleading, rleading, lbearing, rbearing, lleadOutline, rleadOutline, lbearOutline, rbearOutline)
-                    fontTextureTiles.append(image)
-#                    image.save('{0}.png'.format(hex(char)))
-#                    except:
-##                        print "{0} didn't work:".format(hex(char))
-#                        fontMap += '\x00\x00'
+                    try:
+                        fontMetrics += struct.pack('>8B', lleading, rleading, lbearing, rbearing, lleadOutline, rleadOutline, lbearOutline, rbearOutline)
+                        fontTextureTiles.append(image)
+                        #image.save('{0}.png'.format(hex(char)))
+                    except:
+                        print "{0} didn't work:".format(hex(char))
+                        fontMap += '\x00\x00'
                 else:
                     fontMap += '\x00\x00'
             p += 1

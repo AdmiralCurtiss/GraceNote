@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{6e6e6cfa-3cd6-4893-956a-d1079513f8c2}</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>GraceNote.py</StartupFile>
+    <StartupFile>GraceTools\GraceTools.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
