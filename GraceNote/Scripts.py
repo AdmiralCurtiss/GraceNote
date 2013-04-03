@@ -181,6 +181,11 @@ class Scripts2(QtGui.QWidget):
         else:
             self.role = 1
 
+        if self.settings.contains('autoThreshold'):
+            self.autoThreshold = int(self.settings.value('autoThreshold'))
+        else:
+            self.autoThreshold = 0
+
         if self.settings.contains('mode'):
             Globals.ModeFlag = self.settings.value('mode')
         else:
@@ -219,9 +224,10 @@ class Scripts2(QtGui.QWidget):
         if Globals.AmountEditingWindows < 3 or Globals.AmountEditingWindows > 25:
             Globals.AmountEditingWindows = 5
 
-        self.roletext = ['', 'Translating', 'Reviewing Translations', 'Reviewing Context', 'Editing']
+        self.rolenames = ['None', 'Translation', 'Translation Review', 'Contextual Review', 'Editing']
+        self.roletext = ['Doing Nothing', 'Translating', 'Reviewing Translations', 'Reviewing Context', 'Editing']
 
-        self.parent.setWindowTitle("Grace Note - {0} in {1} mode".format(self.roletext[self.role] , Globals.ModeFlag))
+        self.SetWindowTitle()
         #>>> Globals.CursorGracesJapanese.execute('create table Log(ID int primary key, File text, Name text, Timestamp int)')
 
 
@@ -485,6 +491,16 @@ class Scripts2(QtGui.QWidget):
         self.grammarmode.setToolTip('<b>Editing Mode</b>\n\Editing mode involves a full grammar, structure, phrasing, tone, and consistency check.')
         self.grammarmode.setShortcut(QtGui.QKeySequence('Ctrl-Shift-4'))
 
+        self.DisabledMenuOptionSetRole = QtGui.QAction('Role', None)
+        self.DisabledMenuOptionSetRole.setEnabled(False)
+        self.DisabledMenuOptionSetThreshold = QtGui.QAction('Auto Mode Threshold', None)
+        self.DisabledMenuOptionSetThreshold.setEnabled(False)
+
+        self.autoThreshold0Act = QtGui.QAction(QtGui.QIcon('icons/tloff.png'), 'None', None)
+        self.autoThreshold1Act = QtGui.QAction(QtGui.QIcon('icons/tlon.png'), 'Translation', None)
+        self.autoThreshold2Act = QtGui.QAction(QtGui.QIcon('icons/oneon.png'), 'Translation Review', None)
+        self.autoThreshold3Act = QtGui.QAction(QtGui.QIcon('icons/twoon.png'), 'Contextual Review', None)
+
         self.reloadConfigAct = QtGui.QAction('Reload Config', None)
         self.reloadConfigAct.triggered.connect(self.ReloadConfiguration)
         self.reloadConfigAct.setShortcut(QtGui.QKeySequence('Ctrl-Shift-Alt-R'))
@@ -548,10 +564,17 @@ class Scripts2(QtGui.QWidget):
 
         roleMenu = QtGui.QMenu('Role', self)
 
+        roleMenu.addAction(self.DisabledMenuOptionSetRole)
         roleMenu.addAction(self.tmode)
         roleMenu.addAction(self.tlcheckmode)
         roleMenu.addAction(self.rewritemode)
         roleMenu.addAction(self.grammarmode)
+        roleMenu.addSeparator()
+        roleMenu.addAction(self.DisabledMenuOptionSetThreshold)
+        roleMenu.addAction(self.autoThreshold0Act)
+        roleMenu.addAction(self.autoThreshold1Act)
+        roleMenu.addAction(self.autoThreshold2Act)
+        roleMenu.addAction(self.autoThreshold3Act)
 
         roleMenu.triggered.connect(self.setRole)
 
@@ -826,13 +849,34 @@ class Scripts2(QtGui.QWidget):
         if action == self.grammarmode:
             self.role = 4
 
+        if action == self.autoThreshold0Act:
+            self.autoThreshold = 0
+        if action == self.autoThreshold1Act:
+            self.autoThreshold = 1
+        if action == self.autoThreshold2Act:
+            self.autoThreshold = 2
+        if action == self.autoThreshold3Act:
+            self.autoThreshold = 3
+
         try:
             self.settings.setValue('role', int(self.role))
         except:
             self.settings.setValue('role', 1)
-        self.parent.setWindowTitle("Grace Note - {0} in {1} mode".format(self.roletext[self.role] , Globals.ModeFlag))
+
+        try:
+            self.settings.setValue('autoThreshold', int(self.autoThreshold))
+        except:
+            self.settings.setValue('autoThreshold', 0)
+        
+        self.SetWindowTitle()
         self.PopulateEntryList()
 
+    def SetWindowTitle(self):
+        if Globals.ModeFlag == 'Auto':
+            t = "Grace Note - {0} in {1} mode (Threshold: {2})".format(self.roletext[self.role], Globals.ModeFlag, self.rolenames[self.autoThreshold])
+        else:
+            t = "Grace Note - {0} in {1} mode".format(self.roletext[self.role], Globals.ModeFlag)
+        self.parent.setWindowTitle(t)
 
     def setMode(self, action):
         if action == self.autoAct:
@@ -845,7 +889,7 @@ class Scripts2(QtGui.QWidget):
         self.settings.setValue('mode', mode)
         Globals.ModeFlag = mode
 
-        self.parent.setWindowTitle("Grace Note - {0} in {1} mode".format(self.roletext[self.role] , Globals.ModeFlag))
+        self.SetWindowTitle()
 
 
     def ReloadConfiguration(self):
@@ -1116,7 +1160,14 @@ class Scripts2(QtGui.QWidget):
             self.FormatDatabaseListItem(self.currentlyOpenDatabase, treeItem)
 
         index = self.tree.currentIndex()
-        databasefilename = self.treemodel.itemFromIndex(index).statusTip()
+        if index is None:
+            return
+
+        itemFromIndex = self.treemodel.itemFromIndex(index)
+        if itemFromIndex is None:
+            return
+
+        databasefilename = itemFromIndex.statusTip()
         parent = self.treemodel.data(index.parent())
         if self.treemodel.hasChildren(index):
             self.currentTreeIndex = None
@@ -1724,15 +1775,16 @@ class Scripts2(QtGui.QWidget):
                 # in manual mode: leave status alone, do not change, just fetch the existing one
                 updateStatusValue = self.text[textBox.currentEntry - 1][4]
             else:
-                # in (semi)auto mode: change to current role, except when disabled by option and current role is lower than existing status
-                if not Globals.UpdateLowerStatusFlag:
-                    statuscheck = self.text[textBox.currentEntry - 1][4]
-                    if statuscheck > role:
+                statuscheck = self.text[textBox.currentEntry - 1][4]
+                # in Auto mode, check for Threshold
+                if CommandOriginAutoMode and statuscheck < self.autoThreshold:
+                    updateStatusValue = statuscheck
+                else:
+                    # in (semi)auto mode: change to current role, except when disabled by option and current role is lower than existing status
+                    if (not Globals.UpdateLowerStatusFlag) and statuscheck > role:
                         updateStatusValue = statuscheck
                     else:
                         updateStatusValue = role
-                else:
-                    updateStatusValue = role
                 # endif Globals.UpdateLowerStatusFlag
             # endif Globals.ModeFlag
         # endif CommandOriginButton
