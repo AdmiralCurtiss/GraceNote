@@ -53,7 +53,10 @@ def SetupEnvironment():
 
     # load config
     try:
-        Globals.configfile = sys.argv[1]
+        if len(sys.argv) > 1:
+            Globals.configfile = sys.argv[1]
+        else:
+            Globals.configfile = 'config.xml'
         print 'Loading configuration: ' + Globals.configfile
         Globals.configData = Configuration(Globals.configfile)
     except:
@@ -160,8 +163,6 @@ class Scripts2(QtGui.QWidget):
         self.currentTreeIndex = None
         self.currentOpenedEntryIndexes = None
        
-        #self.update = ['DRBO2397','DRBO2400','DRBO2403','DRBO2408','DRBO2411','DRBO2414','DRBO2417','DRBO2420','DRBO2602','DRBO2605','DRBO2610','DRBO2613','DRBO2616','DRBO2619','DRBO2624','DRBO2627','DRBO2630','DRBO2893','DRBO2898','DRBO2901','DRBO2906','DRBO2909','DRBO2912','DRBO2915','DRBO2918','DRBO2921','DRBO2924','DRBO2927','DRBO3079','DRBO3082','DRBO3085','DRBO3090','DRBO3097','DRBO3100','DRBO3105','DRBO3108','DRBO3353','DRBO3356','DRBO3363','DRBO3368','DRBO3371','DRBO3374','DRBO3377','DRBO3380','DRBO3385','DRBO3526','DRBO3531','DRBO3534','DRBO3537','DRBO3540','DRBO3547','DRBO3550','DRBO3565','DRBO3569','DRBO3576']
-
         if self.update == None:
             self.update = set()
 
