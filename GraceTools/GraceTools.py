@@ -48,7 +48,7 @@ class MainWindow(QtGui.QMainWindow):
         self.addToolBar(self.Toolbar)
         self.setUnifiedTitleAndToolBarOnMac(True)
         
-        self.setCentralWidget(Enemies(self))
+        self.setCentralWidget(Font(self))
         
         self.setWindowTitle("Tales of Graces Tools")
 
