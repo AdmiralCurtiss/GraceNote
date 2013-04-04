@@ -21,9 +21,11 @@ def RetrieveModifiedFiles(scripts, splash):
                 
             try:
                 ftp = ftplib.FTP(Globals.configData.FTPServer, Globals.configData.FTPUsername, Globals.configData.FTPPassword, "", 15)
+                ftp.cwd('/')
+                ftp.cwd(Globals.configData.RemoteDatabasePath)
             except:
-                if i == 20:
-                    print '20 errors is enough, this is not gonna work'
+                if i > 2:
+                    print 'Couldn\'t connect to FTP. Be careful: Your files may not be up-to-date!'
                     try:
                         splash.text = 'Grace Note Loaded'.format(scripts.roletext[scripts.role], Globals.ModeFlag)
                         splash.complete = True
@@ -34,8 +36,6 @@ def RetrieveModifiedFiles(scripts, splash):
                 print 'Failed connecting to FTP, retrying...'
                 continue
                     
-            ftp.cwd('/')
-            ftp.cwd(Globals.configData.RemoteDatabasePath)
                         
             changes = DownloadFile(scripts, ftp, 'ChangeLog', 'NewChangeLog')
                 
@@ -83,12 +83,17 @@ def RetrieveModifiedFiles(scripts, splash):
                     
                     
                     
-                DownloadFile(scripts, ftp, item, item)
-                WipeUpdateCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(item))
+                DownloadFile(scripts, ftp, item, 'temp')
+                WipeUpdateCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/temp")
                 WipeUpdateCur = WipeUpdateCon.cursor()
-            
                 WipeUpdateCur.execute(u"update Text set updated=0")
                 WipeUpdateCon.commit()
+
+                old = open(Globals.configData.LocalDatabasePath + '/{0}'.format(item), 'wb')
+                new = open(Globals.configData.LocalDatabasePath + '/temp', 'rb')
+                old.write(new.read())
+                new.close()
+                old.close()
                     
                 CompletionTable.CalculateCompletionForDatabase(item)
 
@@ -104,8 +109,9 @@ def RetrieveModifiedFiles(scripts, splash):
             break
                 
         except ftplib.all_errors:
-            if i == 20:
-                print '20 errors is enough, this is not gonna work'
+            if i == 19:
+                print 'Error during FTP transfer, 20 tries is enough.'
+                print 'Be careful: Your files may not be up-to-date!'
                 break
             print 'Error during FTP transfer, retrying...'
             continue
