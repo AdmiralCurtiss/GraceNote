@@ -414,9 +414,11 @@ class Scripts2(QtGui.QWidget):
         self.updateAct.triggered.connect(self.CallRetrieveModifiedFiles)
         self.updateAct.setShortcut(QtGui.QKeySequence('Ctrl+U'))
 
-        self.refreshCompleteAct = QtGui.QAction(QtGui.QIcon('icons/refresh.png'), 'Refresh Completion Database', None)
+        self.refreshCompleteAct = QtGui.QAction('Refresh Completion Database', None)
         self.refreshCompleteAct.triggered.connect(self.RefreshCompletion)
-        self.refreshCompleteAct.setShortcut(QtGui.QKeySequence('Ctrl+W'))
+
+        self.findUsedSymbolsAct = QtGui.QAction('Find Used Symbols', None)
+        self.findUsedSymbolsAct.triggered.connect(self.FindAllUsedSymbols)
         
         self.recalcFilesToBeUploadedAct = QtGui.QAction(QtGui.QIcon('icons/refresh.png'), 'Find Unsaved Databases', None)
         self.recalcFilesToBeUploadedAct.triggered.connect(self.RecalculateFilesToBeUploaded)
@@ -629,7 +631,6 @@ class Scripts2(QtGui.QWidget):
         
         fileMenu.addAction(self.saveAct)
         fileMenu.addAction(self.updateAct)
-        fileMenu.addAction(self.refreshCompleteAct)
         fileMenu.addAction(self.recalcFilesToBeUploadedAct)
         fileMenu.addSeparator()
         fileMenu.addAction(self.patchAct)
@@ -696,7 +697,10 @@ class Scripts2(QtGui.QWidget):
         toolsMenu.addAction(self.reportAct)
         toolsMenu.addAction(self.compAct)
         toolsMenu.addAction(self.dupeAct)
+        toolsMenu.addSeparator()
         toolsMenu.addAction(self.conDebugAct)
+        toolsMenu.addAction(self.refreshCompleteAct)
+        toolsMenu.addAction(self.findUsedSymbolsAct)
         
         
         modeMenu = QtGui.QMenu("Mode", self)
@@ -1904,6 +1908,27 @@ class Scripts2(QtGui.QWidget):
         print 'Done searching for databases with unsaved changes!'
         return
     
+    def FindAllUsedSymbols(self):
+        charSet = set()
+        aList = Globals.configData.FileList
+        for i in range(1, len(aList)):
+            for File in aList[i]:
+                FilterCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(File))
+                FilterCur = FilterCon.cursor()
+                        
+                FilterCur.execute(u"SELECT English FROM Text WHERE status >= 0")
+                                        
+                for item in FilterCur.fetchall():
+                    for char in item[0]:
+                        charSet.add(char)
+        
+        file = open('used_symbols.txt', 'w')
+        charList = sorted(charSet)
+        for char in charList:
+            file.write( char.encode('utf8') )
+        file.close()
+        return
+
     def CallSavetoServer(self):
         NetworkHandler.SavetoServer(self)
         return
