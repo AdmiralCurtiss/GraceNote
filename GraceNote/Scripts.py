@@ -1751,6 +1751,12 @@ class Scripts2(QtGui.QWidget):
             return
         
         CommandOriginAutoMode = ( role == -2 )
+        currentDatabaseStatus = self.text[textBox.currentEntry - 1][4]
+
+        # if this was triggered by the Auto mode feature but the status wouldn't actually change by this operation
+        if CommandOriginAutoMode and currentDatabaseStatus == self.role:
+            # just exit out and don't write to memory or HDD
+            return
         
                         
         #index = self.entry.currentIndex()
@@ -1773,21 +1779,20 @@ class Scripts2(QtGui.QWidget):
             updateStatusValue = role
         elif self.state == "COM":
             # if origin a Comment box, don't update
-            updateStatusValue = self.text[textBox.currentEntry - 1][4]
+            updateStatusValue = currentDatabaseStatus
         else:
             # if origin by typing or automatic:
             if Globals.ModeFlag == 'Manual':
                 # in manual mode: leave status alone, do not change, just fetch the existing one
-                updateStatusValue = self.text[textBox.currentEntry - 1][4]
+                updateStatusValue = currentDatabaseStatus
             else:
-                statuscheck = self.text[textBox.currentEntry - 1][4]
                 # in Auto mode, check for Threshold
-                if CommandOriginAutoMode and statuscheck < self.autoThreshold:
-                    updateStatusValue = statuscheck
+                if CommandOriginAutoMode and currentDatabaseStatus < self.autoThreshold:
+                    updateStatusValue = currentDatabaseStatus
                 else:
                     # in (semi)auto mode: change to current role, except when disabled by option and current role is lower than existing status
-                    if (not Globals.UpdateLowerStatusFlag) and statuscheck > role:
-                        updateStatusValue = statuscheck
+                    if (not Globals.UpdateLowerStatusFlag) and currentDatabaseStatus > role:
+                        updateStatusValue = currentDatabaseStatus
                     else:
                         updateStatusValue = role
                 # endif Globals.UpdateLowerStatusFlag
@@ -1832,8 +1837,11 @@ class Scripts2(QtGui.QWidget):
         databasesWrittenTo = set()
 
         #DatabaseEntryStruct(cleanString, databaseName, entry, role, state)
+        SaveCon = None
         for d in sortedStorage:
-            if lastDatabase != d.databaseName: # open up new DB connectin if neccesary, otherwise just reuse the old one
+            if lastDatabase != d.databaseName: # open up new DB connection if neccesary, otherwise just reuse the old one
+                if SaveCon is not None:
+                    SaveCon.commit()
                 self.update.add(str(d.databaseName))
                 SaveCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(d.databaseName))
                 SaveCur = SaveCon.cursor()
@@ -1844,6 +1852,7 @@ class Scripts2(QtGui.QWidget):
                 SaveCur.execute(u"update Text set english=?, updated=1, status=? where ID=?", (d.cleanString, d.role, d.entry))
             elif d.state == "COM":
                 SaveCur.execute(u"update Text set comment=?, updated=1, status=? where ID=?", (d.cleanString, d.role, d.entry))
+        if SaveCon is not None:
             SaveCon.commit()
         
         for db in databasesWrittenTo:
