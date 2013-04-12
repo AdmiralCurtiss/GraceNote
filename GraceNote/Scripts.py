@@ -1406,13 +1406,22 @@ class Scripts2(QtGui.QWidget):
     def GetFullText(self, replaceVariables):
         string = ''
         i = 1
+        if self.state == 'ENG':
+            idx = 0
+        elif self.state == 'JPN':
+            idx = 1
+        elif self.state == 'COM':
+            idx = 2
+        else:
+            return 'NO VALID STATE'
+            
         for entry in self.text:
             if entry[3] == 0 or self.debug.isChecked():
                 string = string + 'Entry {0}\n'.format(i)
                 if replaceVariables:
-                    string = string + Globals.VariableReplace(entry[0])
+                    string = string + Globals.VariableReplace(entry[idx])
                 else:
-                    string = string + entry[0]
+                    string = string + entry[idx]
                 string = string + "\n\n\n"
             
             i += 1
