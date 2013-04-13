@@ -232,6 +232,10 @@ class Scripts2(QtGui.QWidget):
         #>>> Globals.CursorGracesJapanese.execute('create table Log(ID int primary key, File text, Name text, Timestamp int)')
 
 
+        self.timeoutTimer = QtCore.QTimer()
+        self.timeoutTimer.timeout.connect(self.WriteDatabaseStorageToHdd)
+
+
         # Grab the changes
         NetworkHandler.RetrieveModifiedFiles(self, self.splashScreen)
 
@@ -1818,6 +1822,8 @@ class Scripts2(QtGui.QWidget):
         # keep for later write to HDD
         self.InsertOrUpdateEntryToWrite(DatabaseEntryStruct(GoodString, databasefilename, textBox.currentEntry, updateStatusValue, self.state))
         textBox.refreshFooter(GoodString, self.state[0] + ': ')
+
+        self.ReStartTimeoutTimer()
         
         # write the new string back into the main window, this is neccessary or else the new string isn't there when the displayed entry is changed!
         if self.state == 'ENG':
@@ -1832,6 +1838,8 @@ class Scripts2(QtGui.QWidget):
         return
 
     def WriteDatabaseStorageToHdd(self):
+        self.timeoutTimer.stop()
+
         if not self.databaseWriteStorage:
             #print("Database storage empty, no need to write.")
             return
@@ -1946,6 +1954,11 @@ class Scripts2(QtGui.QWidget):
             file.write( char.encode('utf8') )
         file.close()
         return
+
+    # starts or restarts the timer that writes entries to HDD after a few minutes of inactivity
+    def ReStartTimeoutTimer(self):
+        self.timeoutTimer.stop()
+        self.timeoutTimer.start( 120000 ) # 2 minutes
 
     def CallSavetoServer(self):
         NetworkHandler.SavetoServer(self)
