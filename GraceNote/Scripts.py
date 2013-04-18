@@ -391,8 +391,10 @@ class Scripts2(QtGui.QWidget):
         self.compAct.triggered.connect(self.ShowCompletionTable)
         self.compAct.setShortcut(QtGui.QKeySequence('Ctrl+%'))
 
-        self.conDebugAct = QtGui.QAction('Consolidate Debug', None)
+        self.conDebugAct = QtGui.QAction('Propagate Debug (GracesJapanese -> Databases)', None)
         self.conDebugAct.triggered.connect(self.ConsolidateDebug)
+        self.reverseConDebugAct = QtGui.QAction('Propagate Debug (Databases -> GracesJapanese)', None)
+        self.reverseConDebugAct.triggered.connect(self.ReverseConsolidateDebug)
 
         self.fullcopyAct = QtGui.QAction('Full-Text Copy', None)
         self.fullcopyAct.triggered.connect(self.FullTextCopy)
@@ -703,6 +705,7 @@ class Scripts2(QtGui.QWidget):
         toolsMenu.addAction(self.dupeAct)
         toolsMenu.addSeparator()
         toolsMenu.addAction(self.conDebugAct)
+        toolsMenu.addAction(self.reverseConDebugAct)
         toolsMenu.addAction(self.refreshCompleteAct)
         toolsMenu.addAction(self.findUsedSymbolsAct)
         
