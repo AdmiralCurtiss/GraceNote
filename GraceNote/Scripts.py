@@ -252,6 +252,7 @@ class Scripts2(QtGui.QWidget):
         #self.tree.setFixedWidth(190)
         self.tree.sortByColumn(1, 0)
         self.tree.setHeaderHidden(True)
+        self.tree.setContentsMargins(0, 0, 0, 0)
         
         self.PopulateModel(Globals.configData.FileList)
 
@@ -299,9 +300,11 @@ class Scripts2(QtGui.QWidget):
             self.twoupEditingTextBoxes.append(tb2)
             
             footer = QtGui.QLabel('')
+            footer.setContentsMargins(0, 0, 0, 0)
             self.textEditingFooters.append(footer)
             tb1.setFooter(footer)
             footer2 = QtGui.QLabel('')
+            footer2.setContentsMargins(0, 0, 0, 0)
             self.twoupEditingFooters.append(footer2)
             tb2.setFooter(footer2)
             
@@ -323,6 +326,7 @@ class Scripts2(QtGui.QWidget):
             if Globals.FooterVisibleFlag:
                 tmplayout.addWidget(footer , 3, 1, 1, 2)
                 tmplayout.addWidget(footer2, 4, 1, 1, 2)
+            tmplayout.setContentsMargins(0, 0, 0, 0)
 
             tmpqgrpbox = QtGui.QWidget()
             tmpqgrpbox.setLayout(tmplayout)
