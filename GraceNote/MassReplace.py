@@ -37,7 +37,9 @@ class MassReplace(QtGui.QDialog):
         self.fileFilter.setToolTip('Wildcards implicit. eg CHT will match all skits')
         self.matchCase = QtGui.QCheckBox('Match case')
         self.searchDebug = QtGui.QCheckBox('Search Debug')
-        
+        self.searchStartOfEntry = QtGui.QCheckBox('At Start of Entry')
+        self.searchEndOfEntry = QtGui.QCheckBox('At End of Entry')
+
         self.matchEnglish.setFont(font)
         self.matchExact.setFont(font)
         self.matchEntry.setFont(font)
@@ -79,15 +81,24 @@ class MassReplace(QtGui.QDialog):
         textboxLayout.addWidget(replaceLabel     , 0, 1, 1, 1)
         textboxLayout.addWidget(self.original    , 1, 0, 1, 1)
         textboxLayout.addWidget(self.replacement , 1, 1, 1, 1)
+        textboxLayout.setContentsMargins( QtCore.QMargins(0, 0, 0, 0) )
         textboxWidget = QtGui.QWidget()
         textboxWidget.setLayout(textboxLayout)
+
+        optionsLayout = QtGui.QGridLayout()
+        optionsLayout.addWidget(self.matchCase         , 0, 0, 1, 1)
+        optionsLayout.addWidget(self.searchDebug       , 0, 1, 1, 1)
+        optionsLayout.addWidget(self.searchStartOfEntry, 0, 2, 1, 1)
+        optionsLayout.addWidget(self.searchEndOfEntry  , 0, 3, 1, 1)
+        optionsLayout.setContentsMargins( QtCore.QMargins(0, 0, 0, 0) )
+        optionsWidget = QtGui.QWidget()
+        optionsWidget.setLayout(optionsLayout)
                 
         inputLayout = QtGui.QGridLayout()
         inputLayout.addWidget(textboxWidget    , 0, 0, 3, 2)
         inputLayout.addWidget(exceptionLabel   , 3, 0, 1, 1)
         inputLayout.addWidget(self.exceptions  , 3, 1, 1, 1)
-        inputLayout.addWidget(self.matchCase   , 4, 0, 1, 1)
-        inputLayout.addWidget(self.searchDebug , 4, 1, 1, 1)
+        inputLayout.addWidget(optionsWidget    , 4, 0, 1, 2)
         inputLayout.addWidget(filterLabel      , 0, 2, 1, 1)
         inputLayout.addWidget(self.fileFilter  , 1, 2, 1, 1)
         inputLayout.addWidget(self.matchEntry  , 2, 2, 1, 1)
@@ -187,17 +198,23 @@ class MassReplace(QtGui.QDialog):
         if self.matchCase.isChecked():
             Globals.CursorGracesJapanese.execute(u"PRAGMA case_sensitive_like = ON")
 
+        # prepare the expression match string before this, since I don't want those ifs three times
+        SqlExpressionMatchString = ''
+        if not self.searchStartOfEntry.isChecked():
+            SqlExpressionMatchString = '%'
+        SqlExpressionMatchString = SqlExpressionMatchString + unicode(matchString)
+        if not self.searchEndOfEntry.isChecked():
+            SqlExpressionMatchString = SqlExpressionMatchString + '%'
+
         # any match within a string
         if self.matchExact.isChecked():
             Globals.CursorGracesJapanese.execute(u"select ID from Japanese where string LIKE ?", ('%' + unicode(matchString) + '%', ))
             JPmatches = set(Globals.CursorGracesJapanese.fetchall())
-            SqlExpressionMatchString = '%' + unicode(matchString) + '%'
             TextSearchColumn = 'English'
             ReplacementType = 'Substr'
         # any match in English strings only
         elif self.matchEnglish.isChecked():
             JPmatches = set()
-            SqlExpressionMatchString = '%' + unicode(matchString) + '%'
             TextSearchColumn = 'English'
             ReplacementType = 'Substr'
         # match the entire entry
@@ -209,7 +226,6 @@ class MassReplace(QtGui.QDialog):
             ReplacementType = 'Entry'
         elif self.matchComments.isChecked():
             JPmatches = set()
-            SqlExpressionMatchString = '%' + unicode(matchString) + '%'
             TextSearchColumn = 'Comment'
             ReplacementType = 'CommentSubstr'
             
