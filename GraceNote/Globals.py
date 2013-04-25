@@ -161,6 +161,7 @@ def VariableReplace(string):
     string = re.sub('(.|\r)\(.*?\)', VariableSwap, unicode(string), re.DOTALL)
     string = re.sub(u"\x0A", u"↵\x0A", unicode(string))
     string = re.sub(u"\x0C", u"<Feed>\x0A", unicode(string))
+    string = re.sub(u"\x00", u"<Null>", unicode(string))
     return string
     
     
@@ -168,6 +169,7 @@ def VariableRemove(string):
     string = re.sub(u"'+", "''", unicode(string))
     string = re.sub(u"<Feed>\x0A", u"\x0C", unicode(string))
     string = re.sub(u"<Feed>", u"\x0C", unicode(string))
+    string = re.sub(u"<Null>", u"\x00", unicode(string))
     string = re.sub(u"↵\x0A", u"\x0A", unicode(string))
     string = re.sub(u"↵", u"\x0A", unicode(string))
     string = re.sub(u'<.*?>', VariableSwap, unicode(string), re.DOTALL)
