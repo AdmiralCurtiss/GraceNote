@@ -112,7 +112,7 @@ class XTextBox(QtGui.QTextEdit):
             return
             
         feedCount = text.count('\f')
-        sanitizedText = re.sub('<CLT[ 0-9]+>', '', text.replace("''", "'"))
+        sanitizedText = re.sub('<CLT[ 0-9]*>', '', text.replace("''", "'")) # dangan ronpa specific
         splitOnFeeds = sanitizedText.split('\f')
         splitOnLines = sanitizedText.replace('\f', '\n').split('\n')
         longestLineChars = 0
