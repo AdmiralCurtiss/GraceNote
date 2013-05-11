@@ -1196,7 +1196,7 @@ class Scripts2(QtGui.QWidget):
         SaveCur = SaveCon.cursor()
         
         try:
-            SaveCur.execute("select ID, StringID, english, comment, updated, status, IdentifyString from Text")
+            SaveCur.execute("SELECT ID, StringID, english, comment, updated, status, IdentifyString FROM Text")
             TempList = SaveCur.fetchall()
             ContainsIDString = True
             

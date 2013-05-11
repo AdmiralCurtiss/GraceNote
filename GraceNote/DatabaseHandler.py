@@ -3,27 +3,27 @@ import sqlite3
 
 
 def OpenEntryDatabase(filename):
-    connection = sqlite3.connect(Globals.configData.LocalDatabasePath + "/" + filename)
+    connection = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(filename))
     
     # check for correct tables, columns, ... and fix if neccesary    
     cursor = connection.cursor()
     
     # SELECT cid, name, type, notnull, dflt_value, pk FROM [somewhere] WHERE [tablename] = Text;
-    existingColumns = []
+    existingColumns = {}
     cursor.execute("PRAGMA table_info(Text)")
     for row in cursor.fetchall():
-        existingColums[row[1]] = True
+        existingColumns[row[1]] = True
     
-    if not existingColumns['IdentifyString']:
+    if not 'IdentifyString' in existingColumns:
         cursor.execute("ALTER TABLE Text ADD COLUMN IdentifyString text")
         connection.commit()
-    if not existingColumns['IdentifyPointerRef']:
+    if not 'IdentifyPointerRef' in existingColumns:
         cursor.execute("ALTER TABLE Text ADD COLUMN IdentifyPointerRef int")
         connection.commit()
-    if not existingColumns['UpdatedBy']:
+    if not 'UpdatedBy' in existingColumns:
         cursor.execute("ALTER TABLE Text ADD COLUMN UpdatedBy text")
         connection.commit()
-    if not existingColumns['UpdatedTimestamp']:
+    if not 'UpdatedTimestamp' in existingColumns:
         cursor.execute("ALTER TABLE Text ADD COLUMN UpdatedTimestamp int")
         connection.commit()
 
