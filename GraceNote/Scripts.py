@@ -1195,18 +1195,12 @@ class Scripts2(QtGui.QWidget):
         SaveCon = DatabaseHandler.OpenEntryDatabase(databasefilename)
         SaveCur = SaveCon.cursor()
         
-        try:
-            SaveCur.execute("SELECT ID, StringID, english, comment, updated, status, IdentifyString FROM Text")
-            TempList = SaveCur.fetchall()
-            ContainsIDString = True
-            
-        except:
-            SaveCur.execute("select ID, StringID, english, comment, updated, status from Text")
-            TempList = SaveCur.fetchall()
-            ContainsIDString = False
-            
+        SaveCur.execute("SELECT ID, StringID, english, comment, updated, status, IdentifyString FROM Text")
+        TempList = SaveCur.fetchall()
+        ContainsIDString = True
+           
         for i in xrange(len(TempList)):
-            Globals.CursorGracesJapanese.execute("select * from Japanese where ID={0}".format(TempList[i][1]))
+            Globals.CursorGracesJapanese.execute("SELECT * FROM Japanese WHERE ID={0}".format(TempList[i][1]))
             TempString = Globals.CursorGracesJapanese.fetchall() 
             TempJPN = TempString[0][1]
             TempDebug = TempString[0][2]
@@ -1868,15 +1862,16 @@ class Scripts2(QtGui.QWidget):
                 if SaveCon is not None:
                     SaveCon.commit()
                 self.update.add(str(d.databaseName))
-                SaveCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(d.databaseName))
+                SaveCon = DatabaseHandler.OpenEntryDatabase(d.databaseName)
                 SaveCur = SaveCon.cursor()
                 lastDatabase = d.databaseName
                 databasesWrittenTo.add(d.databaseName)
             
+            DatabaseHandler.CopyEntryToHistory(SaveCur, d.entry)
             if d.state == 'ENG':
-                SaveCur.execute(u"update Text set english=?, updated=1, status=? where ID=?", (d.cleanString, d.role, d.entry))
+                SaveCur.execute(u"UPDATE Text SET english=?, updated=1, status=?, UpdatedBy=?, UpdatedTimestamp=strftime('%s','now') WHERE ID=?", (d.cleanString, d.role, d.entry, self.author))
             elif d.state == "COM":
-                SaveCur.execute(u"update Text set comment=?, updated=1, status=? where ID=?", (d.cleanString, d.role, d.entry))
+                SaveCur.execute(u"UPDATE Text SET comment=?, updated=1, status=?, UpdatedBy=?, UpdatedTimestamp=strftime('%s','now') WHERE ID=?", (d.cleanString, d.role, d.entry, self.author))
         if SaveCon is not None:
             SaveCon.commit()
         

@@ -35,3 +35,9 @@ def OpenEntryDatabase(filename):
         connection.commit()
 
     return connection
+
+def CopyEntryToHistory(cursor, ID):
+    
+    cursor.execute("INSERT INTO History(ID, english, comment, status, UpdatedBy, UpdatedTimestamp) SELECT ID, english, comment, status, UpdatedBy, UpdatedTimestamp FROM Text WHERE ID = {0}".format(ID))
+
+    return
