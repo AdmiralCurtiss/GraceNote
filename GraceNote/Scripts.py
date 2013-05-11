@@ -40,6 +40,7 @@ import ImageViewerWindow
 import FontDisplayWindow
 import GracesCreation
 import NetworkHandler
+import DatabaseHandler
 
 def SetupEnvironment():
     Globals.commentsAvailableLabel = False
@@ -1191,7 +1192,7 @@ class Scripts2(QtGui.QWidget):
 
         self.currentTreeIndex = index
         self.currentlyOpenDatabase = str(databasefilename)
-        SaveCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(databasefilename))
+        SaveCon = DatabaseHandler.OpenEntryDatabase(databasefilename)
         SaveCur = SaveCon.cursor()
         
         try:
