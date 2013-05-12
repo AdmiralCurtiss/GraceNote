@@ -4,6 +4,7 @@ import sqlite3
 import ftplib
 import CompletionTable
 import filecmp
+import DatabaseHandler
 
 def RetrieveModifiedFiles(scripts, splash):
     scripts.WriteDatabaseStorageToHdd()
@@ -19,11 +20,11 @@ def RetrieveModifiedFiles(scripts, splash):
     for i in range( 0, 20 ):    # range( start, stop, step )
         try:
                 
-            try:
+            try: # try to connect to the FTP
                 ftp = ftplib.FTP(Globals.configData.FTPServer, Globals.configData.FTPUsername, Globals.configData.FTPPassword, "", 15)
                 ftp.cwd('/')
                 ftp.cwd(Globals.configData.RemoteDatabasePath)
-            except:
+            except: # if FTP conn fails 3 times assume it doesn't work at all and just cancel
                 if i > 2:
                     print 'Couldn\'t connect to FTP. Be careful: Your files may not be up-to-date!'
                     try:
@@ -37,6 +38,7 @@ def RetrieveModifiedFiles(scripts, splash):
                 continue
                     
                         
+            # get new changelog
             changes = DownloadFile(scripts, ftp, 'ChangeLog', 'NewChangeLog')
                 
             if not changes:
@@ -45,17 +47,8 @@ def RetrieveModifiedFiles(scripts, splash):
 
 
             # Get any new entries
-            Globals.LogCur.execute('select ID, File from Log ORDER BY ID')
-            results = Globals.LogCur.fetchall()
-            LogSet = set(results)
-
-            NewLogCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/NewChangeLog")
-            NewLogCur = NewLogCon.cursor()
-                
-            NewLogCur.execute('select ID, File from Log ORDER BY ID')
-            newResults = NewLogCur.fetchall()
-            newLogSet = set(newResults)
-                
+            LogSet = DatabaseHandler.GetChangelogData()
+            newLogSet = DatabaseHandler.GetNewChangelogData()
             DownloaderSet = LogSet.symmetric_difference(newLogSet)
             Downloader = []
                         
@@ -67,10 +60,10 @@ def RetrieveModifiedFiles(scripts, splash):
                         continue
                     Downloader.append(subitem)
                 
-            # by pika: remove possible duplicates from list, so it doesn't download the same file multiple times
+            # remove possible duplicates from list, so it doesn't download the same file multiple times
             Downloader = list(set(Downloader))
                 
-            #Downloader.sort()
+            # Download the files that have been changed
             for item in set(Downloader):
                 Globals.CursorGracesJapanese.execute("SELECT count(1) FROM descriptions WHERE filename = ?", [item])
                 exists = Globals.CursorGracesJapanese.fetchall()[0][0]
@@ -81,14 +74,15 @@ def RetrieveModifiedFiles(scripts, splash):
                 else:
                     print 'Downloading ' + item + '...'
                     
-                    
-                    
                 DownloadFile(scripts, ftp, item, 'temp')
-                WipeUpdateCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/temp")
+
+                # Clean up downloaded file
+                WipeUpdateCon = DatabaseHandler.OpenEntryDatabase('temp')
                 WipeUpdateCur = WipeUpdateCon.cursor()
-                WipeUpdateCur.execute(u"update Text set updated=0")
+                WipeUpdateCur.execute(u"UPDATE Text SET updated=0")
                 WipeUpdateCon.commit()
 
+                # Copy it to the right place
                 old = open(Globals.configData.LocalDatabasePath + '/{0}'.format(item), 'wb')
                 new = open(Globals.configData.LocalDatabasePath + '/temp', 'rb')
                 old.write(new.read())
@@ -97,14 +91,21 @@ def RetrieveModifiedFiles(scripts, splash):
                     
                 CompletionTable.CalculateCompletionForDatabase(item)
 
-                                
+            ftp.close()
+
+            
+            # Copy new change log over old and reopen
+            Globals.LogCon.commit()
+            Globals.LogCon.close()
+
             old = open(Globals.configData.LocalDatabasePath + '/ChangeLog', 'wb')
             new = open(Globals.configData.LocalDatabasePath + '/NewChangeLog', 'rb')
             old.write(new.read())
             new.close()
             old.close()
 
-            ftp.close()
+            Globals.LogCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/ChangeLog")
+            Globals.LogCur = Globals.LogCon.cursor()
                 
             break
                 
@@ -247,49 +248,19 @@ def SavetoServer(scripts):
                     autoRestartAfter = True
                     saveUpdate.add(filename)
                     continue
-                    
-                # remove empty comments
-                rcommentconn = sqlite3.connect(Globals.configData.LocalDatabasePath + "/" + filename)
-                rcommentcur = rcommentconn.cursor()
-                rcommentcur.execute(u"UPDATE text SET comment = '', updated = 1 WHERE comment IS NULL")
-                rcommentconn.commit()
-                rcommentconn.close()
-                    
-                Globals.CursorGracesJapanese.execute("SELECT count(1) FROM descriptions WHERE filename = ?", [filename])
-                exists = Globals.CursorGracesJapanese.fetchall()[0][0]
-                if exists > 0:
-                    Globals.CursorGracesJapanese.execute("SELECT shortdesc FROM descriptions WHERE filename = ?", [filename])
-                    desc = Globals.CursorGracesJapanese.fetchall()[0][0]
-                    print 'Uploading ' + desc + ' [' + filename + ']...'
-                else:
-                    print 'Uploading ' + filename + '...'
+                
+                print 'Uploading ' + Globals.GetDatabaseDescriptionString(filename) + ' [' + filename + ']...'
 
                 # Downloading the server version and double checking
                 DownloadFile(scripts, scripts.ftp, str(filename), 'temp')
 
                 try:
-                    WipeUpdateCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/temp")
-                    WipeUpdateCur = WipeUpdateCon.cursor()
-                
-                    WipeUpdateCur.execute(u"update Text set updated=0")
-                    WipeUpdateCon.commit()
+                    DatabaseHandler.MergeDatabaseWithServerVersionBeforeUpload(
+                        DatabaseHandler.OpenEntryDatabase(filename).cursor(),
+                        DatabaseHandler.OpenEntryDatabase('temp').cursor()
+                    )
                         
-                    # Merging the Server and the local version
-                    NewMergeCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(filename))
-                    NewMergeCur = NewMergeCon.cursor()
-            
-                    OldMergeCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/temp")
-                    OldMergeCur = OldMergeCon.cursor()
-                                
-                    NewMergeCur.execute(u'SELECT id, stringid, english, comment, updated, status FROM Text WHERE updated=1')
-                    NewTable = NewMergeCur.fetchall()
-                    
-                    for item in NewTable:
-                        if item[4] == 1:
-                            OldMergeCur.execute(u"UPDATE Text SET english=?, comment=?, status=? WHERE ID=?", (item[2], item[3], item[5], item[0]))
-                    OldMergeCon.commit()
-                        
-                    # Upload new file
+                    # Upload merged remote
                     for ftpSingleFileUpErrorCount in range(1, 20):
                         try:
                             if ftpSingleFileUpErrorCount >= 20:
@@ -304,14 +275,8 @@ def SavetoServer(scripts):
                             print 'Error uploading ' + filename + ', retrying...'
                             continue
             
-                    # Transposing the local file
-                    fnew = open(Globals.configData.LocalDatabasePath + '/temp', 'rb')
-                    data = fnew.read()
-                    fnew.close()
-                        
-                    old = open(Globals.configData.LocalDatabasePath + '/{0}'.format(filename), 'wb')
-                    old.write(data)
-                    old.close()
+                    # And copy the new remote over the old local
+                    Globals.CopyFile(Globals.configData.LocalDatabasePath + '/temp', Globals.configData.LocalDatabasePath + '/{0}'.format(filename))
 
                 except:
                     
@@ -338,7 +303,7 @@ def SavetoServer(scripts):
             fileString = ''.join(["%s," % (k) for k in LogTable])[:-1]
             print 'Uploaded: ', fileString
                 
-            Globals.LogCur.execute(u"insert into Log values({0}, '{1}', '{2}', {3})".format(MaxID + 1, fileString, scripts.author, "strftime('%s','now')"))
+            Globals.LogCur.execute(u"insert into Log values({0}, '{1}', '{2}', {3})".format(MaxID + 1, fileString, Globals.Author, "strftime('%s','now')"))
             Globals.LogCon.commit()
 
             print 'Uploading: ChangeLog'

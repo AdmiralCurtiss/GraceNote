@@ -37,7 +37,35 @@ def OpenEntryDatabase(filename):
     return connection
 
 def CopyEntryToHistory(cursor, ID):
-    
     cursor.execute("INSERT INTO History(ID, english, comment, status, UpdatedBy, UpdatedTimestamp) SELECT ID, english, comment, status, UpdatedBy, UpdatedTimestamp FROM Text WHERE ID = {0}".format(ID))
-
     return
+
+def GetChangelogData(cursor = None):
+    if not cursor:
+        cursor = Globals.LogCur
+    cursor.execute('SELECT ID, File FROM Log ORDER BY ID')
+    results = Globals.LogCur.fetchall()
+    LogSet = set(results)
+    return LogSet
+
+def GetNewChangelogData():
+    NewLogCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/NewChangeLog")
+    NewLogCur = NewLogCon.cursor()
+    return GetChangelogData(NewLogCur)            
+
+def MergeDatabaseWithServerVersionBeforeUpload(LocalMergeCur, RemoteMergeCur):
+    # Merging the Server and the local version
+    # First clean up remote version
+    RemoteMergeCur.execute(u"update Text set updated=0")
+                                
+    # Then take new stuff from local
+    LocalMergeCur.execute(u'SELECT id, stringid, english, comment, updated, status FROM Text WHERE updated=1')
+    NewTable = LocalMergeCur.fetchall()
+                    
+    # And insert it into the remote
+    for item in NewTable:
+        DatabaseHandler.CopyEntryToHistory(RemoteMergeCur, item[0])
+        RemoteMergeCur.execute(u"UPDATE Text SET english=?, comment=?, status=? WHERE ID=?", (item[2], item[3], item[5], item[0]))
+    RemoteMergeCon.commit()
+    return
+

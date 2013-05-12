@@ -18,6 +18,7 @@ ModeFlag = 'Semi-Auto'
 AmountEditingWindows = 5
 WriteDatabaseStorageToHddOnEntryChange = False
 FooterVisibleFlag = False
+Author = 'NONE'
 
 
 import re
@@ -376,3 +377,12 @@ def GetDatabaseDescriptionString(filename):
     else:
         return filename
 
+def CopyFile(sourcepath, targetpath):
+    sourcefile = open(sourcepath, 'rb')
+    data = sourcefile.read()
+    sourcefile.close()
+                        
+    targetfile = open(targetpath, 'wb')
+    targetfile.write(data)
+    targetfile.close()
+    return

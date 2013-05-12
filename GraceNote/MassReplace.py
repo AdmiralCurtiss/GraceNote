@@ -4,6 +4,7 @@ from PyQt4 import QtCore, QtGui
 import Globals
 import sqlite3
 import re
+import DatabaseHandler
 
 class MassReplace(QtGui.QDialog):
 
@@ -383,7 +384,8 @@ class MassReplace(QtGui.QDialog):
                     string = unicode(self.replacement.toPlainText())
                     string = Globals.VariableRemove(string)
                                 
-                IterCur.execute(u"update Text set english=?, updated=1, status=? where ID=?", (unicode(string), updateStatusValue, entryID))
+                DatabaseHandler.CopyEntryToHistory(IterCur, entryID)
+                IterCur.execute(u"update Text set english=?, updated=1, status=?, UpdatedBy=?, UpdatedTimestamp=strftime('%s','now') where ID=?", (unicode(string), updateStatusValue, Globals.Author, entryID))
                 self.parent.update.add(unicode(databaseName))
             
                 #if self.matchCase.isChecked():

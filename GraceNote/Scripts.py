@@ -158,7 +158,7 @@ class Scripts2(QtGui.QWidget):
             if ok and text != '':
                 self.settings.setValue('author', text)
 
-        self.author = self.settings.value('author')
+        Globals.Author = self.settings.value('author')
         self.update = self.settings.value('update')
         self.databaseWriteStorage = deque()
         self.currentTreeIndex = None
@@ -1139,12 +1139,12 @@ class Scripts2(QtGui.QWidget):
     def FormatEntryListItemColor(self, item, status):
         if status >= self.role:
             item.setBackground(QtGui.QBrush(QtGui.QColor(160, 255, 160)))
-            if self.author == 'ruta':
+            if Globals.Author == 'ruta':
                 item.setBackground(QtGui.QBrush(QtGui.QColor(255, 235, 245)))
 
         if status == -1:
             item.setBackground(QtGui.QBrush(QtGui.QColor(255, 220, 220)))
-            if self.author == 'ruta':
+            if Globals.Author == 'ruta':
                 item.setBackground(QtGui.QBrush(QtGui.QColor(255, 225, 180)))             
 
 
@@ -1725,16 +1725,16 @@ class Scripts2(QtGui.QWidget):
             status = SaveCur.fetchall()[0][0]
             if status >= self.role:
                 self.entrymodel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(220, 255, 220)))
-                if self.author == 'ruta':
+                if Globals.Author == 'ruta':
                     self.entrymodel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(255, 235, 245)))
-                elif self.author == 'Pikachu025':
+                elif Globals.Author == 'Pikachu025':
                     self.entrymodel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(0, 150, 0)))
             else:
                 self.entrymodel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(255, 255, 255)))
                 
         else:
             self.entrymodel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(255, 220, 220)))
-            if self.author == 'ruta':
+            if Globals.Author == 'ruta':
                 self.entrymodel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(255,225,180)))             
         
     def DebugPrintDatabaseWriteStorage(self):
@@ -1869,9 +1869,9 @@ class Scripts2(QtGui.QWidget):
             
             DatabaseHandler.CopyEntryToHistory(SaveCur, d.entry)
             if d.state == 'ENG':
-                SaveCur.execute(u"UPDATE Text SET english=?, updated=1, status=?, UpdatedBy=?, UpdatedTimestamp=strftime('%s','now') WHERE ID=?", (d.cleanString, d.role, d.entry, self.author))
+                SaveCur.execute(u"UPDATE Text SET english=?, updated=1, status=?, UpdatedBy=?, UpdatedTimestamp=strftime('%s','now') WHERE ID=?", (d.cleanString, d.role, d.entry, Globals.Author))
             elif d.state == "COM":
-                SaveCur.execute(u"UPDATE Text SET comment=?, updated=1, status=?, UpdatedBy=?, UpdatedTimestamp=strftime('%s','now') WHERE ID=?", (d.cleanString, d.role, d.entry, self.author))
+                SaveCur.execute(u"UPDATE Text SET comment=?, updated=1, status=?, UpdatedBy=?, UpdatedTimestamp=strftime('%s','now') WHERE ID=?", (d.cleanString, d.role, d.entry, Globals.Author))
         if SaveCon is not None:
             SaveCon.commit()
         
