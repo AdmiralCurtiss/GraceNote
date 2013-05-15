@@ -1945,7 +1945,7 @@ class Scripts2(QtGui.QWidget):
         i = 1
         for item in Globals.configData.FileList[0]:
             for item in Globals.configData.FileList[i]:
-                RecalcDbConn = sqlite3.connect(Globals.configData.LocalDatabasePath + "/" + item)
+                RecalcDbConn = DatabaseHandler.OpenEntryDatabase(item)
                 RecalcDbCur = RecalcDbConn.cursor()
                 RecalcDbCur.execute("SELECT Count(1) FROM Text WHERE updated = 1")
                 exists = RecalcDbCur.fetchall()[0][0]
@@ -1964,7 +1964,7 @@ class Scripts2(QtGui.QWidget):
         aList = Globals.configData.FileList
         for i in range(1, len(aList)):
             for File in aList[i]:
-                FilterCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(File))
+                FilterCon = DatabaseHandler.OpenEntryDatabase(str(File))
                 FilterCur = FilterCon.cursor()
                         
                 FilterCur.execute(u"SELECT English FROM Text WHERE status >= 0")
