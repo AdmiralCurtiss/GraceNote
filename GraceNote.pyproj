@@ -36,6 +36,7 @@
     <Compile Include="GraceNote\Globals.py" />
     <Compile Include="GraceNote\GracesCreation.py" />
     <Compile Include="GraceNote\hashtable.py" />
+    <Compile Include="GraceNote\HistoryWindow.py" />
     <Compile Include="GraceNote\HUDLayout.py" />
     <Compile Include="GraceNote\ImageViewerWindow.py" />
     <Compile Include="GraceNote\FontDisplayWindow.py" />

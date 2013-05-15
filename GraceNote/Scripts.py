@@ -41,6 +41,7 @@ import FontDisplayWindow
 import GracesCreation
 import NetworkHandler
 import DatabaseHandler
+import HistoryWindow
 
 def SetupEnvironment():
     Globals.commentsAvailableLabel = False
@@ -576,6 +577,9 @@ class Scripts2(QtGui.QWidget):
         self.reopenFontWinAct = QtGui.QAction('Reopen Font Window', None)
         self.reopenFontWinAct.triggered.connect(self.openFontWindow)
 
+        self.reopenHistoryWinAct = QtGui.QAction('Reopen History Window', None)
+        self.reopenHistoryWinAct.triggered.connect(self.openHistoryWindow)
+
         roleMenu = QtGui.QMenu('Role', self)
 
         roleMenu.addAction(self.DisabledMenuOptionSetRole)
@@ -674,6 +678,7 @@ class Scripts2(QtGui.QWidget):
         viewMenu.addSeparator()
         viewMenu.addAction(self.reopenFontWinAct)
         viewMenu.addAction(self.reopenMediaWinAct)
+        viewMenu.addAction(self.reopenHistoryWinAct)
         viewMenu.addSeparator()
         iconSizeMenu = QtGui.QMenu("Toolbar Icon Size", self)
         for action in self.iconSizeActs:
@@ -777,6 +782,7 @@ class Scripts2(QtGui.QWidget):
         
         self.openMediumWindows()
         self.openFontWindow()
+        self.openHistoryWindow()
         
     def openMediumWindows(self):
         self.media = {}
@@ -797,6 +803,12 @@ class Scripts2(QtGui.QWidget):
         self.fontWindow.show()
         self.fontWindow.raise_()
         self.fontWindow.activateWindow()
+
+    def openHistoryWindow(self):
+        self.historyWindow = HistoryWindow.HistoryWindow(self)
+        self.historyWindow.show()
+        self.historyWindow.raise_()
+        self.historyWindow.activateWindow()
 
     def cleanupAndQuit(self):
         self.WriteDatabaseStorageToHdd()

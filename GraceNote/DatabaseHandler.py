@@ -74,9 +74,9 @@ def MergeDatabaseWithServerVersionBeforeUpload(LocalMergeCur, RemoteMergeCur):
         # 3) Sync Histories into Server History
         # TODO: TEST IF THIS WORKS AS EXPECTED
         LocalMergeCur.execute(u'SELECT english, comment, status, UpdatedBy, UpdatedTimestamp FROM History WHERE ID=?', (item[0]))
-        LocalHistory = LocalMergeCur.fetchall()
+        LocalHistory = set(LocalMergeCur.fetchall())
         RemoteMergeCur.execute(u'SELECT english, comment, status, UpdatedBy, UpdatedTimestamp FROM History WHERE ID=?', (item[0]))
-        RemoteHistory = RemoteMergeCur.fetchall()
+        RemoteHistory = set(RemoteMergeCur.fetchall())
         HistoryDiff = LocalHistory.difference(RemoteHistory)
         for hEntry in HistoryDiff:
             RemoteMergeCur.execute(u'INSERT INTO History(ID, english, comment, status, UpdatedBy, UpdatedTimestamp) VALUES (?,?,?,?,?,?)',
