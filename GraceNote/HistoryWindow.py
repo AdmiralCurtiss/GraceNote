@@ -48,9 +48,18 @@ class HistoryWindow(QtGui.QDialog):
             item = QtGui.QStandardItem('Status ' + str(entry[3]) + ' at ' + date + ' by ' + str(entry[4]))
             #item.setData(entry)
             self.entryModel.appendRow(item)
+        
+        # display newest history entry automatically
+        if self.History[entryId]:
+            self.entryList.setCurrentIndex(self.entryModel.index(0, 0))
+        else:
+            self.clearInfo()
+
         return
     
     def clearInfo(self):
+        self.entryTextTextbox.setText(Globals.VariableReplace(''))
+        self.entryCommentTextbox.setText(Globals.VariableReplace(''))
         return
 
     def EntryModelSelectionChanged(self, selectedItems):
