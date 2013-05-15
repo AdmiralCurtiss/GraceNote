@@ -18,6 +18,9 @@ class FontDisplayWindow(QtGui.QDialog):
         self.setLayout(self.layout)
         
     def drawText(self, text, databaseDesc): # database desc is only passed for Dangan Ronpa!! can be removed in generic GN version
+        if not Globals.configData.Fonts:
+            return
+
         self.clearInfo()
 
         text = text.replace('\f', '\n')

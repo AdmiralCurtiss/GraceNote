@@ -1209,6 +1209,13 @@ class Scripts2(QtGui.QWidget):
         
         SaveCur.execute("SELECT ID, StringID, english, comment, updated, status, IdentifyString FROM Text")
         TempList = SaveCur.fetchall()
+
+        SaveCur.execute('SELECT ID, english, comment, status, UpdatedBy, UpdatedTimestamp FROM History ORDER BY ID ASC, UpdatedTimestamp DESC')
+        HistoryList = SaveCur.fetchall()
+        SaveCur.execute('SELECT MAX(ID) FROM Text')
+        MaxId = SaveCur.fetchall()[0][0]
+        self.historyWindow.setHistoryList(HistoryList, MaxId)
+
         ContainsIDString = True
            
         for i in xrange(len(TempList)):
@@ -1386,6 +1393,9 @@ class Scripts2(QtGui.QWidget):
         # inform font box
         databasefilename = self.treemodel.itemFromIndex(self.tree.currentIndex()).statusTip()
         self.fontWindow.drawText( self.text[rowBoxes[centerPanel]][t], Globals.GetDatabaseDescriptionString(str(databasefilename)) )
+
+        # inform history window
+        self.historyWindow.displayHistoryOfEntry(self.regularEditingTextBoxes[centerPanel].currentEntry)
                     
         # put text into textboxes, display entry number
         twoupTypeHelper = []
@@ -1881,9 +1891,9 @@ class Scripts2(QtGui.QWidget):
             
             DatabaseHandler.CopyEntryToHistory(SaveCur, d.entry)
             if d.state == 'ENG':
-                SaveCur.execute(u"UPDATE Text SET english=?, updated=1, status=?, UpdatedBy=?, UpdatedTimestamp=strftime('%s','now') WHERE ID=?", (d.cleanString, d.role, d.entry, Globals.Author))
+                SaveCur.execute(u"UPDATE Text SET english=?, updated=1, status=?, UpdatedBy=?, UpdatedTimestamp=strftime('%s','now') WHERE ID=?", (d.cleanString, d.role, str(Globals.Author), d.entry))
             elif d.state == "COM":
-                SaveCur.execute(u"UPDATE Text SET comment=?, updated=1, status=?, UpdatedBy=?, UpdatedTimestamp=strftime('%s','now') WHERE ID=?", (d.cleanString, d.role, d.entry, Globals.Author))
+                SaveCur.execute(u"UPDATE Text SET comment=?, updated=1, status=?, UpdatedBy=?, UpdatedTimestamp=strftime('%s','now') WHERE ID=?", (d.cleanString, d.role, str(Globals.Author), d.entry))
         if SaveCon is not None:
             SaveCon.commit()
         
