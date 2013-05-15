@@ -44,7 +44,7 @@ def GetChangelogData(cursor = None):
     if not cursor:
         cursor = Globals.LogCur
     cursor.execute('SELECT ID, File FROM Log ORDER BY ID')
-    results = Globals.LogCur.fetchall()
+    results = cursor.fetchall()
     LogSet = set(results)
     return LogSet
 
