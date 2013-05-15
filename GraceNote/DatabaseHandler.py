@@ -65,7 +65,7 @@ def MergeDatabaseWithServerVersionBeforeUpload(LocalMergeCur, RemoteMergeCur):
                     
     for item in NewTable:
         # 1) Copy Server Entry to Server History
-        DatabaseHandler.CopyEntryToHistory(RemoteMergeCur, item[0])
+        CopyEntryToHistory(RemoteMergeCur, item[0])
 
         # 2) Copy Local Entry to Server Entry
         RemoteMergeCur.execute(u"UPDATE Text SET english=?, comment=?, status=?, UpdatedBy=?, UpdatedTimestamp=? WHERE ID=?",
@@ -73,9 +73,9 @@ def MergeDatabaseWithServerVersionBeforeUpload(LocalMergeCur, RemoteMergeCur):
 
         # 3) Sync Histories into Server History
         # TODO: TEST IF THIS WORKS AS EXPECTED
-        LocalMergeCur.execute(u'SELECT english, comment, status, UpdatedBy, UpdatedTimestamp FROM History WHERE ID=?', (item[0]))
+        LocalMergeCur.execute(u'SELECT english, comment, status, UpdatedBy, UpdatedTimestamp FROM History WHERE ID=?', (item[0],))
         LocalHistory = set(LocalMergeCur.fetchall())
-        RemoteMergeCur.execute(u'SELECT english, comment, status, UpdatedBy, UpdatedTimestamp FROM History WHERE ID=?', (item[0]))
+        RemoteMergeCur.execute(u'SELECT english, comment, status, UpdatedBy, UpdatedTimestamp FROM History WHERE ID=?', (item[0],))
         RemoteHistory = set(RemoteMergeCur.fetchall())
         HistoryDiff = LocalHistory.difference(RemoteHistory)
         for hEntry in HistoryDiff:
