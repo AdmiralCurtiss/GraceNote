@@ -83,6 +83,5 @@ def MergeDatabaseWithServerVersionBeforeUpload(LocalMergeCur, RemoteMergeCur):
                                    (item[0], hEntry[0], hEntry[1], hEntry[2], hEntry[3], hEntry[4]))
 
     # 4) File is ready for upload
-    RemoteMergeCon.commit()
     return
 

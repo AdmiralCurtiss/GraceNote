@@ -255,10 +255,12 @@ def SavetoServer(scripts):
                 DownloadFile(scripts, scripts.ftp, str(filename), 'temp')
 
                 try:
+                    RemoteMergeCon = DatabaseHandler.OpenEntryDatabase('temp')
                     DatabaseHandler.MergeDatabaseWithServerVersionBeforeUpload(
                         DatabaseHandler.OpenEntryDatabase(filename).cursor(),
-                        DatabaseHandler.OpenEntryDatabase('temp').cursor()
+                        RemoteMergeCon.cursor()
                     )
+                    RemoteMergeCon.commit()
                         
                     # Upload merged remote
                     for ftpSingleFileUpErrorCount in range(1, 20):
