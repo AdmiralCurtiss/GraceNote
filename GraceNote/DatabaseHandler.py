@@ -56,24 +56,33 @@ def GetNewChangelogData():
 def MergeDatabaseWithServerVersionBeforeUpload(LocalMergeCur, RemoteMergeCur):
     # Merging the Server and the local version
 
-    # PLANNED PRODECURE
-    # 1) Copy Server Entry to Server History
-    # 2) Copy Local Entry to Server Entry
-    # 3) Sync Histories into Server History
-    # 4) Upload Server File
-
-
     # First clean up remote version
     RemoteMergeCur.execute(u"update Text set updated=0")
                                 
     # Then take new stuff from local
-    LocalMergeCur.execute(u'SELECT id, stringid, english, comment, updated, status FROM Text WHERE updated=1')
+    LocalMergeCur.execute(u'SELECT id, english, comment, status, UpdatedBy, UpdatedTimestamp FROM Text WHERE updated=1')
     NewTable = LocalMergeCur.fetchall()
                     
-    # And insert it into the remote
     for item in NewTable:
+        # 1) Copy Server Entry to Server History
         DatabaseHandler.CopyEntryToHistory(RemoteMergeCur, item[0])
-        RemoteMergeCur.execute(u"UPDATE Text SET english=?, comment=?, status=? WHERE ID=?", (item[2], item[3], item[5], item[0]))
+
+        # 2) Copy Local Entry to Server Entry
+        RemoteMergeCur.execute(u"UPDATE Text SET english=?, comment=?, status=?, UpdatedBy=?, UpdatedTimestamp=? WHERE ID=?",
+                               (item[1], item[2], item[3], item[4], item[5], item[0]))
+
+        # 3) Sync Histories into Server History
+        # TODO: TEST IF THIS WORKS AS EXPECTED
+        LocalMergeCur.execute(u'SELECT english, comment, status, UpdatedBy, UpdatedTimestamp FROM History WHERE ID=?', (item[0]))
+        LocalHistory = LocalMergeCur.fetchall()
+        RemoteMergeCur.execute(u'SELECT english, comment, status, UpdatedBy, UpdatedTimestamp FROM History WHERE ID=?', (item[0]))
+        RemoteHistory = RemoteMergeCur.fetchall()
+        HistoryDiff = LocalHistory.difference(RemoteHistory)
+        for hEntry in HistoryDiff:
+            RemoteMergeCur.execute(u'INSERT INTO History(ID, english, comment, status, UpdatedBy, UpdatedTimestamp) VALUES (?,?,?,?,?,?)',
+                                   (item[0], hEntry[0], hEntry[1], hEntry[2], hEntry[3], hEntry[4]))
+
+    # 4) File is ready for upload
     RemoteMergeCon.commit()
     return
 
