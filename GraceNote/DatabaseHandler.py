@@ -55,6 +55,14 @@ def GetNewChangelogData():
 
 def MergeDatabaseWithServerVersionBeforeUpload(LocalMergeCur, RemoteMergeCur):
     # Merging the Server and the local version
+
+    # PLANNED PRODECURE
+    # 1) Copy Server Entry to Server History
+    # 2) Copy Local Entry to Server Entry
+    # 3) Sync Histories into Server History
+    # 4) Upload Server File
+
+
     # First clean up remote version
     RemoteMergeCur.execute(u"update Text set updated=0")
                                 
