@@ -1,6 +1,7 @@
 from PyQt4 import QtCore, QtGui
 import Globals
 import time
+import XTextBox
 
 class HistoryWindow(QtGui.QDialog):
 
@@ -14,7 +15,7 @@ class HistoryWindow(QtGui.QDialog):
         self.entryList.setWrapping(False)
         self.entryModel = QtGui.QStandardItemModel()
         self.entryList.setModel(self.entryModel)
-        self.entryTextTextbox = QtGui.QTextEdit()
+        self.entryTextTextbox = XTextBox.XTextBox(None, self, True)
         self.entryTextTextbox.setReadOnly(True)
         self.entryCommentTextbox = QtGui.QTextEdit()
         self.entryCommentTextbox.setReadOnly(True)
@@ -45,7 +46,7 @@ class HistoryWindow(QtGui.QDialog):
                 date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(entry[5]))
             else:
                 date = 'Unknown'
-            item = QtGui.QStandardItem('Status ' + str(entry[3]) + ' at ' + date + ' by ' + str(entry[4]))
+            item = QtGui.QStandardItem('[' + str(entry[3]) + '] ' + date + ' by ' + str(entry[4]))
             #item.setData(entry)
             self.entryModel.appendRow(item)
         
@@ -69,6 +70,7 @@ class HistoryWindow(QtGui.QDialog):
         data = self.History[self.entryId][row]
 
         self.entryTextTextbox.setText(Globals.VariableReplace(data[1]))
+        self.entryTextTextbox.iconToggle(data[3])
         self.entryCommentTextbox.setText(Globals.VariableReplace(data[2]))
 
         return

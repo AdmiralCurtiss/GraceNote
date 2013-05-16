@@ -385,7 +385,8 @@ class MassReplace(QtGui.QDialog):
                     string = Globals.VariableRemove(string)
                                 
                 DatabaseHandler.CopyEntryToHistory(IterCur, entryID)
-                IterCur.execute(u"update Text set english=?, updated=1, status=?, UpdatedBy=?, UpdatedTimestamp=strftime('%s','now') where ID=?", (unicode(string), updateStatusValue, Globals.Author, entryID))
+                IterCur.execute(u"UPDATE Text SET english=?, updated=1, status=?, UpdatedBy=?, UpdatedTimestamp=strftime('%s','now') where ID=?",
+                                (unicode(string), updateStatusValue, str(Globals.Author), entryID))
                 self.parent.update.add(unicode(databaseName))
             
                 #if self.matchCase.isChecked():

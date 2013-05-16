@@ -19,7 +19,7 @@ class XTextBox(QtGui.QTextEdit):
     currentEntry = -1
 
 
-    def __init__(self, HUD, parent):
+    def __init__(self, HUD, parent, readOnly = False):
         super(XTextBox, self).__init__()
         
         self.parent = parent
@@ -33,6 +33,8 @@ class XTextBox(QtGui.QTextEdit):
         self.four = False
 
         self.buttons = []
+
+        self.readOnly = readOnly
 
         if Globals.Audio:
             self.audioOutput = Phonon.AudioOutput(Phonon.MusicCategory)
@@ -68,10 +70,11 @@ class XTextBox(QtGui.QTextEdit):
             topLayout.addLayout(layout)
             self.setLayout(topLayout)
 
-            self.translate.released.connect(self.transTogglem)
-            self.tlCheck.released.connect(self.checkTogglem)
-            self.rewrite.released.connect(self.rewriteTogglem)
-            self.grammar.released.connect(self.grammarTogglem)
+            if not self.readOnly:
+                self.translate.released.connect(self.transTogglem)
+                self.tlCheck.released.connect(self.checkTogglem)
+                self.rewrite.released.connect(self.rewriteTogglem)
+                self.grammar.released.connect(self.grammarTogglem)
 
 
         elif HUD == 'jp':
@@ -84,7 +87,8 @@ class XTextBox(QtGui.QTextEdit):
             layout.addWidget(self.jpflag)
             self.setLayout(layout)
 
-            self.jpflag.released.connect(self.flagToggle)
+            if not self.readOnly:
+                self.jpflag.released.connect(self.flagToggle)
             self.role = 1
             
             
@@ -449,57 +453,62 @@ class XTextBox(QtGui.QTextEdit):
         '''
         Replaces the selected text with word.
         '''
-        cursor = self.textCursor()
-        cursor.beginEditBlock()
+        if not self.readOnly:
+            cursor = self.textCursor()
+            cursor.beginEditBlock()
  
-        cursor.removeSelectedText()
-        cursor.insertText(word)
+            cursor.removeSelectedText()
+            cursor.insertText(word)
  
-        cursor.endEditBlock()
+            cursor.endEditBlock()
 
 
     def transTogglem(self):
-        if not self.one:
-            self.translate.setIcon(QtGui.QIcon('icons/tlon.png'))
-            self.one = True
-            self.manualEdit.emit(1, self, self.footer)
-        else:
-            self.translate.setIcon(QtGui.QIcon('icons/tloff.png'))
-            self.one = False
-            self.manualEdit.emit(0, self, self.footer)
+        if not self.readOnly:
+            if not self.one:
+                self.translate.setIcon(QtGui.QIcon('icons/tlon.png'))
+                self.one = True
+                self.manualEdit.emit(1, self, self.footer)
+            else:
+                self.translate.setIcon(QtGui.QIcon('icons/tloff.png'))
+                self.one = False
+                self.manualEdit.emit(0, self, self.footer)
 
             
     def checkTogglem(self):
-        if not self.two:
-            self.tlCheck.setIcon(QtGui.QIcon('icons/oneon.png'))
-            self.two = True
-            self.manualEdit.emit(2, self, self.footer)
-        else:
-            self.tlCheck.setIcon(QtGui.QIcon('icons/oneoff.png'))
-            self.two = False
-            self.manualEdit.emit(1, self, self.footer)
+        if not self.readOnly:
+            if not self.two:
+                self.tlCheck.setIcon(QtGui.QIcon('icons/oneon.png'))
+                self.two = True
+                self.manualEdit.emit(2, self, self.footer)
+            else:
+                self.tlCheck.setIcon(QtGui.QIcon('icons/oneoff.png'))
+                self.two = False
+                self.manualEdit.emit(1, self, self.footer)
 
 
     def rewriteTogglem(self):
-        if not self.three:
-            self.rewrite.setIcon(QtGui.QIcon('icons/twoon.png'))
-            self.three = True
-            self.manualEdit.emit(3, self, self.footer)
-        else:
-            self.rewrite.setIcon(QtGui.QIcon('icons/twooff.png'))
-            self.three = False
-            self.manualEdit.emit(2, self, self.footer)
+        if not self.readOnly:
+            if not self.three:
+                self.rewrite.setIcon(QtGui.QIcon('icons/twoon.png'))
+                self.three = True
+                self.manualEdit.emit(3, self, self.footer)
+            else:
+                self.rewrite.setIcon(QtGui.QIcon('icons/twooff.png'))
+                self.three = False
+                self.manualEdit.emit(2, self, self.footer)
 
 
     def grammarTogglem(self):
-        if not self.four:
-            self.grammar.setIcon(QtGui.QIcon('icons/threeon.png'))
-            self.four = True
-            self.manualEdit.emit(4, self, self.footer)
-        else:
-            self.grammar.setIcon(QtGui.QIcon('icons/threeoff.png'))
-            self.four = False
-            self.manualEdit.emit(3, self, self.footer)
+        if not self.readOnly:
+            if not self.four:
+                self.grammar.setIcon(QtGui.QIcon('icons/threeon.png'))
+                self.four = True
+                self.manualEdit.emit(4, self, self.footer)
+            else:
+                self.grammar.setIcon(QtGui.QIcon('icons/threeoff.png'))
+                self.four = False
+                self.manualEdit.emit(3, self, self.footer)
 
 
 
@@ -532,6 +541,9 @@ class XTextBox(QtGui.QTextEdit):
 
 
     def flagToggle(self):
+        if self.readOnly:
+            return
+
         if self.role == 2:
             self.jpflag.setIcon(QtGui.QIcon('icons/cdnflag.png'))
             self.role = 0

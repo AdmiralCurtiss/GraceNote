@@ -794,18 +794,21 @@ class Scripts2(QtGui.QWidget):
     
     def openImageWindow(self, img):
         self.media[img.name] = ImageViewerWindow.ImageViewerWindow(self, img)
+        self.media[img.name].resize(300, 200)
         self.media[img.name].show()
         self.media[img.name].raise_()
         self.media[img.name].activateWindow()
 
     def openFontWindow(self):
         self.fontWindow = FontDisplayWindow.FontDisplayWindow(self)
+        self.fontWindow.resize(500, 150)
         self.fontWindow.show()
         self.fontWindow.raise_()
         self.fontWindow.activateWindow()
 
     def openHistoryWindow(self):
         self.historyWindow = HistoryWindow.HistoryWindow(self)
+        self.historyWindow.resize(350, 300)
         self.historyWindow.show()
         self.historyWindow.raise_()
         self.historyWindow.activateWindow()
