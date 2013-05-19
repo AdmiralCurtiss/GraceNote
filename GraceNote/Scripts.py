@@ -729,8 +729,8 @@ class Scripts2(QtGui.QWidget):
         
 
         optionsMenu = QtGui.QMenu("Options", self)
-        optionsMenu.addAction(self.reloadConfigAct)
-        optionsMenu.addSeparator()
+        #optionsMenu.addAction(self.reloadConfigAct)
+        #optionsMenu.addSeparator()
         optionsMenu.addAction(self.voiceLangAct)
         optionsMenu.addAction(self.updateLowerStatusAct)
         optionsMenu.addAction(self.displayFooterAct)
