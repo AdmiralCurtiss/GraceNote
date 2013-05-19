@@ -1098,10 +1098,12 @@ class Scripts2(QtGui.QWidget):
         i = 1
         for item in FileList[0]:
             cat = QtGui.QStandardItem(item)
+            cat.setEditable(False)
             self.treemodel.appendRow(cat)
             for item in FileList[i]:
                 newrow = QtGui.QStandardItem()
                 newrow.setStatusTip(item)
+                newrow.setEditable(False)
                 
                 # color based on completion / comments exist
                 self.FormatDatabaseListItem(item, newrow, PercentageCursor)
@@ -1254,6 +1256,7 @@ class Scripts2(QtGui.QWidget):
             additem = QtGui.QStandardItem(entryDisplayString)
             additem.setCheckable(True)
             additem.setStatusTip(identifyString)
+            additem.setEditable(False)
     
             self.FormatEntryListItemColor(additem, TempStatus)        
     
@@ -1944,6 +1947,7 @@ class Scripts2(QtGui.QWidget):
     def RecalculateFilesToBeUploaded(self):
         self.WriteDatabaseStorageToHdd()
         
+        self.update.clear()
         print 'Searching for databases with unsaved changes...'
         i = 1
         for item in Globals.configData.FileList[0]:

@@ -47,6 +47,7 @@ class HistoryWindow(QtGui.QDialog):
             else:
                 date = 'Unknown'
             item = QtGui.QStandardItem('[' + str(entry[3]) + '] ' + date + ' by ' + str(entry[4]))
+            item.setEditable(False)
             #item.setData(entry)
             self.entryModel.appendRow(item)
         
