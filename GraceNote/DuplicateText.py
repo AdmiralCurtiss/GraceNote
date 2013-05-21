@@ -3,6 +3,7 @@
 from PyQt4 import QtCore, QtGui
 import Globals
 import sqlite3
+import DatabaseCache
 
 class DuplicateText(QtGui.QDialog):
 
@@ -135,18 +136,13 @@ class DuplicateText(QtGui.QDialog):
                 for filename in aList[i]:
                     #print 'Processing ' + filename + '...'
 
-                    conC = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(filename))
-                    curC = conC.cursor()
-                    
-                    curC.execute("SELECT StringID, English FROM Text")
-                    
-                    results = curC.fetchall()
+                    results = Globals.Cache.GetDatabase(filename)
                     
                     for item in results:
-                        StringId = int(item[0])
+                        StringId = item.stringId
                         if BlackList[StringId] == 0:
                             Table[StringId][0] += 1
-                            Table[StringId][1].add(item[1])
+                            Table[StringId][1].add(item.english)
 #                    self.progressbar.setValue(self.progressbar.value() + (6250/len(Globals.configData.FileList[i])))
 #                    self.progressLabel.setText("Processing {0}".format(category))
 #                    self.progressLabel.update()

@@ -42,6 +42,7 @@ import GracesCreation
 import NetworkHandler
 import DatabaseHandler
 import HistoryWindow
+import DatabaseCache
 
 def SetupEnvironment():
     Globals.commentsAvailableLabel = False
@@ -107,6 +108,9 @@ def SetupEnvironment():
     Globals.AmountEditingWindows = 5
     Globals.WriteDatabaseStorageToHddOnEntryChange = False
     Globals.FooterVisibleFlag = False
+
+    Globals.Cache = DatabaseCache.DatabaseCache()
+
     return
 
 class SearchAction(QtGui.QAction):
@@ -117,20 +121,6 @@ class SearchAction(QtGui.QAction):
         QtGui.QAction.__init__(self, *args)
  
         self.triggered.connect(lambda x: self.jumpTo.emit(self.data()[0], self.data()[1]))
-
-class DatabaseEntryStruct():
-    def __init__(self, cleanString, databaseName, entry, role, state):
-        #string cleanString; // this is the actual entry text
-        self.cleanString = cleanString
-        #string database;
-        self.databaseName = databaseName
-        #int entry;
-        self.entry = entry
-        #int role;
-        self.role = role
-        #string state; // "ENG" or "COM", defines which column in the database to update
-        self.state = state
-        self.timestamp = time.clock()
 
 class Scripts2(QtGui.QWidget):
 
@@ -1848,9 +1838,9 @@ class Scripts2(QtGui.QWidget):
         
         databasefilename = self.treemodel.itemFromIndex(self.tree.currentIndex()).statusTip()
         
-        #DatabaseEntryStruct(cleanString, databaseName, entry, role, state)
+        #UpdatedDatabaseEntry(cleanString, databaseName, entry, role, state)
         # keep for later write to HDD
-        self.InsertOrUpdateEntryToWrite(DatabaseEntryStruct(GoodString, databasefilename, textBox.currentEntry, updateStatusValue, self.state))
+        self.InsertOrUpdateEntryToWrite(DatabaseCache.UpdatedDatabaseEntry(GoodString, databasefilename, textBox.currentEntry, updateStatusValue, self.state))
         textBox.refreshFooter(GoodString, self.state[0] + ': ')
 
         self.ReStartTimeoutTimer()

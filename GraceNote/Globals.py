@@ -20,6 +20,7 @@ WriteDatabaseStorageToHddOnEntryChange = False
 FooterVisibleFlag = False
 Author = 'NONE'
 
+Cache = None
 
 import re
 

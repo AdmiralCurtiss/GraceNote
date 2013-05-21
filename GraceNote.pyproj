@@ -30,6 +30,7 @@
     <Compile Include="GraceNote\CompletionTable.py" />
     <Compile Include="GraceNote\Config.py" />
     <Compile Include="GraceNote\CustomHighlighter.py" />
+    <Compile Include="GraceNote\DatabaseCache.py" />
     <Compile Include="GraceNote\DatabaseHandler.py" />
     <Compile Include="GraceNote\DuplicateText.py" />
     <Compile Include="GraceNote\GlobalChangelog.py" />
