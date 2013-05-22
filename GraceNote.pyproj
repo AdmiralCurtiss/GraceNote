@@ -13,7 +13,7 @@
     <Name>GraceNote</Name>
     <RootNamespace>GraceNote</RootNamespace>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>config_sdr2.xml</CommandLineArguments>
+    <CommandLineArguments>config_test.xml</CommandLineArguments>
     <InterpreterPath />
     <InterpreterArguments />
   </PropertyGroup>

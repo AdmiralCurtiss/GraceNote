@@ -1521,8 +1521,10 @@ class Scripts2(QtGui.QWidget):
 
         # For an Exact match to the string at any point                        
         try:
-            Globals.CursorGracesJapanese.execute(u"select ID from Japanese where debug=0 AND string LIKE ?", ('%' + unicode(matchString) + '%', ))
-            JPmatches = set(Globals.CursorGracesJapanese.fetchall())
+            Globals.CursorGracesJapanese.execute(u"SELECT ID FROM Japanese WHERE debug=0 AND string LIKE ?", ('%' + unicode(matchString) + '%', ))
+            JPmatches = set()
+            for match in Globals.CursorGracesJapanese.fetchall():
+                JPmatches.add(int(match[0]))
         except:
             reply = QtGui.QMessageBox.information(self, "Incorrect Search Usage", "Warning:\n\nYour search returned too many results, try something with more letters or use the mass replace.")
             return
@@ -1532,8 +1534,8 @@ class Scripts2(QtGui.QWidget):
 
         
         aList = Globals.configData.FileList
-        for i in range(1, len(aList)):
-            for File in aList[i]:
+        for j in range(1, len(aList)):
+            for File in aList[j]:
                 data = Globals.Cache.GetDatabase(File)
                 if self.debug.isChecked():
                     for i in xrange(len(data)):
@@ -1545,40 +1547,11 @@ class Scripts2(QtGui.QWidget):
                             if data[i].stringId in JPmatches or data[i].english.find(matchString) > -1:
                                 MatchedEntries.append((File, i+1, data[i].english))
 
-        #aList = Globals.configData.FileList
-        #for i in range(1, len(aList)):
-        #    for File in aList[i]:
-        #        FilterCon = DatabaseHandler.OpenEntryDatabase(File)
-        #        FilterCur = FilterCon.cursor()
-                
-        #        ORIDString = ''
-        #        for match in JPmatches:
-        #            ORIDString = ORIDString + " OR StringID='" + str(match[0]) + "'"
-                    
-        #        try:
-        #            if self.debug.isChecked():
-        #                FilterCur.execute(u"select ID, English, StringID from Text where english LIKE ? {0}".format(ORIDString), ('%' + unicode(matchString) + '%', ))
-        #            else:
-        #                FilterCur.execute(u"select ID, English, StringID from Text where status>=0 AND english LIKE ? {0}".format(ORIDString), ('%' + unicode(matchString) + '%', ))
-        #        except:
-        #            reply = QtGui.QMessageBox.information(self, "Incorrect Search Usage", "Warning:\n\nYour search returned too many results, try something with more letters or use the mass replace.")
-        #            return
-                
-        #        TempList = FilterCur.fetchall()
-                                        
-        #        for item in TempList:
-        #            if item[1] == '':
-        #                Globals.CursorGracesJapanese.execute('select string from Japanese where ID={0}'.format(item[2]))
-        #                String = Globals.CursorGracesJapanese.fetchall()[0][0]
-        #            else:
-        #                String = item[1]
-        #            MatchedEntries.append((File, item[0], String))
-        
         #No matches found case
         if len(MatchedEntries) == 0:
             popup_menu.addAction('No Matches Found')
 
-        
+        TotalResultCount = len(MatchedEntries)
         if platform.uname()[0] != 'Darwin':
             ResultLen = 20
             MatchedEntries = MatchedEntries[:20]
@@ -1603,7 +1576,8 @@ class Scripts2(QtGui.QWidget):
             action.jumpTo.connect(self.JumpToEntry)
             popup_menu.addAction(action)
         
-        popup_menu.addAction('------Limited to {0} Results------'.format(ResultLen))
+        if TotalResultCount > ResultLen:
+            popup_menu.addAction('------Limited to {0} Results------'.format(ResultLen))
         
         popup_menu.exec_(self.filter.mapToGlobal(QtCore.QPoint(0,self.filter.height())))
 
@@ -1977,13 +1951,9 @@ class Scripts2(QtGui.QWidget):
         aList = Globals.configData.FileList
         for i in range(1, len(aList)):
             for File in aList[i]:
-                FilterCon = DatabaseHandler.OpenEntryDatabase(str(File))
-                FilterCur = FilterCon.cursor()
-                        
-                FilterCur.execute(u"SELECT English FROM Text WHERE status >= 0")
-                                        
-                for item in FilterCur.fetchall():
-                    for char in item[0]:
+                db = Globals.Cache.GetDatabase(str(File))
+                for item in db:
+                    for char in item.english:
                         charSet.add(char)
         
         file = open('used_symbols.txt', 'w')

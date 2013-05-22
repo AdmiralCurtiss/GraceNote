@@ -30,21 +30,19 @@ class MassReplace(QtGui.QDialog):
         self.replacement.setFixedHeight(50)
         self.exceptions = QtGui.QLineEdit()
         self.fileFilter = QtGui.QLineEdit()
-        self.matchExact = QtGui.QRadioButton('Any Match')
-        self.matchEnglish = QtGui.QRadioButton('Any: English Only')
-        self.matchEntry = QtGui.QRadioButton('Complete Entry')
-        self.matchComments = QtGui.QRadioButton('Comments')
-        self.matchEnglish.setChecked(True)
+        self.matchAnyRadio = QtGui.QRadioButton('Any Match')
+        self.matchAnyEnglishOnlyRadio = QtGui.QRadioButton('Any: English Only')
+        self.matchCompleteRadio = QtGui.QRadioButton('Complete Entry')
+        self.matchAnyEnglishOnlyRadio.setChecked(True)
         self.fileFilter.setToolTip('Wildcards implicit. eg CHT will match all skits')
         self.matchCase = QtGui.QCheckBox('Match case')
         self.searchDebug = QtGui.QCheckBox('Search Debug')
         self.searchStartOfEntry = QtGui.QCheckBox('At Start of Entry')
         self.searchEndOfEntry = QtGui.QCheckBox('At End of Entry')
 
-        self.matchEnglish.setFont(font)
-        self.matchExact.setFont(font)
-        self.matchEntry.setFont(font)
-        self.matchComments.setFont(font)
+        self.matchAnyEnglishOnlyRadio.setFont(font)
+        self.matchAnyRadio.setFont(font)
+        self.matchCompleteRadio.setFont(font)
                 
         originalLabel = QtGui.QLabel('Search for:')
         originalLabel.setFont(font)
@@ -102,9 +100,9 @@ class MassReplace(QtGui.QDialog):
         inputLayout.addWidget(optionsWidget    , 4, 0, 1, 2)
         inputLayout.addWidget(filterLabel      , 0, 2, 1, 1)
         inputLayout.addWidget(self.fileFilter  , 1, 2, 1, 1)
-        inputLayout.addWidget(self.matchEntry  , 2, 2, 1, 1)
-        inputLayout.addWidget(self.matchExact  , 3, 2, 1, 1)
-        inputLayout.addWidget(self.matchEnglish, 4, 2, 1, 1)
+        inputLayout.addWidget(self.matchCompleteRadio  , 2, 2, 1, 1)
+        inputLayout.addWidget(self.matchAnyRadio  , 3, 2, 1, 1)
+        inputLayout.addWidget(self.matchAnyEnglishOnlyRadio, 4, 2, 1, 1)
         #inputLayout.addWidget(self.matchComments,5, 2, 1, 1)
         
         inputLayout.setColumnStretch(1, 1)
@@ -169,20 +167,17 @@ class MassReplace(QtGui.QDialog):
         # Place all matching strings to the search into the tree widget
         
         newSearchTab = self.generateSearchTab()
-
-
         matchString = unicode(self.original.toPlainText())
         exceptString = unicode(self.exceptions.text())
 
         if matchString.count(unicode('<', 'UTF-8')) != matchString.count(unicode('>', 'UTF-8')):
-            
-            reply = QtGui.QMessageBox.information(self, "Incorrect Search Usage", "Warning:\n\nPart of a variable: Be sure you know what you're doing.")
+            reply = QtGui.QMessageBox.information(self, "Questionable Search Usage", "Warning:\n\nPart of a variable: Be sure you know what you're doing.")
             #return
 
         tabNameString = matchString
         matchString = Globals.VariableRemove(matchString)
         
-        if not self.matchEntry.isChecked():
+        if not self.matchCompleteRadio.isChecked():
             if len(matchString) == 1:
                 if ord(matchString) <= 0x20:
                     reply = QtGui.QMessageBox.question(self, "Questionable Search Usage", "Warning:\n\nYour search only consists of a space, a form feed, a newline, or a tab.\nAre you sure you want to search for this?", QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
@@ -194,99 +189,46 @@ class MassReplace(QtGui.QDialog):
 
         MatchedEntries = []
         aList = Globals.configData.FileList
-        
+        searchDebug = self.searchDebug.isChecked()
+        matchCase = self.matchCase.isChecked()
+        matchFullEntry = self.matchCompleteRadio.isChecked()
+
         # turn on case sensitive checking
-        if self.matchCase.isChecked():
+        if matchCase:
             Globals.CursorGracesJapanese.execute(u"PRAGMA case_sensitive_like = ON")
 
-        # prepare the expression match string before this, since I don't want those ifs three times
-        SqlExpressionMatchString = ''
-        if not self.searchStartOfEntry.isChecked():
-            SqlExpressionMatchString = '%'
-        SqlExpressionMatchString = SqlExpressionMatchString + unicode(matchString)
-        if not self.searchEndOfEntry.isChecked():
-            SqlExpressionMatchString = SqlExpressionMatchString + '%'
-
         # any match within a string
-        if self.matchExact.isChecked():
-            Globals.CursorGracesJapanese.execute(u"select ID from Japanese where string LIKE ?", ('%' + unicode(matchString) + '%', ))
-            JPmatches = set(Globals.CursorGracesJapanese.fetchall())
-            TextSearchColumn = 'English'
+        if self.matchAnyRadio.isChecked():
+            Globals.CursorGracesJapanese.execute(u"SELECT ID FROM Japanese WHERE string LIKE ?", ('%' + unicode(matchString) + '%', ))
+            JPmatches = set()
+            for match in Globals.CursorGracesJapanese.fetchall():
+                JPmatches.add(int(match[0]))
             ReplacementType = 'Substr'
         # any match in English strings only
-        elif self.matchEnglish.isChecked():
+        elif self.matchAnyEnglishOnlyRadio.isChecked():
             JPmatches = set()
-            TextSearchColumn = 'English'
             ReplacementType = 'Substr'
         # match the entire entry
-        elif self.matchEntry.isChecked():
-            Globals.CursorGracesJapanese.execute(u"select ID from Japanese where string LIKE ?", (unicode(matchString),))
-            JPmatches = set(Globals.CursorGracesJapanese.fetchall())
-            SqlExpressionMatchString = unicode(matchString)
-            TextSearchColumn = 'English'
-            ReplacementType = 'Entry'
-        elif self.matchComments.isChecked():
+        elif self.matchCompleteRadio.isChecked():
+            Globals.CursorGracesJapanese.execute(u"SELECT ID FROM Japanese WHERE string LIKE ?", (unicode(matchString),))
             JPmatches = set()
-            TextSearchColumn = 'Comment'
-            ReplacementType = 'CommentSubstr'
+            for match in Globals.CursorGracesJapanese.fetchall():
+                JPmatches.add(int(match[0]))
+            ReplacementType = 'Entry'
             
-        ORIDStringList = []
-        tmp = ''
-        i = 0
-        while JPmatches:
-            i = i + 1
-            if i >= 500: # split up query into multiple queries when it gets too large
-                ORIDStringList = ORIDStringList + [tmp]
-                tmp = ''
-                i = 0
-            tmp = tmp + " OR StringID=" + str(JPmatches.pop()[0])
-        ORIDStringList = ORIDStringList + [tmp]
-        
-        AdditionalConstraintsString = ""
-        if not self.searchDebug.isChecked():
-            AdditionalConstraintsString = "AND status >= 0"
-            
-            
-        for i in range(1, len(aList)):
-            for File in aList[i]:
+        for j in range(1, len(aList)):
+            for File in aList[j]:
                 if File.find(self.fileFilter.text()) >= 0:
-                    FilterCon = DatabaseHandler.OpenEntryDatabase(File)
-                    FilterCur = FilterCon.cursor()
-                    
-                    if self.matchCase.isChecked():
-                        FilterCur.execute(u"PRAGMA case_sensitive_like = ON")
-                        
-                    TempList = []
-                    try: # fetch the english entires
-                        FilterCur.execute(u"SELECT ID, English, StringID, IdentifyString, status FROM Text WHERE {1} LIKE ? {0}".format(AdditionalConstraintsString, TextSearchColumn), (SqlExpressionMatchString, ))
-                    except:
-                        FilterCur.execute(u"SELECT ID, English, StringID, '' AS IdentifyString, status FROM Text WHERE {1} LIKE ? {0}".format(AdditionalConstraintsString, TextSearchColumn), (SqlExpressionMatchString, ))
-                    TempList = TempList + FilterCur.fetchall()
-                    
-                    for ORIDString in ORIDStringList: # fetch the japanese entries
-                        try:
-                            FilterCur.execute(u"SELECT ID, English, StringID, IdentifyString, status FROM Text WHERE ( 1=2 {0} ) {1}".format(ORIDString, AdditionalConstraintsString))
-                        except:
-                            FilterCur.execute(u"SELECT ID, English, StringID, '' AS IdentifyString, status FROM Text WHERE ( 1=2 {0} ) {1}".format(ORIDString, AdditionalConstraintsString))
-                        # This may fetch entries that were already fetched above in the english ones, make sure it's not already added
-                        JapaneseFetches = FilterCur.fetchall()
-                        for JapaneseFetch in JapaneseFetches:
-                            notYetAdded = True
-                            for EnglishFetch in TempList:
-                                if JapaneseFetch[0] == EnglishFetch[0]:
-                                    notYetAdded = False
-                                    break
-                            if notYetAdded:
-                                TempList = TempList + [JapaneseFetch]
-                    
-                    for item in TempList:
-                        ENString = item[1]
-                        Globals.CursorGracesJapanese.execute('SELECT string FROM Japanese WHERE ID={0}'.format(item[2]))
-                        JPString = Globals.CursorGracesJapanese.fetchall()[0][0]
-                        MatchedEntries.append([File, item[0], ENString, JPString, item[3], item[4], Globals.GetDatabaseDescriptionString(File)])
-
-                    if self.matchCase.isChecked():
-                        FilterCur.execute(u"PRAGMA case_sensitive_like = OFF")
+                    data = Globals.Cache.GetDatabase(File)
+                    for i in xrange(len(data)):
+                        if ( data[i].stringId in JPmatches ) \
+                        or ( matchFullEntry and data[i].english == matchString ) \
+                        or ( matchCase and matchString in data[i].english ) \
+                        or ( not matchCase and matchString.upper() in data[i].english.upper() > -1 ):
+                            if searchDebug or data[i].status >= 0:
+                                Globals.CursorGracesJapanese.execute('SELECT string FROM Japanese WHERE ID={0}'.format(data[i].stringId))
+                                JPString = Globals.CursorGracesJapanese.fetchall()[0][0]
+                                MatchedEntries.append( [File, i+1, data[i].english, JPString, data[i].IdentifyString, data[i].status, Globals.GetDatabaseDescriptionString(File)] )
                         
         if len(MatchedEntries) == 0:
             return
@@ -317,7 +259,7 @@ class MassReplace(QtGui.QDialog):
                 print("Mass Replace: Failed adding file [" + filename + "], entry [" + str(entryID) + "]")
         
         # turn case sensitiveness back off
-        if self.matchCase.isChecked():
+        if matchCase:
             Globals.CursorGracesJapanese.execute(u"PRAGMA case_sensitive_like = OFF")
             
         self.tabwidget.addTab(newSearchTab, tabNameString)
