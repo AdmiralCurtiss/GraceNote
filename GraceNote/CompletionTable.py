@@ -4,6 +4,7 @@ from PyQt4 import QtCore, QtGui
 import Globals
 import os
 import sqlite3
+import DatabaseHandler
 
 class CompletionTable(QtGui.QDialog):
 
@@ -61,23 +62,16 @@ class CompletionTable(QtGui.QDialog):
             for item in aList[i]:                
                 try:
                     tempCur.execute("SELECT entries, translation, editing1, editing2, editing3, comments FROM Percentages WHERE Database = ?", [item])
-                    rows = tempCur.fetchall()
-                    totalDB = rows[0][0]
-                    translated = rows[0][1]
-                    tlCheck = rows[0][2]
-                    rewrite = rows[0][3]
-                    grammar = rows[0][4]
-                    commentamount = rows[0][5]
                 except:
                     CalculateCompletionForDatabase(item)
                     tempCur.execute("SELECT entries, translation, editing1, editing2, editing3, comments FROM Percentages WHERE Database = ?", [item])
-                    rows = tempCur.fetchall()
-                    totalDB = rows[0][0]
-                    translated = rows[0][1]
-                    tlCheck = rows[0][2]
-                    rewrite = rows[0][3]
-                    grammar = rows[0][4]
-                    commentamount = rows[0][5]
+                rows = tempCur.fetchall()
+                totalDB = rows[0][0]
+                translated = rows[0][1]
+                tlCheck = rows[0][2]
+                rewrite = rows[0][3]
+                grammar = rows[0][4]
+                commentamount = rows[0][5]
                     
                 catTotalDB += totalDB
                 catTotalComments += commentamount
@@ -135,7 +129,7 @@ def CalculateAllCompletionPercentagesForDatabase():
 def CalculateCompletionForDatabase(database):
     #print 'Calculating percentages for ' + database + '...'
     
-    tempCon = sqlite3.connect(Globals.configData.LocalDatabasePath + '/' + database)
+    tempCon = DatabaseHandler.OpenEntryDatabase(database)
     tempCur = tempCon.cursor()
     
     tempCur.execute("SELECT Count(1) from Text where status>=0")

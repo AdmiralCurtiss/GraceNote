@@ -250,7 +250,7 @@ class MassReplace(QtGui.QDialog):
         for i in range(1, len(aList)):
             for File in aList[i]:
                 if File.find(self.fileFilter.text()) >= 0:
-                    FilterCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(File))
+                    FilterCon = DatabaseHandler.OpenEntryDatabase(File)
                     FilterCur = FilterCon.cursor()
                     
                     if self.matchCase.isChecked():
@@ -342,7 +342,7 @@ class MassReplace(QtGui.QDialog):
                 databaseName = Iterator.value().data(8, 0)
                 entryID = int(Iterator.value().data(1, 0))
                 
-                IterCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(databaseName))
+                IterCon = DatabaseHandler.OpenEntryDatabase(databaseName)
                 IterCur = IterCon.cursor()
                 
                 #if self.matchCase.isChecked():

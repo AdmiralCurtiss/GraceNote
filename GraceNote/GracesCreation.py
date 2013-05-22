@@ -10,6 +10,7 @@ import codecs
 from Config import *
 from collections import deque
 import filecmp
+import DatabaseHandler
 
 
 def SavetoPatch(self):
@@ -124,7 +125,7 @@ def MakeSCS(self, allFiles, progress, path, BIN=None):
             continue
         print filename
 
-        OutCon = sqlite3.connect(Globals.configData.LocalDatabasePath + '/{0}'.format(filename))
+        OutCon = DatabaseHandler.OpenEntryDatabase(filename)
         OutCur = OutCon.cursor()
 
             

@@ -90,6 +90,7 @@ def RetrieveModifiedFiles(scripts, splash):
                 old.close()
                     
                 CompletionTable.CalculateCompletionForDatabase(item)
+                Globals.Cache.LoadDatabase(item)
 
             ftp.close()
 
@@ -294,6 +295,7 @@ def SavetoServer(scripts):
                 LogTable.append(filename)
                     
                 CompletionTable.CalculateCompletionForDatabase(filename)
+                Globals.Cache.LoadDatabase(filename)
 
             # Fix up the changelog and upload
             Globals.LogCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/ChangeLog")
@@ -394,13 +396,14 @@ def RevertFromServer(scripts):
                     
                     
                 DownloadFile(scripts, scripts.ftp, item, item)
-                WipeUpdateCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(item))
+                WipeUpdateCon = DatabaseHandler.OpenEntryDatabase(item)
                 WipeUpdateCur = WipeUpdateCon.cursor()
             
                 WipeUpdateCur.execute(u"update Text set updated=0")
                 WipeUpdateCon.commit()
                     
                 CompletionTable.CalculateCompletionForDatabase(item)
+                Globals.Cache.LoadDatabase(item)
 
             scripts.ftp.close()
             scripts.update.clear()

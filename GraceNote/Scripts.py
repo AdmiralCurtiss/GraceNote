@@ -1029,7 +1029,7 @@ class Scripts2(QtGui.QWidget):
 
                 print "Processing: {0}".format(filename)
             
-                UpdateCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(filename))
+                UpdateCon = DatabaseHandler.OpenEntryDatabase(filename)
                 UpdateCur = UpdateCon.cursor()
                         
                 UpdateCur.execute("select ID, StringID, status from Text")
@@ -1064,7 +1064,7 @@ class Scripts2(QtGui.QWidget):
 
                 print "Processing: {0}".format(filename)
             
-                UpdateCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(filename))
+                UpdateCon = DatabaseHandler.OpenEntryDatabase(filename)
                 UpdateCur = UpdateCon.cursor()
                         
                 UpdateCur.execute("SELECT StringID FROM Text WHERE status = -1")
@@ -1529,35 +1529,50 @@ class Scripts2(QtGui.QWidget):
 
         MatchedEntries = []
 
-        aList = Globals.configData.FileList
 
+        
+        aList = Globals.configData.FileList
         for i in range(1, len(aList)):
             for File in aList[i]:
-                FilterCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(File))
-                FilterCur = FilterCon.cursor()
+                data = Globals.Cache.GetDatabase(File)
+                if self.debug.isChecked():
+                    for i in xrange(len(data)):
+                        if data[i].stringId in JPmatches or data[i].english.find(matchString) > -1:
+                            MatchedEntries.append((File, i+1, data[i].english))
+                else:
+                    for i in xrange(len(data)):
+                        if data[i].status >= 0:
+                            if data[i].stringId in JPmatches or data[i].english.find(matchString) > -1:
+                                MatchedEntries.append((File, i+1, data[i].english))
+
+        #aList = Globals.configData.FileList
+        #for i in range(1, len(aList)):
+        #    for File in aList[i]:
+        #        FilterCon = DatabaseHandler.OpenEntryDatabase(File)
+        #        FilterCur = FilterCon.cursor()
                 
-                ORIDString = ''
-                for match in JPmatches:
-                    ORIDString = ORIDString + " OR StringID='" + str(match[0]) + "'"
+        #        ORIDString = ''
+        #        for match in JPmatches:
+        #            ORIDString = ORIDString + " OR StringID='" + str(match[0]) + "'"
                     
-                try:
-                    if self.debug.isChecked():
-                        FilterCur.execute(u"select ID, English, StringID from Text where english LIKE ? {0}".format(ORIDString), ('%' + unicode(matchString) + '%', ))
-                    else:
-                        FilterCur.execute(u"select ID, English, StringID from Text where status>=0 AND english LIKE ? {0}".format(ORIDString), ('%' + unicode(matchString) + '%', ))
-                except:
-                    reply = QtGui.QMessageBox.information(self, "Incorrect Search Usage", "Warning:\n\nYour search returned too many results, try something with more letters or use the mass replace.")
-                    return
+        #        try:
+        #            if self.debug.isChecked():
+        #                FilterCur.execute(u"select ID, English, StringID from Text where english LIKE ? {0}".format(ORIDString), ('%' + unicode(matchString) + '%', ))
+        #            else:
+        #                FilterCur.execute(u"select ID, English, StringID from Text where status>=0 AND english LIKE ? {0}".format(ORIDString), ('%' + unicode(matchString) + '%', ))
+        #        except:
+        #            reply = QtGui.QMessageBox.information(self, "Incorrect Search Usage", "Warning:\n\nYour search returned too many results, try something with more letters or use the mass replace.")
+        #            return
                 
-                TempList = FilterCur.fetchall()
+        #        TempList = FilterCur.fetchall()
                                         
-                for item in TempList:
-                    if item[1] == '':
-                        Globals.CursorGracesJapanese.execute('select string from Japanese where ID={0}'.format(item[2]))
-                        String = Globals.CursorGracesJapanese.fetchall()[0][0]
-                    else:
-                        String = item[1]
-                    MatchedEntries.append((File, item[0], String))
+        #        for item in TempList:
+        #            if item[1] == '':
+        #                Globals.CursorGracesJapanese.execute('select string from Japanese where ID={0}'.format(item[2]))
+        #                String = Globals.CursorGracesJapanese.fetchall()[0][0]
+        #            else:
+        #                String = item[1]
+        #            MatchedEntries.append((File, item[0], String))
         
         #No matches found case
         if len(MatchedEntries) == 0:
@@ -1720,7 +1735,7 @@ class Scripts2(QtGui.QWidget):
         
         selectedRow = int(self.entrysort.data(index)[6:11])-1
         databasefilename = self.treemodel.itemFromIndex(self.tree.currentIndex()).statusTip()
-        SaveCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/{0}".format(databasefilename))
+        SaveCon = DatabaseHandler.OpenEntryDatabase(databasefilename)
         SaveCur = SaveCon.cursor()
         SaveCur.execute("select StringID from Text where ID={0}".format(selectedRow+1))
         NextID = SaveCur.fetchall()[0][0]
@@ -1895,6 +1910,7 @@ class Scripts2(QtGui.QWidget):
         
         for db in databasesWrittenTo:
             CompletionTable.CalculateCompletionForDatabase(str(db))
+            Globals.Cache.LoadDatabase(str(db))
 
         self.databaseWriteStorage.clear()
 
@@ -2023,7 +2039,7 @@ def TrueCount():
         typeset = set([])
     
         for name in aList[i]:
-            tempCon = sqlite3.connect(Globals.configData.LocalDatabasePath + '/' + name)
+            tempCon = DatabaseHandler.OpenEntryDatabase(name)
             tempCur = tempCon.cursor()
             
             tempCur.execute("SELECT StringID from Text")
