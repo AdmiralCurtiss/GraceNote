@@ -179,6 +179,7 @@ class DuplicateText(QtGui.QDialog):
             self.parent.massDialog.original.setText(parentItem.data(1, 0))
             self.parent.massDialog.replacement.setText(searchstring)
             
-        self.parent.massDialog.matchEntry.setChecked(True)
+        self.parent.massDialog.matchCompleteRadio.setChecked(True)
+        self.parent.massDialog.matchCase.setChecked(True)
         self.parent.massDialog.Search()
 

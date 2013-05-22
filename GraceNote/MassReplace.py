@@ -5,6 +5,7 @@ import Globals
 import sqlite3
 import re
 import DatabaseHandler
+import DatabaseCache
 
 class MassReplace(QtGui.QDialog):
 
@@ -87,8 +88,8 @@ class MassReplace(QtGui.QDialog):
         optionsLayout = QtGui.QGridLayout()
         optionsLayout.addWidget(self.matchCase         , 0, 0, 1, 1)
         optionsLayout.addWidget(self.searchDebug       , 0, 1, 1, 1)
-        optionsLayout.addWidget(self.searchStartOfEntry, 0, 2, 1, 1)
-        optionsLayout.addWidget(self.searchEndOfEntry  , 0, 3, 1, 1)
+        #optionsLayout.addWidget(self.searchStartOfEntry, 0, 2, 1, 1) # don't work at the moment, maybe reimplement later
+        #optionsLayout.addWidget(self.searchEndOfEntry  , 0, 3, 1, 1)
         optionsLayout.setContentsMargins( QtCore.QMargins(0, 0, 0, 0) )
         optionsWidget = QtGui.QWidget()
         optionsWidget.setLayout(optionsLayout)
@@ -103,7 +104,6 @@ class MassReplace(QtGui.QDialog):
         inputLayout.addWidget(self.matchCompleteRadio  , 2, 2, 1, 1)
         inputLayout.addWidget(self.matchAnyRadio  , 3, 2, 1, 1)
         inputLayout.addWidget(self.matchAnyEnglishOnlyRadio, 4, 2, 1, 1)
-        #inputLayout.addWidget(self.matchComments,5, 2, 1, 1)
         
         inputLayout.setColumnStretch(1, 1)
         
@@ -115,7 +115,6 @@ class MassReplace(QtGui.QDialog):
                 
         self.setWindowTitle('Mass Replace')
         layout = QtGui.QVBoxLayout()
-        #layout.addWidget(QtGui.QLabel('Replace:'))
         layout.addLayout(inputLayout)
         layout.addWidget(self.tabwidget)
         layout.addLayout(buttonLayout, QtCore.Qt.AlignRight)
@@ -165,6 +164,7 @@ class MassReplace(QtGui.QDialog):
             
     def Search(self):
         # Place all matching strings to the search into the tree widget
+        self.parent.WriteDatabaseStorageToHdd()
         
         newSearchTab = self.generateSearchTab()
         matchString = unicode(self.original.toPlainText())
@@ -249,7 +249,7 @@ class MassReplace(QtGui.QDialog):
                 databaseDescriptor = item[6]
                                 
                 if checkForExceptions:
-                    if exceptString in englishString:
+                    if exceptString in englishString or exceptString in japaneseString:
                         continue
                     
                 treeItem = QtGui.QTreeWidgetItem([databaseDescriptor, str(entryID), str(infoString), "", englishString, japaneseString, ReplacementType, str(int(status)), filename])
@@ -266,7 +266,7 @@ class MassReplace(QtGui.QDialog):
         self.tabwidget.setCurrentIndex(self.tabwidget.count()-1)
         
     def Replace(self):
-
+        self.parent.WriteDatabaseStorageToHdd()
         currentTab = self.tabwidget.currentWidget()
         if currentTab == None:
             return
@@ -283,34 +283,10 @@ class MassReplace(QtGui.QDialog):
                 
                 databaseName = Iterator.value().data(8, 0)
                 entryID = int(Iterator.value().data(1, 0))
-                
-                IterCon = DatabaseHandler.OpenEntryDatabase(databaseName)
-                IterCur = IterCon.cursor()
-                
-                #if self.matchCase.isChecked():
-                #    IterCur.execute(u"PRAGMA case_sensitive_like = ON")
-                
-                IterCur.execute("SELECT status FROM Text WHERE ID=?", (entryID,))
-                currentStatus = IterCur.fetchall()[0][0]
-
-                # if origin by typing or automatic:
-                if Globals.ModeFlag == 'Manual':
-                    # in manual mode: leave status alone, do not change, just fetch the existing one
-                    updateStatusValue = currentStatus
-                else:
-                    # in (semi)auto mode: change to current role, except when disabled by option and current role is lower than existing status
-                    if not Globals.UpdateLowerStatusFlag:
-                        statuscheck = currentStatus
-                        if statuscheck > self.parent.role:
-                            updateStatusValue = statuscheck
-                        else:
-                            updateStatusValue = self.parent.role
-                    else:
-                        updateStatusValue = self.parent.role
-                    # endif Globals.UpdateLowerStatusFlag
-                # endif Globals.ModeFlag
-                
+                currentStatus = int(Iterator.value().data(7, 0))
+                updateStatusValue = self.parent.FigureOutNewStatusValue(self.parent.role, currentStatus, 'ENG', False, False)
                 ReplacementType = Iterator.value().data(6, 0)
+
                 if ReplacementType == 'Substr':
                     string = unicode(Iterator.value().data(4, 0))
                     
@@ -326,19 +302,14 @@ class MassReplace(QtGui.QDialog):
                     string = unicode(self.replacement.toPlainText())
                     string = Globals.VariableRemove(string)
                                 
-                DatabaseHandler.CopyEntryToHistory(IterCur, entryID)
-                IterCur.execute(u"UPDATE Text SET english=?, updated=1, status=?, UpdatedBy=?, UpdatedTimestamp=strftime('%s','now') where ID=?",
-                                (unicode(string), updateStatusValue, str(Globals.Author), entryID))
+                self.parent.InsertOrUpdateEntryToWrite(DatabaseCache.UpdatedDatabaseEntry(unicode(string), unicode(databaseName), entryID, updateStatusValue, 'ENG'))
                 self.parent.update.add(unicode(databaseName))
-            
-                #if self.matchCase.isChecked():
-                #    IterCur.execute(u"PRAGMA case_sensitive_like = OFF")
-                    
-                IterCon.commit()
 
             Iterator += 1 
-            
+        
+        self.parent.WriteDatabaseStorageToHdd()    
         self.tabwidget.removeTab( self.tabwidget.currentIndex() )
+
         
     def JumpToFile(self, item, column):
         if item.childCount() > 0:

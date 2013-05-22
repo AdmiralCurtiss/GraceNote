@@ -1,5 +1,6 @@
 # Caches access to the databasese
 import DatabaseHandler
+import time
 
 # Setup is:
 # Dictionary "Databases" ->

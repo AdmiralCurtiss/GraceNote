@@ -1795,32 +1795,7 @@ class Scripts2(QtGui.QWidget):
         else:
             CommandOriginButton = True
         
-        
-        if CommandOriginButton:
-            # if origin a button: always set to argument
-            updateStatusValue = role
-        elif self.state == "COM":
-            # if origin a Comment box, don't update
-            updateStatusValue = currentDatabaseStatus
-        else:
-            # if origin by typing or automatic:
-            if Globals.ModeFlag == 'Manual':
-                # in manual mode: leave status alone, do not change, just fetch the existing one
-                updateStatusValue = currentDatabaseStatus
-            else:
-                # in Auto mode, check for Threshold
-                if CommandOriginAutoMode and currentDatabaseStatus < self.autoThreshold:
-                    updateStatusValue = currentDatabaseStatus
-                else:
-                    # in (semi)auto mode: change to current role, except when disabled by option and current role is lower than existing status
-                    if (not Globals.UpdateLowerStatusFlag) and currentDatabaseStatus > role:
-                        updateStatusValue = currentDatabaseStatus
-                    else:
-                        updateStatusValue = role
-                # endif Globals.UpdateLowerStatusFlag
-            # endif Globals.ModeFlag
-        # endif CommandOriginButton
-
+        updateStatusValue = self.FigureOutNewStatusValue(role, currentDatabaseStatus, self.state, CommandOriginButton, CommandOriginAutoMode)
 
         self.text[textBox.currentEntry - 1][4] = updateStatusValue
         textBox.iconToggle(updateStatusValue)
@@ -1845,6 +1820,32 @@ class Scripts2(QtGui.QWidget):
             self.fontWindow.drawText( GoodString, Globals.GetDatabaseDescriptionString(str(databasefilename)) )
 
         return
+
+    def FigureOutNewStatusValue(self, role, currentDatabaseStatus, state, CommandOriginButton, CommandOriginAutoMode):
+        if CommandOriginButton:
+            # if origin a button: always set to argument
+            return role
+        elif state == "COM":
+            # if origin a Comment box, don't update
+            return currentDatabaseStatus
+        else:
+            # if origin by typing or automatic:
+            if Globals.ModeFlag == 'Manual':
+                # in manual mode: leave status alone, do not change, just fetch the existing one
+                return currentDatabaseStatus
+            else:
+                # in Auto mode, check for Threshold
+                if CommandOriginAutoMode and currentDatabaseStatus < self.autoThreshold:
+                    return currentDatabaseStatus
+                else:
+                    # in (semi)auto mode: change to current role, except when disabled by option and current role is lower than existing status
+                    if (not Globals.UpdateLowerStatusFlag) and currentDatabaseStatus > role:
+                        return currentDatabaseStatus
+                    else:
+                        return role
+                # endif Globals.UpdateLowerStatusFlag
+            # endif Globals.ModeFlag
+        # endif CommandOriginButton
 
     def WriteDatabaseStorageToHdd(self):
         self.timeoutTimer.stop()
