@@ -223,8 +223,8 @@ class MassReplace(QtGui.QDialog):
                     for i in xrange(len(data)):
                         if ( data[i].stringId in JPmatches ) \
                         or ( matchFullEntry and data[i].english == matchString ) \
-                        or ( matchCase and matchString in data[i].english ) \
-                        or ( not matchCase and matchString.upper() in data[i].english.upper() > -1 ):
+                        or ( not matchFullEntry and matchCase and matchString in data[i].english ) \
+                        or ( not matchFullEntry and not matchCase and matchString.upper() in data[i].english.upper() > -1 ):
                             if searchDebug or data[i].status >= 0:
                                 Globals.CursorGracesJapanese.execute('SELECT string FROM Japanese WHERE ID={0}'.format(data[i].stringId))
                                 JPString = Globals.CursorGracesJapanese.fetchall()[0][0]
