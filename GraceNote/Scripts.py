@@ -1441,7 +1441,10 @@ class Scripts2(QtGui.QWidget):
             
         for entry in self.text:
             if entry[3] == 0 or self.debug.isChecked():
-                string = string + 'Entry {0}\n'.format(i)
+                string = string + 'Entry {0}'.format(i)
+                if entry[5]:
+                    string = string + ': ' + entry[5]
+                string = string + '\n'
                 if replaceVariables:
                     string = string + Globals.VariableReplace(entry[idx])
                 else:

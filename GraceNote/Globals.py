@@ -161,7 +161,7 @@ def Sub(string, subsection):
 def VariableReplace(string):
     string = re.sub(u"'+", "'", unicode(string))
     string = re.sub('(.|\r)\(.*?\)', VariableSwap, unicode(string), re.DOTALL)
-    string = re.sub(u"\x0A", u"↵\x0A", unicode(string))
+    string = re.sub(u"\x0A", u"\u21B5\x0A", unicode(string))
     string = re.sub(u"\x0C", u"<Feed>\x0A", unicode(string))
     string = re.sub(u"\x00", u"<Null>", unicode(string))
     string = re.sub(u"\uFEFF", u"<UTF16 BOM BE>", unicode(string))
@@ -178,8 +178,8 @@ def VariableRemove(string):
     string = re.sub(u"<UTF16 BOM BE>", u"\uFEFF", unicode(string))
     string = re.sub(u"<UTF16 BOM LE>", u"\uFFEE", unicode(string))
     string = re.sub(u"<UTF8 BOM>", u"\uEFBBBF", unicode(string))
-    string = re.sub(u"↵\x0A", u"\x0A", unicode(string))
-    string = re.sub(u"↵", u"\x0A", unicode(string))
+    string = re.sub(u"\u21B5\x0A", u"\x0A", unicode(string))
+    string = re.sub(u"\u21B5", u"\x0A", unicode(string))
     string = re.sub(u'<.*?>', VariableSwap, unicode(string), re.DOTALL)
     return string
         
