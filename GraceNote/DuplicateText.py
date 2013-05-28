@@ -156,11 +156,11 @@ class DuplicateText(QtGui.QDialog):
                 Globals.CursorGracesJapanese.execute('SELECT String FROM Japanese WHERE ID=?', (i, ))
                 JP = Globals.CursorGracesJapanese.fetchall()[0][0]
             
-                textOriginalJapaneseText = QtGui.QTreeWidgetItem(self.treewidget, [str(item[0]).zfill(3), Globals.VariableReplace(JP)])
+                textOriginalJapaneseText = QtGui.QTreeWidgetItem(self.treewidget, [str(item[0]).zfill(3), '[' + Globals.VariableReplace(JP) + ']' ])
                 textOriginalJapaneseText.setBackgroundColor(0, QtGui.QColor(212,236,255,255))
                 textOriginalJapaneseText.setBackgroundColor(1, QtGui.QColor(212,236,255,255))
                 for exception in item[1]:
-                    newline = QtGui.QTreeWidgetItem(textOriginalJapaneseText, ['', Globals.VariableReplace(exception)])
+                    newline = QtGui.QTreeWidgetItem(textOriginalJapaneseText, ['', '[' + Globals.VariableReplace(exception) +']' ])
 #           self.progressLabel.setText("Processing {0}/50000".format(i))
             i += 1
 #           self.progressbar.setValue(self.progressbar.value() + 1)
@@ -171,12 +171,12 @@ class DuplicateText(QtGui.QDialog):
 
     def InitiateMassReplaceSearch(self, item, column):
         parentItem = item.parent()
-        searchstring = item.data(1, 0)
+        searchstring = item.data(1, 0)[1:-1]
         self.parent.ShowMassReplace()
         if parentItem is None: # clicked on the Japanese text, just search for it
             self.parent.massDialog.original.setText(searchstring)
         else: # clicked on the English subentry, search for JP and place ENG in the replacement box
-            self.parent.massDialog.original.setText(parentItem.data(1, 0))
+            self.parent.massDialog.original.setText(parentItem.data(1, 0)[1:-1])
             self.parent.massDialog.replacement.setText(searchstring)
             
         self.parent.massDialog.matchCompleteRadio.setChecked(True)
