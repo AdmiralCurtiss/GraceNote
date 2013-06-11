@@ -43,6 +43,7 @@ import NetworkHandler
 import DatabaseHandler
 import HistoryWindow
 import DatabaseCache
+import OptionsWindow
 
 def SetupEnvironment():
     Globals.commentsAvailableLabel = False
@@ -506,6 +507,10 @@ class Scripts2(QtGui.QWidget):
         self.autoThreshold2Act = QtGui.QAction(QtGui.QIcon('icons/oneon.png'), 'Translation Review', None)
         self.autoThreshold3Act = QtGui.QAction(QtGui.QIcon('icons/twoon.png'), 'Contextual Review', None)
 
+
+        self.openOptionsWindowAct = QtGui.QAction('Preferences...', None)
+        self.openOptionsWindowAct.triggered.connect(self.OpenOptionsWindow)
+
         self.reloadConfigAct = QtGui.QAction('Reload Config', None)
         self.reloadConfigAct.triggered.connect(self.ReloadConfiguration)
         self.reloadConfigAct.setShortcut(QtGui.QKeySequence('Ctrl-Shift-Alt-R'))
@@ -727,6 +732,8 @@ class Scripts2(QtGui.QWidget):
         optionsMenu.addAction(self.writeDatabaseStorageToHddAct)
         optionsMenu.addSeparator()
         optionsMenu.addAction(self.changeEditingWindowAmountAct)
+        optionsMenu.addSeparator()
+        optionsMenu.addAction(self.openOptionsWindowAct)
 
         parent.menuBar().addMenu(fileMenu)
         parent.menuBar().addMenu(parent.editMenu)
@@ -1664,6 +1671,15 @@ class Scripts2(QtGui.QWidget):
         self.massDialog.show()
         self.massDialog.raise_()
         self.massDialog.activateWindow()
+
+
+    def OpenOptionsWindow(self):
+        self.WriteDatabaseStorageToHdd()
+        
+        self.optionsWindow = OptionsWindow.OptionsWindow(self)
+        self.optionsWindow.show()
+        self.optionsWindow.raise_()
+        self.optionsWindow.activateWindow()
 
 
     def ShowCompletionTable(self):

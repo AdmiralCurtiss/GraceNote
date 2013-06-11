@@ -45,6 +45,7 @@
     <Compile Include="GraceNote\MainWindow.py" />
     <Compile Include="GraceNote\MassReplace.py" />
     <Compile Include="GraceNote\NetworkHandler.py" />
+    <Compile Include="GraceNote\OptionsWindow.py" />
     <Compile Include="GraceNote\Scripts.py" />
     <Compile Include="GraceNote\Statistics.py" />
     <Compile Include="GraceNote\XTextBox.py" />
