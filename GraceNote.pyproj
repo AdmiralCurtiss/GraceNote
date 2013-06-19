@@ -95,6 +95,7 @@
     <Content Include="icons\Splash.png" />
     <Content Include="icons\threeoff.png" />
     <Content Include="icons\threeon.png" />
+    <Content Include="icons\threeup.png" />
     <Content Include="icons\tloff.png" />
     <Content Include="icons\tlon.png" />
     <Content Include="icons\twooff.png" />
