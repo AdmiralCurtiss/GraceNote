@@ -217,7 +217,7 @@ def SavetoServer(scripts):
             except:
                 if ftperrorcount >= 20:
                     print "Warning:\n\nYour computer is currently offline, and will not be able to recieve updates or save to the server. Your progress will instead be saved for uploading upon re-establishment of a network connection, and any text you enter will be preserved automatically until such time."
-                    scripts.settings.setValue('update', set(scripts.update))
+                    Globals.Settings.setValue('update', set(scripts.update))
                     return
                 print 'Error during FTP transfer, retrying...'
                 continue
@@ -343,8 +343,8 @@ def SavetoServer(scripts):
             print 'Retaining the following files for later upload: ', saveUpdate
             scripts.update.clear()
             scripts.update = set(saveUpdate)
-            scripts.settings.setValue('update', scripts.update)
-            scripts.settings.sync()
+            Globals.Settings.setValue('update', scripts.update)
+            Globals.Settings.sync()
                 
             if autoRestartAfter:
                 SavetoServer(scripts)
@@ -373,8 +373,8 @@ def RevertFromServer(scripts):
             except:
                 if i == 20:
                     print "FTP connection failed, revert didn't succeed.\nPlease try to revert again at a later date."
-                    scripts.settings.setValue('update', set(scripts.update))
-                    scripts.settings.sync()
+                    Globals.Settings.setValue('update', set(scripts.update))
+                    Globals.Settings.sync()
                     return
                 print 'Error during FTP transfer, retrying...'
                 continue
@@ -407,8 +407,8 @@ def RevertFromServer(scripts):
 
             scripts.ftp.close()
             scripts.update.clear()
-            scripts.settings.setValue('update', scripts.update)
-            scripts.settings.sync()
+            Globals.Settings.setValue('update', scripts.update)
+            Globals.Settings.sync()
             print 'Reverted!'
             break
         except ftplib.all_errors:

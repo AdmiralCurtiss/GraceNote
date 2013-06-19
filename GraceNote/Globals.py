@@ -12,6 +12,8 @@ CursorGracesJapanese = None
 LogCon = None
 LogCur = None
 
+Settings = None
+
 EnglishVoiceLanguageFlag = False
 UpdateLowerStatusFlag = False
 ModeFlag = 'Semi-Auto'

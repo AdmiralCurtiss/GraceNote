@@ -300,8 +300,8 @@ def SavetoXML(self):
         os.makedirs('Resources/Wii')
 
 
-    if self.settings.contains('Graceful'):
-        Graceful = self.settings.value('Graceful')
+    if Globals.Settings.contains('Graceful'):
+        Graceful = Globals.Settings.value('Graceful')
         if not os.path.isfile(Graceful):
             Graceful = QtGui.QFileDialog.getOpenFileName(self, 'Locate Graceful', '', 'All Files(*)')
             if Graceful == '': return
@@ -310,10 +310,10 @@ def SavetoXML(self):
         Graceful = QtGui.QFileDialog.getOpenFileName(self, 'Locate Graceful', '', 'All Files(*)')
         if Graceful == '': return
         Graceful = str(Graceful)
-    self.settings.setValue("Graceful", Graceful)
+    Globals.Settings.setValue("Graceful", Graceful)
 
-    if self.settings.contains('RootR'):
-        RootR = self.settings.value('RootR')
+    if Globals.Settings.contains('RootR'):
+        RootR = Globals.Settings.value('RootR')
         if not os.path.isfile(RootR):
             RootR = QtGui.QFileDialog.getOpenFileName(self, 'Locate rootR.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
             if RootR == '': return
@@ -322,10 +322,10 @@ def SavetoXML(self):
         RootR = QtGui.QFileDialog.getOpenFileName(self, 'Locate rootR.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
         if RootR == '': return
         RootR = str(RootR)
-    self.settings.setValue("RootR", RootR)
+    Globals.Settings.setValue("RootR", RootR)
 
-    if self.settings.contains('Map0R'):
-        Map0R = self.settings.value('Map0R')
+    if Globals.Settings.contains('Map0R'):
+        Map0R = Globals.Settings.value('Map0R')
         if not os.path.isfile(Map0R):
             Map0R = QtGui.QFileDialog.getOpenFileName(self, 'Locate map0R.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
             if Map0R == '': return
@@ -334,10 +334,10 @@ def SavetoXML(self):
         Map0R = QtGui.QFileDialog.getOpenFileName(self, 'Locate map0R.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
         if Map0R == '': return
         Map0R = str(Map0R)
-    self.settings.setValue("Map0R", Map0R)
+    Globals.Settings.setValue("Map0R", Map0R)
 
-    if self.settings.contains('Map1R'):
-        Map1R = self.settings.value('Map1R')
+    if Globals.Settings.contains('Map1R'):
+        Map1R = Globals.Settings.value('Map1R')
         if not os.path.isfile(Map1R):
             Map1R = QtGui.QFileDialog.getOpenFileName(self, 'Locate map1R.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
             if Map1R == '': return
@@ -346,7 +346,7 @@ def SavetoXML(self):
         Map1R = QtGui.QFileDialog.getOpenFileName(self, 'Locate map1R.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
         if Map1R == '': return
         Map1R = str(Map1R)
-    self.settings.setValue("Map1R", Map1R)
+    Globals.Settings.setValue("Map1R", Map1R)
 
         
     #Delety function!
@@ -711,8 +711,8 @@ def SavetoGracesfDemoXML(self):
         os.makedirs('Resources/fDemo')
 
 
-    if self.settings.contains('Graceful'):
-        Graceful = self.settings.value('Graceful')
+    if Globals.Settings.contains('Graceful'):
+        Graceful = Globals.Settings.value('Graceful')
         if not os.path.isfile(Graceful):
             Graceful = QtGui.QFileDialog.getOpenFileName(self, 'Locate Graceful', '', 'All Files(*)')
             if Graceful == '': return
@@ -721,10 +721,10 @@ def SavetoGracesfDemoXML(self):
         Graceful = QtGui.QFileDialog.getOpenFileName(self, 'Locate Graceful', '', 'All Files(*)')
         if Graceful == '': return
         Graceful = str(Graceful)
-    self.settings.setValue("Graceful", Graceful)
+    Globals.Settings.setValue("Graceful", Graceful)
 
-    if self.settings.contains('RootRToGf'):
-        RootR = self.settings.value('RootRToGf')
+    if Globals.Settings.contains('RootRToGf'):
+        RootR = Globals.Settings.value('RootRToGf')
         if not os.path.isfile(RootR):
             RootR = QtGui.QFileDialog.getOpenFileName(self, 'Locate Tales of Graces f rootR.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
             if RootR == '': return
@@ -733,10 +733,10 @@ def SavetoGracesfDemoXML(self):
         RootR = QtGui.QFileDialog.getOpenFileName(self, 'Locate Tales of Graces f rootR.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
         if RootR == '': return
         RootR = str(RootR)
-    self.settings.setValue("RootRToGf", RootR)
+    Globals.Settings.setValue("RootRToGf", RootR)
 
-    if self.settings.contains('Map0RToGf'):
-        Map0R = self.settings.value('Map0RToGf')
+    if Globals.Settings.contains('Map0RToGf'):
+        Map0R = Globals.Settings.value('Map0RToGf')
         if not os.path.isfile(Map0R):
             Map0R = QtGui.QFileDialog.getOpenFileName(self, 'Locate Tales of Graces f map0R.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
             if Map0R == '': return
@@ -745,10 +745,10 @@ def SavetoGracesfDemoXML(self):
         Map0R = QtGui.QFileDialog.getOpenFileName(self, 'Locate Tales of Graces f map0R.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
         if Map0R == '': return
         Map0R = str(Map0R)
-    self.settings.setValue("Map0RToGf", Map0R)
+    Globals.Settings.setValue("Map0RToGf", Map0R)
 
-    if self.settings.contains('Map1RToGf'):
-        Map1R = self.settings.value('Map1RToGf')
+    if Globals.Settings.contains('Map1RToGf'):
+        Map1R = Globals.Settings.value('Map1RToGf')
         if not os.path.isfile(Map1R):
             Map1R = QtGui.QFileDialog.getOpenFileName(self, 'Locate Tales of Graces f map1R.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
             if Map1R == '': return
@@ -757,7 +757,7 @@ def SavetoGracesfDemoXML(self):
         Map1R = QtGui.QFileDialog.getOpenFileName(self, 'Locate Tales of Graces f map1R.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
         if Map1R == '': return
         Map1R = str(Map1R)
-    self.settings.setValue("Map1RToGf", Map1R)
+    Globals.Settings.setValue("Map1RToGf", Map1R)
 
         
     #Delety function!
@@ -1293,8 +1293,8 @@ def SavetoBugfixXML(self):
         os.makedirs('Resources/Wii')
 
 
-    if self.settings.contains('Graceful'):
-        Graceful = self.settings.value('Graceful')
+    if Globals.Settings.contains('Graceful'):
+        Graceful = Globals.Settings.value('Graceful')
         if not os.path.isfile(Graceful):
             Graceful = QtGui.QFileDialog.getOpenFileName(self, 'Locate Graceful', '', 'All Files(*)')
             if Graceful == '': return
@@ -1303,10 +1303,10 @@ def SavetoBugfixXML(self):
         Graceful = QtGui.QFileDialog.getOpenFileName(self, 'Locate Graceful', '', 'All Files(*)')
         if Graceful == '': return
         Graceful = str(Graceful)
-    self.settings.setValue("Graceful", Graceful)
+    Globals.Settings.setValue("Graceful", Graceful)
 
-    if self.settings.contains('RootRfix'):
-        RootR = self.settings.value('RootRfix')
+    if Globals.Settings.contains('RootRfix'):
+        RootR = Globals.Settings.value('RootRfix')
         if not os.path.isfile(RootR):
             RootR = QtGui.QFileDialog.getOpenFileName(self, 'Locate bugfix rootR.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
             if RootR == '': return
@@ -1315,10 +1315,10 @@ def SavetoBugfixXML(self):
         RootR = QtGui.QFileDialog.getOpenFileName(self, 'Locate bugfix rootR.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
         if RootR == '': return
         RootR = str(RootR)
-    self.settings.setValue("RootRfix", RootR)
+    Globals.Settings.setValue("RootRfix", RootR)
 
-    if self.settings.contains('Map0Rfix'):
-        Map0R = self.settings.value('Map0Rfix')
+    if Globals.Settings.contains('Map0Rfix'):
+        Map0R = Globals.Settings.value('Map0Rfix')
         if not os.path.isfile(Map0R):
             Map0R = QtGui.QFileDialog.getOpenFileName(self, 'Locate bugfix map0R.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
             if Map0R == '': return
@@ -1327,10 +1327,10 @@ def SavetoBugfixXML(self):
         Map0R = QtGui.QFileDialog.getOpenFileName(self, 'Locate bugfix map0R.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
         if Map0R == '': return
         Map0R = str(Map0R)
-    self.settings.setValue("Map0Rfix", Map0R)
+    Globals.Settings.setValue("Map0Rfix", Map0R)
 
-    if self.settings.contains('Map1Rfix'):
-        Map1R = self.settings.value('Map1Rfix')
+    if Globals.Settings.contains('Map1Rfix'):
+        Map1R = Globals.Settings.value('Map1Rfix')
         if not os.path.isfile(Map1R):
             Map1R = QtGui.QFileDialog.getOpenFileName(self, 'Locate bugfix map1R.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
             if Map1R == '': return
@@ -1339,7 +1339,7 @@ def SavetoBugfixXML(self):
         Map1R = QtGui.QFileDialog.getOpenFileName(self, 'Locate bugfix map1R.cpk', '', 'CRIWARE Packed Archive (*.cpk);;All Files(*)')
         if Map1R == '': return
         Map1R = str(Map1R)
-    self.settings.setValue("Map1Rfix", Map1R)
+    Globals.Settings.setValue("Map1Rfix", Map1R)
 
         
     #Delety function!

@@ -144,14 +144,14 @@ class Scripts2(QtGui.QWidget):
 #        TrueCount()
              
         # Settings
-        self.settings = QtCore.QSettings("GraceNote", Globals.configData.ID)
-        if not self.settings.contains('author'):
+        Globals.Settings = QtCore.QSettings("GraceNote", Globals.configData.ID)
+        if not Globals.Settings.contains('author'):
             text, ok = QtGui.QInputDialog.getText(self, "Enter your Name", "Author name:", QtGui.QLineEdit.Normal)
             if ok and text != '':
-                self.settings.setValue('author', text)
+                Globals.Settings.setValue('author', text)
 
-        Globals.Author = self.settings.value('author')
-        self.update = self.settings.value('update')
+        Globals.Author = Globals.Settings.value('author')
+        self.update = Globals.Settings.value('update')
         self.databaseWriteStorage = deque()
         self.currentTreeIndex = None
         self.currentOpenedEntryIndexes = None
@@ -170,50 +170,50 @@ class Scripts2(QtGui.QWidget):
                 self.update = set()
         print str(len(self.update)) + ' files retained from last session: ', ''.join(["%s, " % (k) for k in self.update])[:-2]
 
-        if self.settings.contains('role'):
-            self.role = int(self.settings.value('role'))
+        if Globals.Settings.contains('role'):
+            self.role = int(Globals.Settings.value('role'))
         else:
             self.role = 1
 
-        if self.settings.contains('autoThreshold'):
-            self.autoThreshold = int(self.settings.value('autoThreshold'))
+        if Globals.Settings.contains('autoThreshold'):
+            self.autoThreshold = int(Globals.Settings.value('autoThreshold'))
         else:
             self.autoThreshold = 0
 
-        if self.settings.contains('mode'):
-            Globals.ModeFlag = self.settings.value('mode')
+        if Globals.Settings.contains('mode'):
+            Globals.ModeFlag = Globals.Settings.value('mode')
         else:
-            self.settings.setValue('mode', 'Semi-Auto')
+            Globals.Settings.setValue('mode', 'Semi-Auto')
             Globals.ModeFlag = 'Semi-Auto'
         
-        if self.settings.contains('voicelanguage'):
-            Globals.EnglishVoiceLanguageFlag = self.settings.value('voicelanguage') == 'EN'
+        if Globals.Settings.contains('voicelanguage'):
+            Globals.EnglishVoiceLanguageFlag = Globals.Settings.value('voicelanguage') == 'EN'
         else:
-            self.settings.setValue('voicelanguage', 'JP')
+            Globals.Settings.setValue('voicelanguage', 'JP')
             Globals.EnglishVoiceLanguageFlag = False
         
-        if self.settings.contains('updatelowerstatus'):
-            Globals.UpdateLowerStatusFlag = self.settings.value('updatelowerstatus') == 'True'
+        if Globals.Settings.contains('updatelowerstatus'):
+            Globals.UpdateLowerStatusFlag = Globals.Settings.value('updatelowerstatus') == 'True'
         else:
-            self.settings.setValue('updatelowerstatus', 'False')
+            Globals.Settings.setValue('updatelowerstatus', 'False')
             Globals.UpdateLowerStatusFlag = False
         
-        if self.settings.contains('writeonentrychange'):
-            Globals.WriteDatabaseStorageToHddOnEntryChange = self.settings.value('writeonentrychange') == 'True'
+        if Globals.Settings.contains('writeonentrychange'):
+            Globals.WriteDatabaseStorageToHddOnEntryChange = Globals.Settings.value('writeonentrychange') == 'True'
         else:
-            self.settings.setValue('writeonentrychange', 'False')
+            Globals.Settings.setValue('writeonentrychange', 'False')
             Globals.WriteDatabaseStorageToHddOnEntryChange = False
         
-        if self.settings.contains('footervisible'):
-            Globals.FooterVisibleFlag = self.settings.value('footervisible') == 'True'
+        if Globals.Settings.contains('footervisible'):
+            Globals.FooterVisibleFlag = Globals.Settings.value('footervisible') == 'True'
         else:
-            self.settings.setValue('footervisible', 'False')
+            Globals.Settings.setValue('footervisible', 'False')
             Globals.FooterVisibleFlag = False
         
-        if self.settings.contains('editpane_amount'):
-            Globals.AmountEditingWindows = int(self.settings.value('editpane_amount'))
+        if Globals.Settings.contains('editpane_amount'):
+            Globals.AmountEditingWindows = int(Globals.Settings.value('editpane_amount'))
         else:
-            self.settings.setValue('editpane_amount', '5')
+            Globals.Settings.setValue('editpane_amount', '5')
             Globals.AmountEditingWindows = 5
         if Globals.AmountEditingWindows < 3 or Globals.AmountEditingWindows > 25:
             Globals.AmountEditingWindows = 5
@@ -285,8 +285,8 @@ class Scripts2(QtGui.QWidget):
             tb2 = XTextBox('jp', self)
             tb2.hide()
             tb2.setReadOnly(True)
-            if self.settings.contains('font'):
-                size = int(self.settings.value('font'))
+            if Globals.Settings.contains('font'):
+                size = int(Globals.Settings.value('font'))
                 tb1.setFontPointSize(size)
                 tb2.setFontPointSize(size)
             self.regularEditingTextBoxes.append(tb1)
@@ -515,35 +515,6 @@ class Scripts2(QtGui.QWidget):
         self.reloadConfigAct.triggered.connect(self.ReloadConfiguration)
         self.reloadConfigAct.setShortcut(QtGui.QKeySequence('Ctrl-Shift-Alt-R'))
         
-        if Globals.EnglishVoiceLanguageFlag:
-            self.voiceLangAct = QtGui.QAction('English Voices', None)
-        else:
-            self.voiceLangAct = QtGui.QAction('Japanese Voices', None)
-        self.voiceLangAct.triggered.connect(self.VoiceLanguageSwap)
-        self.voiceLangAct.setShortcut(QtGui.QKeySequence('Ctrl-Shift-Alt-E'))
-        
-        if Globals.UpdateLowerStatusFlag:
-            self.updateLowerStatusAct = QtGui.QAction('Updating lower status', None)
-        else:
-            self.updateLowerStatusAct = QtGui.QAction('Not updating lower status', None)
-        self.updateLowerStatusAct.triggered.connect(self.UpdateLowerStatusSwap)
-        
-        if Globals.FooterVisibleFlag:
-            self.displayFooterAct = QtGui.QAction('Footer enabled', None)
-        else:
-            self.displayFooterAct = QtGui.QAction('Footer disabled', None)
-        self.displayFooterAct.triggered.connect(self.DisplayFooterSwap)
-        
-        self.changeEditingWindowAmountAct = QtGui.QAction('Change Editing Window Amount', None)
-        self.changeEditingWindowAmountAct.triggered.connect(self.ChangeEditingWindowAmountDisplay)
-        
-        if Globals.WriteDatabaseStorageToHddOnEntryChange:
-            self.writeDatabaseStorageToHddAct = QtGui.QAction('Writing on Entry change', None)
-        else:
-            self.writeDatabaseStorageToHddAct = QtGui.QAction('Not writing on Entry change', None)
-        self.writeDatabaseStorageToHddAct.triggered.connect(self.ChangeWriteDatabaseStorageToHddBehavior)
-        
-        
         
         self.autoAct = QtGui.QAction('Auto', None)
         self.semiAct = QtGui.QAction('Semi-Auto', None)
@@ -624,10 +595,10 @@ class Scripts2(QtGui.QWidget):
         self.Toolbar.setToolButtonStyle(3)
         
         
-        if self.settings.contains('toolicon'):
-            self.Toolbar.setIconSize(QtCore.QSize(self.settings.value('toolicon'), self.settings.value('toolicon')))
-        if self.settings.contains('toolstyle'):
-            self.Toolbar.setToolButtonStyle(self.settings.value('toolstyle'))
+        if Globals.Settings.contains('toolicon'):
+            self.Toolbar.setIconSize(QtCore.QSize(Globals.Settings.value('toolicon'), Globals.Settings.value('toolicon')))
+        if Globals.Settings.contains('toolstyle'):
+            self.Toolbar.setToolButtonStyle(Globals.Settings.value('toolstyle'))
         
         parent.menuBar().clear()
         
@@ -726,13 +697,6 @@ class Scripts2(QtGui.QWidget):
         optionsMenu = QtGui.QMenu("Options", self)
         #optionsMenu.addAction(self.reloadConfigAct)
         #optionsMenu.addSeparator()
-        optionsMenu.addAction(self.voiceLangAct)
-        optionsMenu.addAction(self.updateLowerStatusAct)
-        optionsMenu.addAction(self.displayFooterAct)
-        optionsMenu.addAction(self.writeDatabaseStorageToHddAct)
-        optionsMenu.addSeparator()
-        optionsMenu.addAction(self.changeEditingWindowAmountAct)
-        optionsMenu.addSeparator()
         optionsMenu.addAction(self.openOptionsWindowAct)
 
         parent.menuBar().addMenu(fileMenu)
@@ -812,9 +776,9 @@ class Scripts2(QtGui.QWidget):
 
     def cleanupAndQuit(self):
         self.WriteDatabaseStorageToHdd()
-        self.settings.setValue('update', set(self.update))
+        Globals.Settings.setValue('update', set(self.update))
         print str(len(self.update)) + ' files retained for next session: ', ''.join(["%s, " % (k) for k in self.update])[:-2]
-        self.settings.sync()
+        Globals.Settings.sync()
         self.close()
         quit()
         
@@ -865,7 +829,7 @@ class Scripts2(QtGui.QWidget):
             box.setFontPointSize(size)
 
         self.PopulateTextEdit()
-        self.settings.setValue('font', size)
+        Globals.Settings.setValue('font', size)
 
 
     def setRole(self, action):
@@ -888,14 +852,14 @@ class Scripts2(QtGui.QWidget):
             self.autoThreshold = 3
 
         try:
-            self.settings.setValue('role', int(self.role))
+            Globals.Settings.setValue('role', int(self.role))
         except:
-            self.settings.setValue('role', 1)
+            Globals.Settings.setValue('role', 1)
 
         try:
-            self.settings.setValue('autoThreshold', int(self.autoThreshold))
+            Globals.Settings.setValue('autoThreshold', int(self.autoThreshold))
         except:
-            self.settings.setValue('autoThreshold', 0)
+            Globals.Settings.setValue('autoThreshold', 0)
         
         self.SetWindowTitle()
         self.PopulateEntryList()
@@ -915,7 +879,7 @@ class Scripts2(QtGui.QWidget):
         if action == self.manuAct:
             mode = 'Manual'
             
-        self.settings.setValue('mode', mode)
+        Globals.Settings.setValue('mode', mode)
         Globals.ModeFlag = mode
 
         self.SetWindowTitle()
@@ -928,60 +892,13 @@ class Scripts2(QtGui.QWidget):
         Globals.configData.DelayedLoad()
         self.PopulateModel(Globals.configData.FileList)
         
-    def VoiceLanguageSwap(self):
-        if Globals.EnglishVoiceLanguageFlag:
-            self.voiceLangAct.setText('Japanese Voices')
-            Globals.EnglishVoiceLanguageFlag = False
-            self.settings.setValue('voicelanguage', 'JP')
-        else:
-            self.voiceLangAct.setText('English Voices')
-            Globals.EnglishVoiceLanguageFlag = True
-            self.settings.setValue('voicelanguage', 'EN')
-        
-    def UpdateLowerStatusSwap(self):
-        if Globals.UpdateLowerStatusFlag:
-            self.updateLowerStatusAct.setText('Not updating lower status')
-            Globals.UpdateLowerStatusFlag = False
-            self.settings.setValue('updatelowerstatus', 'False')
-        else:
-            self.updateLowerStatusAct.setText('Updating lower status')
-            Globals.UpdateLowerStatusFlag = True
-            self.settings.setValue('updatelowerstatus', 'True')
-            
-    def DisplayFooterSwap(self):
-        if Globals.FooterVisibleFlag:
-            self.displayFooterAct.setText('Footer disabled')
-            Globals.FooterVisibleFlag = False
-            self.settings.setValue('footervisible', 'False')
-        else:
-            self.displayFooterAct.setText('Footer enabled')
-            Globals.FooterVisibleFlag = True
-            self.settings.setValue('footervisible', 'True')
-
-    def ChangeWriteDatabaseStorageToHddBehavior(self):
-        if Globals.WriteDatabaseStorageToHddOnEntryChange:
-            self.writeDatabaseStorageToHddAct.setText('Not writing on Entry change')
-            Globals.WriteDatabaseStorageToHddOnEntryChange = False
-            self.settings.setValue('writeonentrychange', 'False')
-        else:
-            self.writeDatabaseStorageToHddAct.setText('Writing on Entry change')
-            Globals.WriteDatabaseStorageToHddOnEntryChange = True
-            self.settings.setValue('writeonentrychange', 'True')
-            
-    def ChangeEditingWindowAmountDisplay(self):
-        text, ok = QtGui.QInputDialog.getText(self, "Enter new window amount", "New amount: (restart GN after entering!)", QtGui.QLineEdit.Normal)
-        if ok and text != '':
-            tmp = int(text)
-            if tmp >= 3 and tmp <= 25:
-                self.settings.setValue('editpane_amount', text)
-                Globals.AmountEditingWindows = tmp
-
+       
     def setToolbariconsize(self, action):
         i = 0
         for size in self.iconSizes:
             if action == self.iconSizeActs[i]:
                 self.Toolbar.setIconSize(QtCore.QSize(size, size))
-                self.settings.setValue('toolicon', size)
+                Globals.Settings.setValue('toolicon', size)
                 if self.Toolbar.toolButtonStyle() == 1:
                     self.Toolbar.setToolButtonStyle(3)
             i += 1
@@ -991,19 +908,19 @@ class Scripts2(QtGui.QWidget):
 
         if action == self.noIconAct:
             self.Toolbar.setToolButtonStyle(1)
-            self.settings.setValue('toolstyle', 1)
+            Globals.Settings.setValue('toolstyle', 1)
 
         if action == self.noTextAct:
             self.Toolbar.setToolButtonStyle(0)
-            self.settings.setValue('toolstyle', 0)
+            Globals.Settings.setValue('toolstyle', 0)
         
         if action == self.textDownAct:
             self.Toolbar.setToolButtonStyle(3)
-            self.settings.setValue('toolstyle', 3)
+            Globals.Settings.setValue('toolstyle', 3)
         
         if action == self.textLeftAct:
             self.Toolbar.setToolButtonStyle(2)
-            self.settings.setValue('toolstyle', 2)
+            Globals.Settings.setValue('toolstyle', 2)
         
     def toggleIcon(self, bool):
         if bool:
@@ -1675,11 +1592,8 @@ class Scripts2(QtGui.QWidget):
 
     def OpenOptionsWindow(self):
         self.WriteDatabaseStorageToHdd()
-        
         self.optionsWindow = OptionsWindow.OptionsWindow(self)
-        self.optionsWindow.show()
-        self.optionsWindow.raise_()
-        self.optionsWindow.activateWindow()
+        self.optionsWindow.exec_()
 
 
     def ShowCompletionTable(self):
@@ -1961,8 +1875,8 @@ class Scripts2(QtGui.QWidget):
                     print 'Found database: ' + item
                 RecalcDbConn.close()
             i = i + 1
-        self.settings.setValue('update', set(self.update))
-        self.settings.sync()
+        Globals.Settings.setValue('update', set(self.update))
+        Globals.Settings.sync()
         print 'Done searching for databases with unsaved changes!'
         return
     
