@@ -28,9 +28,9 @@ class Statistics(QtGui.QDialog):
         TodayGroup.setLayout(TodayLay)
         TodayList = set()
         TodaySet = set()
-        today = time.strftime('%m/%d', time.localtime(time.time()))
+        today = time.strftime('%Y/%m/%d', time.localtime(time.time()))
         for entry in LogList:
-            if time.strftime('%m/%d', time.localtime(entry[3])) == today:
+            if time.strftime('%Y/%m/%d', time.localtime(entry[3])) == today:
                 TodaySet.add(entry[2])
                 for x in entry[1].split(','):
                     TodayList.add((x, entry[2]))
@@ -66,10 +66,10 @@ class Statistics(QtGui.QDialog):
         YesterdayList = set()
         YesterdaySet = set()
         
-        yesterday = '{0}/{1}'.format(time.strftime('%m', time.localtime(time.time())), str(int(time.strftime('%d', time.localtime(time.time())))-1).zfill(2))
+        yesterday = time.strftime('%Y/%m/%d', time.localtime(time.time() - (24*60*60)))
                 
         for entry in LogList:
-            if time.strftime('%m/%d', time.localtime(entry[3])) == yesterday:
+            if time.strftime('%Y/%m/%d', time.localtime(entry[3])) == yesterday:
                 YesterdaySet.add(entry[2])
                 for x in entry[1].split(','):
                     YesterdayList.add((x, entry[2]))
