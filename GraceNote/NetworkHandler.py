@@ -6,6 +6,13 @@ import CompletionTable
 import filecmp
 import DatabaseHandler
 
+
+def ConnectToFtp():
+    ftp = ftplib.FTP()
+    ftp.connect(Globals.configData.FTPServer, Globals.configData.FTPPort, 15)
+    ftp.login(Globals.configData.FTPUsername, Globals.configData.FTPPassword)
+    return ftp
+
 def RetrieveModifiedFiles(scripts, splash):
     scripts.WriteDatabaseStorageToHdd()
         
@@ -21,7 +28,7 @@ def RetrieveModifiedFiles(scripts, splash):
         try:
                 
             try: # try to connect to the FTP
-                ftp = ftplib.FTP(Globals.configData.FTPServer, Globals.configData.FTPUsername, Globals.configData.FTPPassword, "", 15)
+                ftp = ConnectToFtp()
                 ftp.cwd('/')
                 ftp.cwd(Globals.configData.RemoteDatabasePath)
             except: # if FTP conn fails 3 times assume it doesn't work at all and just cancel
@@ -213,7 +220,7 @@ def SavetoServer(scripts):
     for ftperrorcount in range(1, 20):
         try:        
             try:
-                scripts.ftp = ftplib.FTP(Globals.configData.FTPServer, Globals.configData.FTPUsername, Globals.configData.FTPPassword, "", 15)
+                scripts.ftp = ConnectToFtp()
             except:
                 if ftperrorcount >= 20:
                     print "Warning:\n\nYour computer is currently offline, and will not be able to recieve updates or save to the server. Your progress will instead be saved for uploading upon re-establishment of a network connection, and any text you enter will be preserved automatically until such time."
@@ -369,7 +376,7 @@ def RevertFromServer(scripts):
     for i in range(1, 20):
         try:        
             try:
-                scripts.ftp = ftplib.FTP(Globals.configData.FTPServer, Globals.configData.FTPUsername, Globals.configData.FTPPassword, "", 15)
+                scripts.ftp = ConnectToFtp()
             except:
                 if i == 20:
                     print "FTP connection failed, revert didn't succeed.\nPlease try to revert again at a later date."

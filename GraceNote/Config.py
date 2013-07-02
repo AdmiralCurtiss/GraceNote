@@ -17,6 +17,7 @@ class Configuration:
     RemoteDatabasePath = ''
     
     FTPServer = ''
+    FTPPort = 21
     FTPUsername = ''
     FTPPassword = ''
     
@@ -48,6 +49,10 @@ class Configuration:
         self.LocalDatabasePath = mainNode.getAttribute('LocalDatabasePath')
         self.RemoteDatabasePath = mainNode.getAttribute('RemoteDatabasePath')
         self.FTPServer = mainNode.getAttribute('FTPServer')
+        try:
+            self.FTPPort = int(mainNode.getAttribute('FTPPort'))
+        except:
+            self.FTPPort = 21
         self.FTPUsername = mainNode.getAttribute('FTPUsername')
         self.FTPPassword = mainNode.getAttribute('FTPPassword')
         if mainNode.getAttribute('UseGracesVoiceHash') == 'true':
