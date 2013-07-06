@@ -1145,7 +1145,7 @@ class Scripts2(QtGui.QWidget):
         SaveCon = DatabaseHandler.OpenEntryDatabase(databasefilename)
         SaveCur = SaveCon.cursor()
         
-        SaveCur.execute("SELECT ID, StringID, english, comment, updated, status, IdentifyString FROM Text")
+        SaveCur.execute('SELECT ID, StringID, english, comment, updated, status, IdentifyString, UpdatedBy, UpdatedTimestamp FROM Text')
         TempList = SaveCur.fetchall()
 
         SaveCur.execute('SELECT ID, english, comment, status, UpdatedBy, UpdatedTimestamp FROM History ORDER BY ID ASC, UpdatedTimestamp DESC')
@@ -1154,8 +1154,6 @@ class Scripts2(QtGui.QWidget):
         MaxId = SaveCur.fetchall()[0][0]
         self.historyWindow.setHistoryList(HistoryList, MaxId)
 
-        ContainsIDString = True
-           
         for i in xrange(len(TempList)):
             Globals.CursorGracesJapanese.execute("SELECT * FROM Japanese WHERE ID={0}".format(TempList[i][1]))
             TempString = Globals.CursorGracesJapanese.fetchall() 
@@ -1165,31 +1163,32 @@ class Scripts2(QtGui.QWidget):
             TempENG = TempList[i][2]
             TempCOM = TempList[i][3]
             TempStatus = TempList[i][5]
+            TempIdentifyString = str(TempList[i][6])
+            TempUpdatedBy = TempList[i][7]
+            TempUpdatedTimestamp = TempList[i][8]
 
             if TempENG == '':
                 TempENG = TempJPN
-
-            entryDisplayString = 'Entry ' + str(i+1).zfill(5) + ' [' + str(TempStatus) + ']'
-            
-            identifyString = ''
-            if ContainsIDString:
-                try:
-                    tmp = str(TempList[i][6])
-                    identifyString = tmp
-                    entryDisplayString = entryDisplayString + ' ' + identifyString
-                except:
-                    pass
+            if TempUpdatedTimestamp is not None:
+                TempUpdatedTimestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(TempUpdatedTimestamp))
+            else:
+                TempUpdatedTimestamp = 'Unknown'
             
             if TempCOM == None:
                 TempCOM = 'None'
+
+            commentString = ''
             if TempCOM != '':
-                entryDisplayString = entryDisplayString + ' [Comment]'
                 containsComments = True
-            
+                commentString = 'C'
+
+            entryDisplayString = '[' + str(TempStatus) + commentString + ']' + ' ' + str(i+1).zfill(4) + ' ' + TempIdentifyString + ' / ' + str(TempUpdatedTimestamp) + ' by ' + str(TempUpdatedBy)
+                        
             additem = QtGui.QStandardItem(entryDisplayString)
             additem.setCheckable(True)
-            additem.setStatusTip(identifyString)
+            additem.setStatusTip(TempIdentifyString)
             additem.setEditable(False)
+            additem.GraceNoteEntryId = i+1
     
             self.FormatEntryListItemColor(additem, TempStatus)        
     
@@ -1207,7 +1206,7 @@ class Scripts2(QtGui.QWidget):
                 SaveCur.execute("update Text set status=-1 where ID=?", (TempString[0][0],))
                 SaveCon.commit()
                 
-            self.text.append([TempENG, TempJPN, TempCOM, TempDebug, TempStatus, identifyString])
+            self.text.append([TempENG, TempJPN, TempCOM, TempDebug, TempStatus, TempIdentifyString])
             
         if containsComments:
             Globals.commentsAvailableLabel.setText(databasefilename + " | Comments exist!")
@@ -1260,10 +1259,11 @@ class Scripts2(QtGui.QWidget):
         for i in range(len(self.textEditingBoxes)):
             try:
                 idx = index.sibling(index.row()+(i-1), index.column())
+                entryitem = self.entrymodel.item(idx.row())
                 entrytextdisplay = self.entrysort.data(idx)
 
                 if entrytextdisplay != None:
-                    rowBoxes.append( int(entrytextdisplay[6:11])-1 )
+                    rowBoxes.append( entryitem.GraceNoteEntryId - 1 )
                     self.currentOpenedEntryIndexes.append( idx )
                 else:
                     rowBoxes.append( -2 )
@@ -1355,7 +1355,7 @@ class Scripts2(QtGui.QWidget):
                 self.threeupEditingTextBoxes[i].setText(textEntries3[i])
                 
             if self.regularEditingTextBoxes[i].currentEntry >= 0:
-                self.textEditingTitles[i].setText("Entry {0}: {1}".format(rowBoxes[i]+1, commentTexts[i]))
+                self.textEditingTitles[i].setText('Entry {0}: {1}'.format(rowBoxes[i]+1, commentTexts[i]))
                 self.regularEditingTextBoxes[i].refreshFooter(textEntries1raw[i], self.state[0] + ': ')
                 self.twoupEditingTextBoxes[i].refreshFooter(textEntries2raw[i], twoupTypeHelper[self.twoupEditingTextBoxes[i].role] + ': ')
                 if self.termTooltips[i] != '':
