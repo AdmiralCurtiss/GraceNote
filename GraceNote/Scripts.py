@@ -258,15 +258,12 @@ class Scripts2(QtGui.QWidget):
 
 
         # List View of Entries
-        self.entry = QtGui.QListView()
-        self.entry.setWrapping(False)
-        self.entrymodel = QtGui.QStandardItemModel()
-
-        #self.entry.setFixedWidth(180)
- 
-        self.entrysort = QtGui.QSortFilterProxyModel()
-        self.entrysort.setSourceModel(self.entrymodel)
-        self.entry.setModel(self.entrysort)
+        self.entryTreeView = QtGui.QTreeView()
+        self.entryStandardItemModel = QtGui.QStandardItemModel()
+        self.entrySortFilterProxyModel = QtGui.QSortFilterProxyModel()
+        self.entrySortFilterProxyModel.setSourceModel(self.entryStandardItemModel)
+        self.entryTreeView.setModel(self.entrySortFilterProxyModel)
+        self.entryTreeView.setRootIsDecorated(False)
 
         self.termInEntryIcon = QtGui.QPixmap( 'icons/pictogram-din-m000-general.png' )
         self.termInEntryIcon = self.termInEntryIcon.scaled(13, 13, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation);
@@ -354,8 +351,8 @@ class Scripts2(QtGui.QWidget):
         
         # Connections
         self.tree.selectionModel().selectionChanged.connect(self.PopulateEntryList)
-        self.entry.selectionModel().selectionChanged.connect(self.PopulateTextEdit)
-        self.entry.clicked.connect(self.UpdateDebug)
+        self.entryTreeView.selectionModel().selectionChanged.connect(self.PopulateTextEdit)
+        self.entryTreeView.clicked.connect(self.UpdateDebug)
         #self.entry.pressed.connect(self.UpdateDebug)
         for editbox in self.regularEditingTextBoxes:
             editbox.manualEdit.connect(self.UpdateTextGenericFunc)
@@ -733,7 +730,7 @@ class Scripts2(QtGui.QWidget):
         #EditingWindowSubLayoutWidget = QtGui.QWidget()
         #EditingWindowSubLayoutWidget.setLayout(EditingWindowSubLayout)
         layout.addWidget(EditingWindowSubLayoutSplitter)
-        layout.addWidget(self.entry)
+        layout.addWidget(self.entryTreeView)
         #layout.setColumnStretch(1,1)
         
         layout.setSizes( [200, 400, 200] )
@@ -791,16 +788,16 @@ class Scripts2(QtGui.QWidget):
 
     def scrollUp(self, action):
         try:
-            index = self.entry.currentIndex()
+            index = self.entryTreeView.currentIndex()
             row = index.row()
     
             sortIndex = index.sibling(row-1, 0)
 
             if index == None or row == -1 or row == 0:
-                sortIndex = self.entrysort.index(self.entrysort.rowCount()-1,0)                
+                sortIndex = self.entrySortFilterProxyModel.index(self.entrySortFilterProxyModel.rowCount()-1,0)                
     
-            self.entry.setCurrentIndex(sortIndex)
-            self.entry.selectionModel().select(sortIndex, QtGui.QItemSelectionModel.SelectionFlags(3))
+            self.entryTreeView.setCurrentIndex(sortIndex)
+            self.entryTreeView.selectionModel().select(sortIndex, QtGui.QItemSelectionModel.SelectionFlags(3))
     
             return
         except:
@@ -809,16 +806,16 @@ class Scripts2(QtGui.QWidget):
 
     def scrollDown(self, action):
         try:
-            index = self.entry.currentIndex()
+            index = self.entryTreeView.currentIndex()
             row = index.row()
     
             if index == None or row == -1 or row == 0:
-                index = self.entrysort.index(0,0)
+                index = self.entrySortFilterProxyModel.index(0,0)
                 
             sortIndex = index.sibling(row+1, 0)
     
-            self.entry.setCurrentIndex(sortIndex)
-            self.entry.selectionModel().select(sortIndex, QtGui.QItemSelectionModel.SelectionFlags(3))
+            self.entryTreeView.setCurrentIndex(sortIndex)
+            self.entryTreeView.selectionModel().select(sortIndex, QtGui.QItemSelectionModel.SelectionFlags(3))
     
             return
         except:
@@ -1107,7 +1104,16 @@ class Scripts2(QtGui.QWidget):
         for editbox in self.regularEditingTextBoxes:
             editbox.iconToggle(0)
 
-        self.entrymodel.clear()
+        self.entryStandardItemModel.clear()
+        self.entryStandardItemModel.setColumnCount(6)
+        self.entryStandardItemModel.setHorizontalHeaderLabels(['Status', 'Comment?', 'IdentifyString', 'Text', 'Last updated by', 'Last updated at', 'Debug?'])
+        self.entryTreeView.setColumnWidth(0, 10) # status
+        self.entryTreeView.setColumnWidth(1, 10) # comment
+        self.entryTreeView.setColumnWidth(2, 50) # identifystring
+        self.entryTreeView.setColumnWidth(3, 200) # text
+        self.entryTreeView.setColumnWidth(4, 90) # last updated by
+        self.entryTreeView.setColumnWidth(5, 110) # last updated at
+
         self.currentOpenedEntryIndexes = None
         
         self.text = []
@@ -1182,30 +1188,36 @@ class Scripts2(QtGui.QWidget):
                 containsComments = True
                 commentString = 'C'
 
-            TempEntryDisplayText = Globals.VariableReplace( TempENG.replace('\f', ' ').replace('\n', ' ') )
-            TempIdentifyStringText = ''
-            if TempIdentifyString != '':
-                TempIdentifyStringText = TempIdentifyString + ': '
-
-            entryDisplayString = '[' + str(TempStatus) + commentString + ']' + ' ' + TempIdentifyStringText + TempEntryDisplayText + ' / ' + str(TempUpdatedTimestamp) + ' by ' + str(TempUpdatedBy)
+            entryDisplayString = Globals.VariableReplace( TempENG.replace('\f', ' ').replace('\n', ' ') )
                         
-            additem = QtGui.QStandardItem(entryDisplayString)
-            additem.setCheckable(True)
-            additem.setStatusTip(TempIdentifyString)
-            additem.setEditable(False)
-            additem.GraceNoteEntryId = i+1
+            additemEntryStatus = QtGui.QStandardItem(str(TempStatus))
+            additemEntryStatus.setStatusTip(TempIdentifyString)
+            additemEntryStatus.GraceNoteEntryId = i+1
+            additemEntryStatus.setEditable(False)
+            additemEntryText = QtGui.QStandardItem(entryDisplayString)
+            additemEntryText.setEditable(False)
+            additemEntryIdentifyString = QtGui.QStandardItem(TempIdentifyString)
+            additemEntryIdentifyString.setEditable(False)
+            additemEntryComment = QtGui.QStandardItem(commentString)
+            additemEntryComment.setEditable(False)
+            additemEntryTimestamp = QtGui.QStandardItem(str(TempUpdatedTimestamp))
+            additemEntryTimestamp.setEditable(False)
+            additemEntryUpdatedBy = QtGui.QStandardItem(str(TempUpdatedBy))
+            additemEntryUpdatedBy.setEditable(False)
+            additemEntryIsDebug = QtGui.QStandardItem('')
+            additemEntryIsDebug.setCheckable(True)
     
-            self.FormatEntryListItemColor(additem, TempStatus)        
+            self.FormatEntryListItemColor(additemEntryText, TempStatus)        
     
             if (TempDebug == 1) and (not self.debug.isChecked()):
                 pass
             elif (TempDebug == 1) and (self.debug.isChecked()):
-                additem.setCheckState(QtCore.Qt.Checked)
-                additem.setWhatsThis("d") #debug
-                self.entrymodel.appendRow(additem)
+                additemEntryIsDebug.setCheckState(QtCore.Qt.Checked)
+                additemEntryStatus.setWhatsThis("d") #debug
+                self.entryStandardItemModel.appendRow([additemEntryStatus, additemEntryComment, additemEntryIdentifyString, additemEntryText, additemEntryUpdatedBy, additemEntryTimestamp, additemEntryIsDebug])
             else:
-                additem.setWhatsThis("n") #not debug
-                self.entrymodel.appendRow(additem)
+                additemEntryStatus.setWhatsThis("n") #not debug
+                self.entryStandardItemModel.appendRow([additemEntryStatus, additemEntryComment, additemEntryIdentifyString, additemEntryText, additemEntryUpdatedBy, additemEntryTimestamp, additemEntryIsDebug])
             
             if TempStatus != -1 and TempDebug == 1:
                 SaveCur.execute("update Text set status=-1 where ID=?", (TempString[0][0],))
@@ -1218,12 +1230,12 @@ class Scripts2(QtGui.QWidget):
         else:
             Globals.commentsAvailableLabel.setText(databasefilename)
             
-        if self.entrysort.rowCount() != 1:
-            index = self.entrysort.index(1, 0)
+        if self.entrySortFilterProxyModel.rowCount() != 1:
+            index = self.entrySortFilterProxyModel.index(1, 0)
         else:
-            index = self.entrysort.index(0, 0)
-        self.entry.setCurrentIndex(index)
-        self.entry.selectionModel().select(index, QtGui.QItemSelectionModel.SelectionFlags(3))
+            index = self.entrySortFilterProxyModel.index(0, 0)
+        self.entryTreeView.setCurrentIndex(index)
+        self.entryTreeView.selectionModel().select(index, QtGui.QItemSelectionModel.SelectionFlags(3))
 
 
     def FormatCurrentlyOpenedEntryIndexes(self):
@@ -1239,7 +1251,7 @@ class Scripts2(QtGui.QWidget):
         if Globals.WriteDatabaseStorageToHddOnEntryChange:
             self.WriteDatabaseStorageToHdd()
                 
-        index = self.entry.currentIndex()
+        index = self.entryTreeView.currentIndex()
         row = index.row()
 
         if index == None or row == -1:
@@ -1264,8 +1276,8 @@ class Scripts2(QtGui.QWidget):
         for i in range(len(self.textEditingBoxes)):
             try:
                 idx = index.sibling(index.row()+(i-1), index.column())
-                entryitem = self.entrymodel.item(idx.row())
-                entrytextdisplay = self.entrysort.data(idx)
+                entryitem = self.entryStandardItemModel.item(idx.row())
+                entrytextdisplay = self.entrySortFilterProxyModel.data(idx)
 
                 if entrytextdisplay != None:
                     rowBoxes.append( entryitem.GraceNoteEntryId - 1 )
@@ -1561,12 +1573,12 @@ class Scripts2(QtGui.QWidget):
                     self.tree.selectionModel().select(treeIndex, QtGui.QItemSelectionModel.SelectionFlags(3))
 
                     try:
-                        entryItem = self.entrymodel.findItems(str(entry).zfill(5), QtCore.Qt.MatchContains)[0]
-                        entryIndex = self.entrymodel.indexFromItem(entryItem)
-                        sortIndex = self.entrysort.mapFromSource(entryIndex)
+                        entryItem = self.entryStandardItemModel.findItems(str(entry).zfill(5), QtCore.Qt.MatchContains)[0]
+                        entryIndex = self.entryStandardItemModel.indexFromItem(entryItem)
+                        sortIndex = self.entrySortFilterProxyModel.mapFromSource(entryIndex)
 
-                        self.entry.setCurrentIndex(sortIndex)
-                        self.entry.selectionModel().select(sortIndex, QtGui.QItemSelectionModel.SelectionFlags(3))
+                        self.entryTreeView.setCurrentIndex(sortIndex)
+                        self.entryTreeView.selectionModel().select(sortIndex, QtGui.QItemSelectionModel.SelectionFlags(3))
                     except:
                         pass
 
@@ -1659,33 +1671,33 @@ class Scripts2(QtGui.QWidget):
 
 
     def UpdateDebug(self):
-        index = self.entry.currentIndex()
-        if self.entrymodel.item(index.row()).checkState() == 0:
-            if self.entrymodel.item(index.row()).whatsThis() == "n":
+        index = self.entryTreeView.currentIndex()
+        if self.entryStandardItemModel.item(index.row(), 6).checkState() == 0:
+            if self.entryStandardItemModel.item(index.row()).whatsThis() == "n":
                 return # no change, was already not debug
             DebugState = False
         else:
-            if self.entrymodel.item(index.row()).whatsThis() == "d":
+            if self.entryStandardItemModel.item(index.row()).whatsThis() == "d":
                 return # no change, was already debug
             DebugState = True
         
         #print("updateDebug")
         self.WriteDatabaseStorageToHdd()
         
-        selectedRow = int(self.entrysort.data(index)[6:11])-1
+        selectedEntryId = self.entryStandardItemModel.item(index.row(), 0).GraceNoteEntryId - 1
         databasefilename = self.treemodel.itemFromIndex(self.tree.currentIndex()).statusTip()
         SaveCon = DatabaseHandler.OpenEntryDatabase(databasefilename)
         SaveCur = SaveCon.cursor()
-        SaveCur.execute("select StringID from Text where ID={0}".format(selectedRow+1))
+        SaveCur.execute("select StringID from Text where ID={0}".format(selectedEntryId+1))
         NextID = SaveCur.fetchall()[0][0]
         if DebugState:
             Globals.CursorGracesJapanese.execute("UPDATE Japanese SET debug = 1 WHERE ID = {0} AND debug != 1".format(NextID))
-            SaveCur.execute("UPDATE Text SET status = -1, updated = 1 WHERE ID = {0} AND status != -1".format(selectedRow+1))
-            self.entrymodel.item(index.row()).setWhatsThis("d")
+            SaveCur.execute("UPDATE Text SET status = -1, updated = 1 WHERE ID = {0} AND status != -1".format(selectedEntryId+1))
+            self.entryStandardItemModel.item(index.row()).setWhatsThis("d")
         else:
             Globals.CursorGracesJapanese.execute("UPDATE Japanese SET debug = 0 WHERE ID = {0} AND debug != 0".format(NextID))
-            SaveCur.execute("UPDATE Text SET status =  0, updated = 1 WHERE ID = {0} AND status  = -1".format(selectedRow+1))
-            self.entrymodel.item(index.row()).setWhatsThis("n")
+            SaveCur.execute("UPDATE Text SET status =  0, updated = 1 WHERE ID = {0} AND status  = -1".format(selectedEntryId+1))
+            self.entryStandardItemModel.item(index.row()).setWhatsThis("n")
         self.update.add(str(databasefilename))
         SaveCon.commit()
         Globals.ConnectionGracesJapanese.commit()
@@ -1693,21 +1705,21 @@ class Scripts2(QtGui.QWidget):
 
         # color
         if not DebugState:
-            SaveCur.execute("select status from Text where ID={0}".format(selectedRow+1))
+            SaveCur.execute("select status from Text where ID={0}".format(selectedEntryId+1))
             status = SaveCur.fetchall()[0][0]
             if status >= self.role:
-                self.entrymodel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(220, 255, 220)))
+                self.entryStandardItemModel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(220, 255, 220)))
                 if Globals.Author == 'ruta':
-                    self.entrymodel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(255, 235, 245)))
+                    self.entryStandardItemModel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(255, 235, 245)))
                 elif Globals.Author == 'Pikachu025':
-                    self.entrymodel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(0, 150, 0)))
+                    self.entryStandardItemModel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(0, 150, 0)))
             else:
-                self.entrymodel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(255, 255, 255)))
+                self.entryStandardItemModel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(255, 255, 255)))
                 
         else:
-            self.entrymodel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(255, 220, 220)))
+            self.entryStandardItemModel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(255, 220, 220)))
             if Globals.Author == 'ruta':
-                self.entrymodel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(255,225,180)))             
+                self.entryStandardItemModel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(255,225,180)))             
         
     def DebugPrintDatabaseWriteStorage(self):
         for d in self.databaseWriteStorage:
