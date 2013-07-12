@@ -1182,7 +1182,12 @@ class Scripts2(QtGui.QWidget):
                 containsComments = True
                 commentString = 'C'
 
-            entryDisplayString = '[' + str(TempStatus) + commentString + ']' + ' ' + str(i+1).zfill(4) + ' ' + TempIdentifyString + ' / ' + str(TempUpdatedTimestamp) + ' by ' + str(TempUpdatedBy)
+            TempEntryDisplayText = Globals.VariableReplace( TempENG.replace('\f', ' ').replace('\n', ' ') )
+            TempIdentifyStringText = ''
+            if TempIdentifyString != '':
+                TempIdentifyStringText = TempIdentifyString + ': '
+
+            entryDisplayString = '[' + str(TempStatus) + commentString + ']' + ' ' + TempIdentifyStringText + TempEntryDisplayText + ' / ' + str(TempUpdatedTimestamp) + ' by ' + str(TempUpdatedBy)
                         
             additem = QtGui.QStandardItem(entryDisplayString)
             additem.setCheckable(True)
