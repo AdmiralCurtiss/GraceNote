@@ -127,6 +127,7 @@ class MassReplace(QtGui.QDialog):
         treewidget.setColumnCount(6)
         treewidget.setHeaderLabels(['Database Desc.', 'Entry', 'Info', 'Replace', 'E String', 'J String', 'Replacement Type', 'Status', 'Database Name'])
         treewidget.setSortingEnabled(True)
+        treewidget.setRootIsDecorated(False)
         
         treewidget.setColumnWidth(0, 120)
         treewidget.setColumnWidth(1, 30)

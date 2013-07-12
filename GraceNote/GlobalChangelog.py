@@ -13,6 +13,7 @@ class GlobalChangelog(QtGui.QDialog):
         
         self.setWindowModality(False)        
         self.treewidget = QtGui.QTreeWidget()
+        self.treewidget.setRootIsDecorated(False)
         
         self.treewidget.setColumnCount(3)
         self.treewidget.setHeaderLabels(['Date', 'Name', 'File'])
