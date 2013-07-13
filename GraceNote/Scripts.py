@@ -218,6 +218,11 @@ class Scripts2(QtGui.QWidget):
         if Globals.AmountEditingWindows < 3 or Globals.AmountEditingWindows > 25:
             Globals.AmountEditingWindows = 5
 
+        if Globals.Settings.contains('TwoUpMode'):
+            Globals.TwoUpMode = int(Globals.Settings.value('TwoUpMode'))
+        else:
+            Globals.TwoUpMode = 1
+
         self.rolenames = ['None', 'Translation', 'Translation Review', 'Contextual Review', 'Editing']
         self.roletext = ['Doing Nothing', 'Translating', 'Reviewing Translations', 'Reviewing Context', 'Editing']
 
@@ -747,6 +752,7 @@ class Scripts2(QtGui.QWidget):
         geom = Globals.Settings.value('Geometry/Scripts2')
         if geom is not None:
             self.restoreGeometry(geom)
+        self.SetTwoUpMode(Globals.TwoUpMode)
 
         self.openMediumWindows()
         self.openFontWindow()
@@ -941,12 +947,15 @@ class Scripts2(QtGui.QWidget):
             Globals.Settings.setValue('toolstyle', 2)
         
     def toggleTwoUpMode(self):
-        Globals.TwoUpMode += 1
-        if Globals.TwoUpMode > 3:
-            Globals.TwoUpMode = 1
+        mode = Globals.TwoUpMode + 1
+        if mode > 3:
+            mode = 1
+        self.SetTwoUpMode(mode)
 
+    def SetTwoUpMode(self, mode):
+        Globals.TwoUpMode = mode
 
-        if Globals.TwoUpMode == 1:
+        if mode == 1:
             self.twoupAct.setIcon(QtGui.QIcon('icons/twoup.png'))
             self.twoupAct.setText('Two up')
             for box in self.twoupEditingTextBoxes:
@@ -954,19 +963,27 @@ class Scripts2(QtGui.QWidget):
             for box in self.threeupEditingTextBoxes:
                 box.hide()
         
-        elif Globals.TwoUpMode == 2:
+        elif mode == 2:
             self.twoupAct.setIcon(QtGui.QIcon('icons/threeup.png'))
             self.twoupAct.setText('Three up')
             for box in self.twoupEditingTextBoxes:
                 box.show()
+            for box in self.threeupEditingTextBoxes:
+                box.hide()
             self.PopulateTextEdit()
 
-        elif Globals.TwoUpMode == 3:
+        elif mode == 3:
             self.twoupAct.setIcon(QtGui.QIcon('icons/oneup.png'))
             self.twoupAct.setText('One up')
+            for box in self.twoupEditingTextBoxes:
+                box.show()
             for box in self.threeupEditingTextBoxes:
                 box.show()
             self.PopulateTextEdit()
+
+        Globals.Settings.setValue('TwoUpMode', str(mode))
+
+        return
 
     def ConsolidateDebug(self):
         self.WriteDatabaseStorageToHdd()
