@@ -26,6 +26,10 @@ class HistoryWindow(QtGui.QDialog):
         self.layout.addWidget(self.entryTextTextbox)
         self.layout.addWidget(self.entryCommentTextbox)
         self.setLayout(self.layout)
+
+        geom = Globals.Settings.value('Geometry/HistoryWindow')
+        if geom is not None:
+            self.restoreGeometry(geom)
         
     def setHistoryList(self, HistoryList, MaxId):
         # HistoryList input: SELECT ID, english, comment, status, UpdatedBy, UpdatedTimestamp FROM History ORDER BY ID ASC, UpdatedTimestamp DESC
@@ -75,3 +79,6 @@ class HistoryWindow(QtGui.QDialog):
         self.entryCommentTextbox.setText(Globals.VariableReplace(data[2]))
 
         return
+
+    def closeEvent(self, event):
+        Globals.Settings.setValue('Geometry/HistoryWindow', self.saveGeometry())

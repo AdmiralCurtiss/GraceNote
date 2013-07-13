@@ -1,7 +1,7 @@
 ﻿# -*- coding: utf-8 -*-
 
 from PyQt4 import QtCore, QtGui
-#import Globals
+import Globals
 import re
 import os
 
@@ -17,6 +17,10 @@ class ImageViewerWindow(QtGui.QDialog):
         self.scroll = QtGui.QScrollArea()
         self.layout = QtGui.QVBoxLayout(self.scroll)
         self.setLayout(self.layout)
+
+        geom = Globals.Settings.value('Geometry/ImageViewerWindow_' + self.medium.name)
+        if geom is not None:
+            self.restoreGeometry(geom)
         
     def refreshInfo(self, text):
         search = '<' + self.medium.var + ': (.*?)>'
@@ -41,4 +45,5 @@ class ImageViewerWindow(QtGui.QDialog):
         self.layout = QtGui.QVBoxLayout(self.scroll)
         self.setLayout(self.layout)
 
-
+    def closeEvent(self, event):
+        Globals.Settings.setValue('Geometry/ImageViewerWindow_' + self.medium.name, self.saveGeometry())

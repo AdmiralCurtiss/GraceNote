@@ -744,6 +744,10 @@ class Scripts2(QtGui.QWidget):
         self.statsDialogOpened = False
         self.duplicateTextDialogOpened = False
         
+        geom = Globals.Settings.value('Geometry/Scripts2')
+        if geom is not None:
+            self.restoreGeometry(geom)
+
         self.openMediumWindows()
         self.openFontWindow()
         self.openHistoryWindow()
@@ -779,8 +783,17 @@ class Scripts2(QtGui.QWidget):
 
     def cleanupAndQuit(self):
         self.WriteDatabaseStorageToHdd()
+
+        for key, win in self.media.iteritems():
+            win.close()
+        self.fontWindow.close()
+        self.historyWindow.close()
+
         Globals.Settings.setValue('update', set(self.update))
         print str(len(self.update)) + ' files retained for next session: ', ''.join(["%s, " % (k) for k in self.update])[:-2]
+
+        Globals.Settings.setValue('Geometry/Scripts2', self.saveGeometry())
+
         Globals.Settings.sync()
         self.close()
         quit()

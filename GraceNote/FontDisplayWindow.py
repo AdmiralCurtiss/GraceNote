@@ -16,6 +16,10 @@ class FontDisplayWindow(QtGui.QDialog):
         self.scroll = QtGui.QScrollArea()
         self.layout = QtGui.QVBoxLayout(self.scroll)
         self.setLayout(self.layout)
+
+        geom = Globals.Settings.value('Geometry/FontDisplayWindow')
+        if geom is not None:
+            self.restoreGeometry(geom)
         
     def drawText(self, text, databaseDesc): # database desc is only passed for Dangan Ronpa!! can be removed in generic GN version
         if not Globals.configData.Fonts:
@@ -165,4 +169,7 @@ class FontDisplayWindow(QtGui.QDialog):
             sip.delete(old_layout)
         self.layout = QtGui.QVBoxLayout(self.scroll)
         self.setLayout(self.layout)
+
+    def closeEvent(self, event):
+        Globals.Settings.setValue('Geometry/FontDisplayWindow', self.saveGeometry())
     

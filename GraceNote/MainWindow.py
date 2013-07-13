@@ -9,6 +9,7 @@ class MainWindow(QtGui.QMainWindow):
         super(MainWindow, self).__init__()
 
         self.Toolbar = QtGui.QToolBar()
+        self.Toolbar.setObjectName('MainToolBar')
         
         self.editMenu = QtGui.QMenu("&Edit", self)
                 
@@ -27,8 +28,21 @@ class MainWindow(QtGui.QMainWindow):
 
         self.scripts2 = Scripts.Scripts2(self)
         self.setCentralWidget(self.scripts2)
-        
+
+        self.restoreStateAndGeometry()
+
+    def restoreStateAndGeometry(self):
+        geom = Globals.Settings.value("MainWindowGeometry")
+        if geom is not None:
+            self.restoreGeometry(geom)
+        state = Globals.Settings.value("MainWindowWindowState")
+        if state is not None:
+            self.restoreState(state)
+
     def closeEvent(self, event):
+        Globals.Settings.setValue("MainWindowGeometry", self.saveGeometry())
+        Globals.Settings.setValue("MainWindowWindowState", self.saveState())
+
         self.scripts2.cleanupAndQuit()
         return
 
