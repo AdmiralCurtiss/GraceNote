@@ -21,6 +21,8 @@ class ImageViewerWindow(QtGui.QDialog):
         geom = Globals.Settings.value('Geometry/ImageViewerWindow_' + self.medium.name)
         if geom is not None:
             self.restoreGeometry(geom)
+        else:
+            self.resize(300, 200)
         
     def refreshInfo(self, text):
         search = '<' + self.medium.var + ': (.*?)>'

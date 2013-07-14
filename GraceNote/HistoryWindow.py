@@ -30,6 +30,8 @@ class HistoryWindow(QtGui.QDialog):
         geom = Globals.Settings.value('Geometry/HistoryWindow')
         if geom is not None:
             self.restoreGeometry(geom)
+        else:
+            self.resize(350, 300)
         
     def setHistoryList(self, HistoryList, MaxId):
         # HistoryList input: SELECT ID, english, comment, status, UpdatedBy, UpdatedTimestamp FROM History ORDER BY ID ASC, UpdatedTimestamp DESC

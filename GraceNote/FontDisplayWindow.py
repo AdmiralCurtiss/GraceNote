@@ -20,6 +20,8 @@ class FontDisplayWindow(QtGui.QDialog):
         geom = Globals.Settings.value('Geometry/FontDisplayWindow')
         if geom is not None:
             self.restoreGeometry(geom)
+        else:
+            self.resize(500, 150)
         
     def drawText(self, text, databaseDesc): # database desc is only passed for Dangan Ronpa!! can be removed in generic GN version
         if not Globals.configData.Fonts:
