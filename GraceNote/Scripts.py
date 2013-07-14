@@ -136,6 +136,15 @@ class Scripts2(QtGui.QWidget):
         self.splashScreen.raise_()
         self.splashScreen.activateWindow()
 
+        self.LogDialog = None
+        self.gLogDialog = None
+        self.statDialog = None
+        self.massDialog = None
+        self.comDialog = None
+        self.dupeDialog = None
+        self.optionsWindow = None
+
+
         # Current Variables
         self.state = 'ENG'
         self.text = []
@@ -791,6 +800,20 @@ class Scripts2(QtGui.QWidget):
             win.close()
         self.fontWindow.close()
         self.historyWindow.close()
+        if self.LogDialog:
+            self.LogDialog.close()
+        if self.gLogDialog:
+            self.gLogDialog.close()
+        if self.statDialog:
+            self.statDialog.close()
+        if self.massDialog:
+            self.massDialog.close()
+        if self.optionsWindow:
+            self.optionsWindow.close()
+        if self.comDialog:
+            self.comDialog.close()
+        if self.dupeDialog:
+            self.dupeDialog.close()
 
         Globals.Settings.setValue('update', set(self.update))
         print str(len(self.update)) + ' files retained for next session: ', ''.join(["%s, " % (k) for k in self.update])[:-2]
