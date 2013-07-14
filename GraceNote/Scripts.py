@@ -750,20 +750,27 @@ class Scripts2(QtGui.QWidget):
         for i in range(len(self.textEditingBoxes)):
             EditingWindowSubLayoutSplitter.addWidget(self.textEditingBoxes[i])
         
-        layout = QtGui.QSplitter()
+        self.mainAreaSplitLayout = QtGui.QSplitter()
         FileListSubLayoutWidget = QtGui.QWidget()
         FileListSubLayoutWidget.setLayout(FileListSubLayout)
-        layout.addWidget(FileListSubLayoutWidget)
+        self.mainAreaSplitLayout.addWidget(FileListSubLayoutWidget)
         #EditingWindowSubLayoutWidget = QtGui.QWidget()
         #EditingWindowSubLayoutWidget.setLayout(EditingWindowSubLayout)
-        layout.addWidget(EditingWindowSubLayoutSplitter)
-        layout.addWidget(self.entryTreeView)
-        #layout.setColumnStretch(1,1)
+        self.mainAreaSplitLayout.addWidget(EditingWindowSubLayoutSplitter)
+        self.mainAreaSplitLayout.addWidget(self.entryTreeView)
+        #self.mainAreaSplitLayout.setColumnStretch(1,1)
         
-        layout.setSizes( [200, 400, 200] )
+        self.mainAreaSplitLayout.setSizes( [200, 400, 200] )
+
+        geom = Globals.Settings.value('Geometry/Scripts2.mainAreaSplitLayout')
+        if geom is not None:
+            self.mainAreaSplitLayout.restoreGeometry(geom)
+        state = Globals.Settings.value('States/Scripts2.mainAreaSplitLayout')
+        if state is not None:
+            self.mainAreaSplitLayout.restoreState(state)
         
         layoutWidgetAdapter = QtGui.QVBoxLayout()
-        layoutWidgetAdapter.addWidget(layout)
+        layoutWidgetAdapter.addWidget(self.mainAreaSplitLayout)
         self.setLayout(layoutWidgetAdapter)
 
         self.massDialogOpened = False
@@ -834,6 +841,8 @@ class Scripts2(QtGui.QWidget):
         print str(len(self.update)) + ' files retained for next session: ', ''.join(["%s, " % (k) for k in self.update])[:-2]
 
         Globals.Settings.setValue('Geometry/Scripts2', self.saveGeometry())
+        Globals.Settings.setValue('Geometry/Scripts2.mainAreaSplitLayout', self.mainAreaSplitLayout.saveGeometry())
+        Globals.Settings.setValue('States/Scripts2.mainAreaSplitLayout', self.mainAreaSplitLayout.saveState())
 
         Globals.Settings.sync()
         self.close()
