@@ -279,6 +279,11 @@ class Scripts2(QtGui.QWidget):
         self.entryTreeView.setModel(self.entrySortFilterProxyModel)
         self.entryTreeView.setRootIsDecorated(False)
 
+        self.entryTreeViewHeaderLabels = ['Status', 'Comment?', 'IdentifyString', 'Text', 'Last updated by', 'Last updated at', 'Debug?']
+        self.entryTreeViewHeadersVisible = []
+        for i in xrange( len(self.entryTreeViewHeaderLabels) ):
+            self.entryTreeViewHeadersVisible.append( True )
+
         self.termInEntryIcon = QtGui.QPixmap( 'icons/pictogram-din-m000-general.png' )
         self.termInEntryIcon = self.termInEntryIcon.scaled(13, 13, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation);
 
@@ -1159,7 +1164,6 @@ class Scripts2(QtGui.QWidget):
 
         self.entryStandardItemModel.clear()
         self.entryStandardItemModel.setColumnCount(6)
-        self.entryTreeViewHeaderLabels = ['Status', 'Comment?', 'IdentifyString', 'Text', 'Last updated by', 'Last updated at', 'Debug?']
         self.entryStandardItemModel.setHorizontalHeaderLabels(self.entryTreeViewHeaderLabels)
         self.entryTreeView.header().setStretchLastSection(False) 
         self.entryTreeView.header().setResizeMode(3, QtGui.QHeaderView.Stretch)
@@ -1170,6 +1174,9 @@ class Scripts2(QtGui.QWidget):
         self.entryTreeView.setColumnWidth(4, 90) # last updated by
         self.entryTreeView.setColumnWidth(5, 110) # last updated at
         self.entryTreeView.setColumnWidth(6, 20) # debug checkbox
+
+        for i in xrange( len(self.entryTreeViewHeadersVisible) ):
+            self.entryTreeView.setColumnHidden( i, self.entryTreeViewHeadersVisible[i] == False )
 
         self.currentOpenedEntryIndexes = None
         
@@ -1745,6 +1752,9 @@ class Scripts2(QtGui.QWidget):
                 # make sure people don't disable all sections
                 if self.entryTreeView.header().hiddenSectionCount() == self.entryTreeView.header().count():
                     self.entryTreeView.setColumnHidden(i, False)
+
+        for i in xrange( len(menuOptions) ):
+            self.entryTreeViewHeadersVisible[i] = self.entryTreeView.header().isSectionHidden(i) == False
 
         return
 
