@@ -281,8 +281,13 @@ class Scripts2(QtGui.QWidget):
 
         self.entryTreeViewHeaderLabels = ['Status', 'Comment?', 'IdentifyString', 'Text', 'Last updated by', 'Last updated at', 'Debug?']
         self.entryTreeViewHeadersVisible = []
-        for i in xrange( len(self.entryTreeViewHeaderLabels) ):
-            self.entryTreeViewHeadersVisible.append( True )
+        try:
+            tmpVisibleList = Globals.Settings.value('entryTreeViewHeadersVisible')
+            for i in xrange( len(tmpVisibleList) ):
+                self.entryTreeViewHeadersVisible.append( tmpVisibleList[i] == 'true' )
+        except:
+            for i in xrange( len(self.entryTreeViewHeaderLabels) ):
+                self.entryTreeViewHeadersVisible.append( True )
 
         self.termInEntryIcon = QtGui.QPixmap( 'icons/pictogram-din-m000-general.png' )
         self.termInEntryIcon = self.termInEntryIcon.scaled(13, 13, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation);
@@ -822,6 +827,8 @@ class Scripts2(QtGui.QWidget):
             self.comDialog.close()
         if self.dupeDialog:
             self.dupeDialog.close()
+
+        Globals.Settings.setValue('entryTreeViewHeadersVisible', self.entryTreeViewHeadersVisible)
 
         Globals.Settings.setValue('update', set(self.update))
         print str(len(self.update)) + ' files retained for next session: ', ''.join(["%s, " % (k) for k in self.update])[:-2]
