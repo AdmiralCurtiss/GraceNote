@@ -367,6 +367,9 @@ class Scripts2(QtGui.QWidget):
         self.tree.selectionModel().selectionChanged.connect(self.PopulateEntryList)
         self.entryTreeView.selectionModel().selectionChanged.connect(self.PopulateTextEdit)
         self.entryTreeView.clicked.connect(self.UpdateDebug)
+        self.entryTreeView.header().setClickable(True)
+        self.entryTreeView.header().setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.entryTreeView.header().customContextMenuRequested.connect(self.SpawnEntryListColumnHideMenu)
         #self.entry.pressed.connect(self.UpdateDebug)
         for editbox in self.regularEditingTextBoxes:
             editbox.manualEdit.connect(self.UpdateTextGenericFunc)
@@ -1156,13 +1159,17 @@ class Scripts2(QtGui.QWidget):
 
         self.entryStandardItemModel.clear()
         self.entryStandardItemModel.setColumnCount(6)
-        self.entryStandardItemModel.setHorizontalHeaderLabels(['Status', 'Comment?', 'IdentifyString', 'Text', 'Last updated by', 'Last updated at', 'Debug?'])
+        self.entryTreeViewHeaderLabels = ['Status', 'Comment?', 'IdentifyString', 'Text', 'Last updated by', 'Last updated at', 'Debug?']
+        self.entryStandardItemModel.setHorizontalHeaderLabels(self.entryTreeViewHeaderLabels)
+        self.entryTreeView.header().setStretchLastSection(False) 
+        self.entryTreeView.header().setResizeMode(3, QtGui.QHeaderView.Stretch)
         self.entryTreeView.setColumnWidth(0, 10) # status
         self.entryTreeView.setColumnWidth(1, 10) # comment
         self.entryTreeView.setColumnWidth(2, 50) # identifystring
-        self.entryTreeView.setColumnWidth(3, 200) # text
+        #self.entryTreeView.setColumnWidth(3, 200) # text
         self.entryTreeView.setColumnWidth(4, 90) # last updated by
         self.entryTreeView.setColumnWidth(5, 110) # last updated at
+        self.entryTreeView.setColumnWidth(6, 20) # debug checkbox
 
         self.currentOpenedEntryIndexes = None
         
@@ -1719,6 +1726,27 @@ class Scripts2(QtGui.QWidget):
         self.dupeDialog.activateWindow()
         
 
+    def SpawnEntryListColumnHideMenu(self, pos):
+        gPos = self.entryTreeView.mapToGlobal(pos)
+
+        menu = QtGui.QMenu(self.entryTreeView)
+        menuOptions = []
+        for i in xrange( self.entryTreeView.header().count() ):
+            qa = QtGui.QAction( self.entryTreeViewHeaderLabels[i], None )
+            qa.setCheckable(True)
+            qa.setChecked( self.entryTreeView.header().isSectionHidden(i) == False )
+            menuOptions.append( qa )
+        menu.addActions(menuOptions)
+
+        selected = menu.exec_(gPos)
+        for i in xrange( len(menuOptions) ):
+            if menuOptions[i] == selected:
+                self.entryTreeView.setColumnHidden(i, self.entryTreeView.header().isSectionHidden(i) == False)
+                # make sure people don't disable all sections
+                if self.entryTreeView.header().hiddenSectionCount() == self.entryTreeView.header().count():
+                    self.entryTreeView.setColumnHidden(i, False)
+
+        return
 
     def UpdateDebug(self):
         index = self.entryTreeView.currentIndex()
