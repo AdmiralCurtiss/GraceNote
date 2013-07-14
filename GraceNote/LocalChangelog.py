@@ -25,3 +25,9 @@ class LocalChangelog(QtGui.QDialog):
         layout.addWidget(self.listwidget)
         self.setLayout(layout)
 
+        geom = Globals.Settings.value('Geometry/LocalChangelog')
+        if geom is not None:
+            self.restoreGeometry(geom)
+
+    def closeEvent(self, event):
+        Globals.Settings.setValue('Geometry/LocalChangelog', self.saveGeometry())

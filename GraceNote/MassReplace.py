@@ -121,6 +121,10 @@ class MassReplace(QtGui.QDialog):
         self.setLayout(layout)
         self.setMinimumSize(800, 600)
 
+        geom = Globals.Settings.value('Geometry/MassReplace')
+        if geom is not None:
+            self.restoreGeometry(geom)
+
     def generateSearchTab(self):
         treewidget = QtGui.QTreeWidget()
         
@@ -323,3 +327,5 @@ class MassReplace(QtGui.QDialog):
         self.parent.raise_()
         self.parent.activateWindow()
 
+    def closeEvent(self, event):
+        Globals.Settings.setValue('Geometry/MassReplace', self.saveGeometry())

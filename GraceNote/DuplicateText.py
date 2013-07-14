@@ -93,6 +93,10 @@ class DuplicateText(QtGui.QDialog):
         self.setLayout(subLayout)
 
         self.go.released.connect(self.SearchCategories)
+
+        geom = Globals.Settings.value('Geometry/DuplicateText')
+        if geom is not None:
+            self.restoreGeometry(geom)
         
     def CheckAll(self):
         for category in self.categories:
@@ -183,3 +187,5 @@ class DuplicateText(QtGui.QDialog):
         self.parent.massDialog.matchCase.setChecked(True)
         self.parent.massDialog.Search()
 
+    def closeEvent(self, event):
+        Globals.Settings.setValue('Geometry/DuplicateText', self.saveGeometry())

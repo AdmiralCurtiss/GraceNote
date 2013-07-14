@@ -110,6 +110,10 @@ class CompletionTable(QtGui.QDialog):
         progress.setValue(len(os.listdir(Globals.configData.LocalDatabasePath))+1)
         
         
+        geom = Globals.Settings.value('Geometry/CompletionTable')
+        if geom is not None:
+            self.restoreGeometry(geom)
+
         self.setWindowTitle('Current Phase: Translation, at {0:.2f}% completion'.format(float(bigTrans)/float(bigTotal)*100))
 
     def JumpToFile(self, item, column):
@@ -118,6 +122,9 @@ class CompletionTable(QtGui.QDialog):
 
         databaseName = item.data(0, 0)
         self.parent.JumpToEntry(databaseName, 1)
+
+    def closeEvent(self, event):
+        Globals.Settings.setValue('Geometry/CompletionTable', self.saveGeometry())
 
 def CalculateAllCompletionPercentagesForDatabase():
     aList = Globals.configData.FileList

@@ -130,3 +130,9 @@ class Statistics(QtGui.QDialog):
         
         self.setLayout(layout)
 
+        geom = Globals.Settings.value('Geometry/Statistics')
+        if geom is not None:
+            self.restoreGeometry(geom)
+
+    def closeEvent(self, event):
+        Globals.Settings.setValue('Geometry/Statistics', self.saveGeometry())

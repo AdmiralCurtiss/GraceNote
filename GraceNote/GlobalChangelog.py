@@ -40,7 +40,13 @@ class GlobalChangelog(QtGui.QDialog):
         layout.addWidget(self.treewidget)
         self.setLayout(layout)
 
+        geom = Globals.Settings.value('Geometry/GlobalChangelog')
+        if geom is not None:
+            self.restoreGeometry(geom)
+
     def JumpToFile(self, item, column):
         databaseName = item.data(2, 0)
         self.parent.JumpToEntry(databaseName, 1)
 
+    def closeEvent(self, event):
+        Globals.Settings.setValue('Geometry/GlobalChangelog', self.saveGeometry())
