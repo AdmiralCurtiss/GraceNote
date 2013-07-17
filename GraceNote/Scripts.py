@@ -232,6 +232,16 @@ class Scripts2(QtGui.QWidget):
         else:
             Globals.TwoUpMode = 1
 
+        if Globals.Settings.contains('ColorCurrentStatus'):
+            Globals.ColorCurrentStatus = QtGui.QColor( int(Globals.Settings.value('ColorCurrentStatus')) )
+        else:
+            Globals.ColorCurrentStatus = QtGui.QColor(160, 255, 160)
+
+        if Globals.Settings.contains('ColorLowerStatus'):
+            Globals.ColorLowerStatus = QtGui.QColor( int(Globals.Settings.value('ColorLowerStatus')) )
+        else:
+            Globals.ColorLowerStatus = QtGui.QColor(255, 160, 160)
+
         self.rolenames = ['None', 'Translation', 'Translation Review', 'Contextual Review', 'Editing']
         self.roletext = ['Doing Nothing', 'Translating', 'Reviewing Translations', 'Reviewing Context', 'Editing']
 

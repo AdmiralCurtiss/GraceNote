@@ -13,8 +13,6 @@ class OptionsWindow(QtGui.QDialog):
         self.enableFooterCheckbox = QtGui.QCheckBox('Enable Footer')
         self.writeToHddCheckbox = QtGui.QCheckBox('Write entries to HDD every time the displayed entry changes')
 
-        #originalLabel = QtGui.QLabel('Search for:')
-        #replaceLabel =  QtGui.QLabel('Search for:')
         self.applyButton = QtGui.QPushButton('Apply')
         self.cancelButton = QtGui.QPushButton('Cancel')
 
@@ -44,6 +42,24 @@ class OptionsWindow(QtGui.QDialog):
         voiceLanguageLayout.addWidget(self.voiceLanguageComboBox)
         voiceLanguageLayout.addWidget(voiceLanguageLabel)
         checkLayout.addLayout(voiceLanguageLayout)
+
+        self.colorButtonLowerStatus = QtGui.QPushButton('Color')
+        self.colorButtonLowerStatus.released.connect(self.LaunchColorPickerLowerStatus)
+        colorLabelLowerStatus = QtGui.QLabel('Color for lower status')
+        colorButtonLowerStatusLayout = QtGui.QHBoxLayout()
+        colorButtonLowerStatusLayout.addWidget(self.colorButtonLowerStatus)
+        colorButtonLowerStatusLayout.addWidget(colorLabelLowerStatus)
+        checkLayout.addLayout(colorButtonLowerStatusLayout)
+        self.ColorLowerStatus = Globals.ColorLowerStatus
+
+        self.colorButtonCurrentStatus = QtGui.QPushButton('Color')
+        self.colorButtonCurrentStatus.released.connect(self.LaunchColorPickerCurrentStatus)
+        colorLabelCurrentStatus = QtGui.QLabel('Color for current status')
+        colorButtonCurrentStatusLayout = QtGui.QHBoxLayout()
+        colorButtonCurrentStatusLayout.addWidget(self.colorButtonCurrentStatus)
+        colorButtonCurrentStatusLayout.addWidget(colorLabelCurrentStatus)
+        checkLayout.addLayout(colorButtonCurrentStatusLayout)
+        self.ColorCurrentStatus = Globals.ColorCurrentStatus
 
         self.LoadSettings()
                 
@@ -77,6 +93,17 @@ class OptionsWindow(QtGui.QDialog):
 
         return
 
+    def LaunchColorPickerLowerStatus(self):
+        col = QtGui.QColorDialog.getColor(self.ColorLowerStatus)
+        if col.isValid():
+            self.ColorLowerStatus = col
+        return
+    def LaunchColorPickerCurrentStatus(self):
+        col = QtGui.QColorDialog.getColor(self.ColorCurrentStatus)
+        if col.isValid():
+            self.ColorCurrentStatus = col
+        return
+
     def ApplySettingsAndClose(self):
         Globals.WriteDatabaseStorageToHddOnEntryChange = self.writeToHddCheckbox.isChecked()
         Globals.Settings.setValue('writeonentrychange', str(Globals.WriteDatabaseStorageToHddOnEntryChange))
@@ -97,6 +124,11 @@ class OptionsWindow(QtGui.QDialog):
         elif lang == 'Japanese':
             Globals.EnglishVoiceLanguageFlag = False
             Globals.Settings.setValue('voicelanguage', 'JP')
+
+        Globals.ColorLowerStatus = self.ColorLowerStatus
+        Globals.Settings.setValue('ColorLowerStatus', str( self.ColorLowerStatus.rgba() ) )
+        Globals.ColorCurrentStatus = self.ColorCurrentStatus
+        Globals.Settings.setValue('ColorCurrentStatus', str( self.ColorCurrentStatus.rgba() ) )
 
         Globals.Settings.sync()
 

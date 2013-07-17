@@ -23,6 +23,9 @@ FooterVisibleFlag = False
 Author = 'NONE'
 TwoUpMode = 1
 
+ColorLowerStatus = None
+ColorCurrentStatus = None
+
 Cache = None
 
 import re
