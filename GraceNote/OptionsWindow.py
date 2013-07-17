@@ -50,7 +50,6 @@ class OptionsWindow(QtGui.QDialog):
         colorButtonLowerStatusLayout.addWidget(self.colorButtonLowerStatus)
         colorButtonLowerStatusLayout.addWidget(colorLabelLowerStatus)
         checkLayout.addLayout(colorButtonLowerStatusLayout)
-        self.ColorLowerStatus = Globals.ColorLowerStatus
 
         self.colorButtonCurrentStatus = QtGui.QPushButton('Color')
         self.colorButtonCurrentStatus.released.connect(self.LaunchColorPickerCurrentStatus)
@@ -59,7 +58,6 @@ class OptionsWindow(QtGui.QDialog):
         colorButtonCurrentStatusLayout.addWidget(self.colorButtonCurrentStatus)
         colorButtonCurrentStatusLayout.addWidget(colorLabelCurrentStatus)
         checkLayout.addLayout(colorButtonCurrentStatusLayout)
-        self.ColorCurrentStatus = Globals.ColorCurrentStatus
 
         self.LoadSettings()
                 
@@ -88,6 +86,11 @@ class OptionsWindow(QtGui.QDialog):
                 idx = self.voiceLanguageComboBox.findText('Japanese')
             self.voiceLanguageComboBox.setCurrentIndex(idx)
 
+            self.ColorLowerStatus = Globals.ColorLowerStatus
+            self.colorButtonLowerStatus.setText( str(self.ColorLowerStatus.red()) +  ' / ' + str(self.ColorLowerStatus.green()) + ' / ' + str(self.ColorLowerStatus.blue()) )
+            self.ColorCurrentStatus = Globals.ColorCurrentStatus
+            self.colorButtonCurrentStatus.setText( str(self.ColorCurrentStatus.red()) +  ' / ' + str(self.ColorCurrentStatus.green()) + ' / ' + str(self.ColorCurrentStatus.blue()) )
+
         except:
             pass
 
@@ -97,11 +100,13 @@ class OptionsWindow(QtGui.QDialog):
         col = QtGui.QColorDialog.getColor(self.ColorLowerStatus)
         if col.isValid():
             self.ColorLowerStatus = col
+            self.colorButtonLowerStatus.setText( str(self.ColorLowerStatus.red()) +  ' / ' + str(self.ColorLowerStatus.green()) + ' / ' + str(self.ColorLowerStatus.blue()) )
         return
     def LaunchColorPickerCurrentStatus(self):
         col = QtGui.QColorDialog.getColor(self.ColorCurrentStatus)
         if col.isValid():
             self.ColorCurrentStatus = col
+            self.colorButtonCurrentStatus.setText( str(self.ColorCurrentStatus.red()) +  ' / ' + str(self.ColorCurrentStatus.green()) + ' / ' + str(self.ColorCurrentStatus.blue()) )
         return
 
     def ApplySettingsAndClose(self):
