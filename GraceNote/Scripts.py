@@ -1145,9 +1145,9 @@ class Scripts2(QtGui.QWidget):
             commentAmount = rows[0][5]
                     
             if translated >= totalDB:
-                treeItem.setBackground(QtGui.QBrush(QtGui.QColor(160, 255, 160)));
+                treeItem.setBackground(QtGui.QBrush( Globals.ColorCurrentStatus ));
             else:
-                treeItem.setBackground(QtGui.QBrush(QtGui.QColor(255, 160, 160)));
+                treeItem.setBackground(QtGui.QBrush( Globals.ColorLowerStatus ));
                     
             dbPhase = 0
             if totalDB == phase1:
@@ -1168,15 +1168,12 @@ class Scripts2(QtGui.QWidget):
         return
 
     def FormatEntryListItemColor(self, item, status):
-        if status >= self.role:
-            item.setBackground(QtGui.QBrush(QtGui.QColor(160, 255, 160)))
-            if Globals.Author == 'ruta':
-                item.setBackground(QtGui.QBrush(QtGui.QColor(255, 235, 245)))
-
         if status == -1:
             item.setBackground(QtGui.QBrush(QtGui.QColor(255, 220, 220)))
-            if Globals.Author == 'ruta':
-                item.setBackground(QtGui.QBrush(QtGui.QColor(255, 225, 180)))             
+        elif status >= self.role:
+            item.setBackground(QtGui.QBrush( Globals.ColorCurrentStatus ))
+        else:
+            item.setBackground(QtGui.QBrush( Globals.ColorLowerStatus ))
 
 
     # fills in the entry list to the right        
@@ -1822,18 +1819,12 @@ class Scripts2(QtGui.QWidget):
             SaveCur.execute("select status from Text where ID={0}".format(selectedEntryId+1))
             status = SaveCur.fetchall()[0][0]
             if status >= self.role:
-                self.entryStandardItemModel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(220, 255, 220)))
-                if Globals.Author == 'ruta':
-                    self.entryStandardItemModel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(255, 235, 245)))
-                elif Globals.Author == 'Pikachu025':
-                    self.entryStandardItemModel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(0, 150, 0)))
+                self.entryStandardItemModel.item(index.row()).setBackground(QtGui.QBrush( Globals.ColorCurrentStatus ))
             else:
-                self.entryStandardItemModel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(255, 255, 255)))
+                self.entryStandardItemModel.item(index.row()).setBackground(QtGui.QBrush( Globals.ColorLowerStatus ))
                 
         else:
             self.entryStandardItemModel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(255, 220, 220)))
-            if Globals.Author == 'ruta':
-                self.entryStandardItemModel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(255,225,180)))             
         
     def DebugPrintDatabaseWriteStorage(self):
         for d in self.databaseWriteStorage:
