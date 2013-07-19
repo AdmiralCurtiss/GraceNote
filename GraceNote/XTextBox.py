@@ -97,11 +97,8 @@ class XTextBox(QtGui.QTextEdit):
         if Globals.enchanted:
             import enchant
             self.dict = enchant.Dict("en_GB")
-            if os.path.isfile('Resources/proper_nouns.txt'):
-                customWordFile = file('Resources/proper_nouns.txt', 'rb')
-                for word in customWordFile.xreadlines():
-                    self.dict.add_to_session(word.strip())
-                customWordFile.close()
+            for word in Globals.configData.Dictionary:
+                self.dict.add_to_session(word.strip())
             self.highlighter.setDict(self.dict)
         
         self.textChanged.connect(self.textChangedSignal)

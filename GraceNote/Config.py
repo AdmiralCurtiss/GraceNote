@@ -34,6 +34,7 @@ class Configuration:
     FontReplacements = {}
     FontLines = []
     FontFormatting = {}
+    Dictionary = []
 
     FileList = []
     
@@ -79,6 +80,8 @@ class Configuration:
             self.FileList.append(newfiles)
         
         self.mainNode = mainNode
+
+        self.LoadDictionary(self.mainNode)
         
         return
 
@@ -188,3 +191,14 @@ class Configuration:
                 self.Terms.append(newTerm)
         except:
             self.Terms = []
+
+    def LoadDictionary(self, mainNode):
+        try:
+            self.Dictionary = []
+            dict = mainNode.getElementsByTagName('Dictionary')[0].getElementsByTagName('Entry')
+            for entry in dict:
+                word = entry.getAttribute('Word')
+                self.Dictionary.append(word)
+        except:
+            self.Dictionary = []
+
