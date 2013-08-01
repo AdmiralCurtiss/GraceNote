@@ -1642,7 +1642,8 @@ class Scripts2(QtGui.QWidget):
 
     def JumpToEntry(self, databaseName, entry):
         self.WriteDatabaseStorageToHdd()
-        
+        entry = int(entry)
+
         if databaseName == '':
             databaseName = self.currentlyOpenDatabase
         self.tree.collapseAll()
@@ -1660,12 +1661,14 @@ class Scripts2(QtGui.QWidget):
                     self.tree.selectionModel().select(treeIndex, QtGui.QItemSelectionModel.SelectionFlags(3))
 
                     try:
-                        entryItem = self.entryStandardItemModel.findItems(str(entry).zfill(5), QtCore.Qt.MatchContains)[0]
-                        entryIndex = self.entryStandardItemModel.indexFromItem(entryItem)
-                        sortIndex = self.entrySortFilterProxyModel.mapFromSource(entryIndex)
-
-                        self.entryTreeView.setCurrentIndex(sortIndex)
-                        self.entryTreeView.selectionModel().select(sortIndex, QtGui.QItemSelectionModel.SelectionFlags(3))
+                        for i in xrange(self.entryStandardItemModel.rowCount()):
+                            item = self.entryStandardItemModel.item(i)
+                            if item.GraceNoteEntryId == entry:
+                                entryIndex = self.entryStandardItemModel.indexFromItem(item)
+                                sortIndex = self.entrySortFilterProxyModel.mapFromSource(entryIndex)
+                                self.entryTreeView.setCurrentIndex(sortIndex)
+                                self.entryTreeView.selectionModel().select(sortIndex, QtGui.QItemSelectionModel.SelectionFlags(3))
+                                break
                     except:
                         pass
 
