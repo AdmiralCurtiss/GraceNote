@@ -223,7 +223,7 @@ class MassReplace(QtGui.QDialog):
             
         for j in range(1, len(aList)):
             for File in aList[j]:
-                if File.find(self.fileFilter.text()) >= 0:
+                if File.find(self.fileFilter.text()) >= 0 or Globals.GetDatabaseDescriptionString(File).find(self.fileFilter.text()) >= 0:
                     data = Globals.Cache.GetDatabase(File)
                     for i in xrange(len(data)):
                         if ( data[i].stringId in JPmatches ) \
