@@ -1245,6 +1245,8 @@ class Scripts2(QtGui.QWidget):
         HistoryList = SaveCur.fetchall()
         SaveCur.execute('SELECT MAX(ID) FROM Text')
         MaxId = SaveCur.fetchall()[0][0]
+        if MaxId is None:
+            MaxId = 0
         self.historyWindow.setHistoryList(HistoryList, MaxId)
 
         for i in xrange(len(TempList)):
