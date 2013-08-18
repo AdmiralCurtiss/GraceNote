@@ -11,7 +11,7 @@ class GlyphStruct():
         return
 
 class Configuration:
-    ID = 'Graces'
+    ID = 'UnknownID'
 
     LocalDatabasePath = ''
     RemoteDatabasePath = ''
@@ -44,8 +44,10 @@ class Configuration:
 
         try:
             self.ID = mainNode.getAttribute('ID')
+            if self.ID == '':
+                self.ID = 'UnknownID'
         except:
-            self.ID = 'Graces'
+            self.ID = 'UnknownID'
 
         self.LocalDatabasePath = mainNode.getAttribute('LocalDatabasePath')
         self.RemoteDatabasePath = mainNode.getAttribute('RemoteDatabasePath')
