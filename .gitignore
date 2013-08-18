@@ -39,3 +39,7 @@ SDR2db
 SDR2rebuild
 config_sdr2.xml
 used_symbols.txt
+LastRankerDB
+config_lastranker.xml
+LastRankerRebuild
+config_xillia_eur.xml
