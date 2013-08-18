@@ -291,13 +291,22 @@ class Scripts2(QtGui.QWidget):
 
         self.entryTreeViewHeaderLabels = ['Status', 'Comment?', 'IdentifyString', 'Text', 'Last updated by', 'Last updated at', 'Debug?']
         self.entryTreeViewHeadersVisible = []
+
+        visibleCount = 0
         try:
             tmpVisibleList = Globals.Settings.value('entryTreeViewHeadersVisible')
-            for i in xrange( len(tmpVisibleList) ):
-                self.entryTreeViewHeadersVisible.append( tmpVisibleList[i] == 'true' )
+            for i in xrange( len(self.entryTreeViewHeaderLabels) ):
+                visible = tmpVisibleList[i] == 't'
+                self.entryTreeViewHeadersVisible.append( visible )
+                if visible:
+                    visibleCount += 1
         except:
+            visibleCount = 0
+        if visibleCount == 0:
+            self.entryTreeViewHeadersVisible = []
             for i in xrange( len(self.entryTreeViewHeaderLabels) ):
                 self.entryTreeViewHeadersVisible.append( True )
+
 
         self.termInEntryIcon = QtGui.QPixmap( 'icons/pictogram-din-m000-general.png' )
         self.termInEntryIcon = self.termInEntryIcon.scaled(13, 13, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation);
@@ -845,7 +854,13 @@ class Scripts2(QtGui.QWidget):
         if self.dupeDialog:
             self.dupeDialog.close()
 
-        Globals.Settings.setValue('entryTreeViewHeadersVisible', self.entryTreeViewHeadersVisible)
+        headersVisibleString = ''
+        for i in xrange( len(self.entryTreeViewHeadersVisible) ):
+            if self.entryTreeViewHeadersVisible[i]:
+                headersVisibleString += 't'
+            else:
+                headersVisibleString += 'f'
+        Globals.Settings.setValue('entryTreeViewHeadersVisible', headersVisibleString)
 
         Globals.Settings.setValue('update', set(self.update))
         print str(len(self.update)) + ' files retained for next session: ', ''.join(["%s, " % (k) for k in self.update])[:-2]
@@ -1198,7 +1213,7 @@ class Scripts2(QtGui.QWidget):
         self.entryTreeView.setColumnWidth(5, 110) # last updated at
         self.entryTreeView.setColumnWidth(6, 20) # debug checkbox
 
-        for i in xrange( len(self.entryTreeViewHeadersVisible) ):
+        for i in xrange( len(self.entryTreeViewHeaderLabels) ):
             self.entryTreeView.setColumnHidden( i, self.entryTreeViewHeadersVisible[i] == False )
 
         self.currentOpenedEntryIndexes = None
