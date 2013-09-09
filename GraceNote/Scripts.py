@@ -289,7 +289,7 @@ class Scripts2(QtGui.QWidget):
         self.entryTreeView.setModel(self.entrySortFilterProxyModel)
         self.entryTreeView.setRootIsDecorated(False)
 
-        self.entryTreeViewHeaderLabels = ['Status', 'Comment?', 'IdentifyString', 'Text', 'Last updated by', 'Last updated at', 'Debug?']
+        self.entryTreeViewHeaderLabels = ['Status', 'Comment?', 'IdentifyString', 'Text', 'Last updated by', 'Last updated at', 'Debug?', 'ID', 'Comment']
         self.entryTreeViewHeadersVisible = []
 
         visibleCount = 0
@@ -1201,17 +1201,19 @@ class Scripts2(QtGui.QWidget):
             editbox.iconToggle(0)
 
         self.entryStandardItemModel.clear()
-        self.entryStandardItemModel.setColumnCount(6)
+        self.entryStandardItemModel.setColumnCount(9)
         self.entryStandardItemModel.setHorizontalHeaderLabels(self.entryTreeViewHeaderLabels)
-        self.entryTreeView.header().setStretchLastSection(False) 
+        self.entryTreeView.header().setStretchLastSection(True) 
         self.entryTreeView.header().setResizeMode(3, QtGui.QHeaderView.Stretch)
         self.entryTreeView.setColumnWidth(0, 10) # status
-        self.entryTreeView.setColumnWidth(1, 10) # comment
+        self.entryTreeView.setColumnWidth(1, 10) # comment exists?
         self.entryTreeView.setColumnWidth(2, 50) # identifystring
         #self.entryTreeView.setColumnWidth(3, 200) # text
         self.entryTreeView.setColumnWidth(4, 90) # last updated by
         self.entryTreeView.setColumnWidth(5, 110) # last updated at
         self.entryTreeView.setColumnWidth(6, 20) # debug checkbox
+        self.entryTreeView.setColumnWidth(7, 30) # entry ID
+        self.entryTreeView.setColumnWidth(8, 100) # comment text
 
         for i in xrange( len(self.entryTreeViewHeaderLabels) ):
             self.entryTreeView.setColumnHidden( i, self.entryTreeViewHeadersVisible[i] == False )
@@ -1276,6 +1278,7 @@ class Scripts2(QtGui.QWidget):
             TempIdentifyString = str(TempList[i][6])
             TempUpdatedBy = TempList[i][7]
             TempUpdatedTimestamp = TempList[i][8]
+            TempID = TempList[i][0]
 
             if TempENG == '':
                 TempENG = TempJPN
@@ -1302,26 +1305,38 @@ class Scripts2(QtGui.QWidget):
             additemEntryText.setEditable(False)
             additemEntryIdentifyString = QtGui.QStandardItem(TempIdentifyString)
             additemEntryIdentifyString.setEditable(False)
-            additemEntryComment = QtGui.QStandardItem(commentString)
-            additemEntryComment.setEditable(False)
+            additemEntryCommentExists = QtGui.QStandardItem(commentString)
+            additemEntryCommentExists.setEditable(False)
             additemEntryTimestamp = QtGui.QStandardItem(str(TempUpdatedTimestamp))
             additemEntryTimestamp.setEditable(False)
             additemEntryUpdatedBy = QtGui.QStandardItem(str(TempUpdatedBy))
             additemEntryUpdatedBy.setEditable(False)
             additemEntryIsDebug = QtGui.QStandardItem('')
             additemEntryIsDebug.setCheckable(True)
+            additemEntryEnglishID = QtGui.QStandardItem(str(TempID))
+            additemEntryEnglishID.setEditable(False)
+            additemEntryCommentText = QtGui.QStandardItem(str(TempCOM))
+            additemEntryCommentText.setEditable(False)
     
+            self.FormatEntryListItemColor(additemEntryStatus, TempStatus)        
             self.FormatEntryListItemColor(additemEntryText, TempStatus)        
+            self.FormatEntryListItemColor(additemEntryIdentifyString, TempStatus)        
+            self.FormatEntryListItemColor(additemEntryCommentExists, TempStatus)        
+            self.FormatEntryListItemColor(additemEntryTimestamp, TempStatus)        
+            self.FormatEntryListItemColor(additemEntryUpdatedBy, TempStatus)        
+            self.FormatEntryListItemColor(additemEntryIsDebug, TempStatus)        
+            self.FormatEntryListItemColor(additemEntryEnglishID, TempStatus)        
+            self.FormatEntryListItemColor(additemEntryCommentText, TempStatus)        
     
             if (TempDebug == 1) and (not self.debug.isChecked()):
                 pass
             elif (TempDebug == 1) and (self.debug.isChecked()):
                 additemEntryIsDebug.setCheckState(QtCore.Qt.Checked)
                 additemEntryStatus.setWhatsThis("d") #debug
-                self.entryStandardItemModel.appendRow([additemEntryStatus, additemEntryComment, additemEntryIdentifyString, additemEntryText, additemEntryUpdatedBy, additemEntryTimestamp, additemEntryIsDebug])
+                self.entryStandardItemModel.appendRow([additemEntryStatus, additemEntryCommentExists, additemEntryIdentifyString, additemEntryText, additemEntryUpdatedBy, additemEntryTimestamp, additemEntryIsDebug, additemEntryEnglishID, additemEntryCommentText])
             else:
                 additemEntryStatus.setWhatsThis("n") #not debug
-                self.entryStandardItemModel.appendRow([additemEntryStatus, additemEntryComment, additemEntryIdentifyString, additemEntryText, additemEntryUpdatedBy, additemEntryTimestamp, additemEntryIsDebug])
+                self.entryStandardItemModel.appendRow([additemEntryStatus, additemEntryCommentExists, additemEntryIdentifyString, additemEntryText, additemEntryUpdatedBy, additemEntryTimestamp, additemEntryIsDebug, additemEntryEnglishID, additemEntryCommentText])
             
             if TempStatus != -1 and TempDebug == 1:
                 SaveCur.execute("update Text set status=-1 where ID=?", (TempString[0][0],))
