@@ -1315,7 +1315,7 @@ class Scripts2(QtGui.QWidget):
             additemEntryIsDebug.setCheckable(True)
             additemEntryEnglishID = QtGui.QStandardItem(str(TempID))
             additemEntryEnglishID.setEditable(False)
-            additemEntryCommentText = QtGui.QStandardItem(str(TempCOM))
+            additemEntryCommentText = QtGui.QStandardItem(TempCOM)
             additemEntryCommentText.setEditable(False)
     
             self.FormatEntryListItemColor(additemEntryStatus, TempStatus)        
