@@ -2,6 +2,7 @@
 
 from xml.dom import minidom
 from PyQt4 import QtCore, QtGui
+import os
 
 class ImageMediumStruct():
     def __init__(self):
@@ -42,6 +43,8 @@ class Configuration:
         dom = minidom.parse(configfilename)
         mainNode = dom.getElementsByTagName('GraceNoteConfig')[0]
 
+        self.ConfigFileDir = os.path.dirname(os.path.realpath(configfilename))
+
         try:
             self.ID = mainNode.getAttribute('ID')
             if self.ID == '':
@@ -49,7 +52,7 @@ class Configuration:
         except:
             self.ID = 'UnknownID'
 
-        self.LocalDatabasePath = mainNode.getAttribute('LocalDatabasePath')
+        self.LocalDatabasePath = self.ConfigFileDir + '/' + mainNode.getAttribute('LocalDatabasePath')
         self.RemoteDatabasePath = mainNode.getAttribute('RemoteDatabasePath')
         self.FTPServer = mainNode.getAttribute('FTPServer')
         try:
@@ -62,9 +65,9 @@ class Configuration:
             self.UseGracesVoiceHash = True
         else:
             self.UseGracesVoiceHash = False
-        self.VoicePathJpPrefix = mainNode.getAttribute('VoicePathJpPrefix')
+        self.VoicePathJpPrefix = self.ConfigFileDir + '/' + mainNode.getAttribute('VoicePathJpPrefix')
         self.VoicePathJpPostfix = mainNode.getAttribute('VoicePathJpPostfix')
-        self.VoicePathEnPrefix = mainNode.getAttribute('VoicePathEnPrefix')
+        self.VoicePathEnPrefix = self.ConfigFileDir + '/' + mainNode.getAttribute('VoicePathEnPrefix')
         self.VoicePathEnPostfix = mainNode.getAttribute('VoicePathEnPostfix')
         self.VoiceEntryOffset = int(mainNode.getAttribute('VoiceEntryOffset'))
         
@@ -101,7 +104,7 @@ class Configuration:
                 fontname = font.getAttribute('name')
                 currentFont = {}
                 for img in imgs:
-                    path = img.getAttribute('Path')
+                    path = self.ConfigFileDir + '/' + img.getAttribute('Path')
                     image = QtGui.QImage(path)
                     glyphs = img.getElementsByTagName('Glyph')
                 
@@ -176,7 +179,7 @@ class Configuration:
                 newImage = ImageMediumStruct()
                 newImage.name = img.getAttribute('Name')
                 newImage.var = img.getAttribute('Variable')
-                newImage.path = img.getAttribute('Path')
+                newImage.path = self.ConfigFileDir + '/' + img.getAttribute('Path')
                 newImage.offs = int(img.getAttribute('Offset'))
                 self.Images.append(newImage)
         except:
