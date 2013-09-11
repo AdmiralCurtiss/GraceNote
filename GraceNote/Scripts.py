@@ -44,6 +44,7 @@ import DatabaseHandler
 import HistoryWindow
 import DatabaseCache
 import OptionsWindow
+import ProjectSelectWindow
 
 def SetupEnvironment():
     Globals.commentsAvailableLabel = False
@@ -57,15 +58,16 @@ def SetupEnvironment():
 
     # load config
     try:
-        if len(sys.argv) > 1:
-            Globals.configfile = sys.argv[1]
+        projectSelectWindow = ProjectSelectWindow.ProjectSelectWindow()
+        projectWinRetVal = projectSelectWindow.exec_()
+        if projectWinRetVal == 0:
+            Globals.configfile = projectSelectWindow.configfile
+            Globals.configData = Configuration(Globals.configfile)
         else:
-            Globals.configfile = 'config.xml'
-        print 'Loading configuration: ' + Globals.configfile
-        Globals.configData = Configuration(Globals.configfile)
+            return False
     except:
         print 'Failed, fallback to default config.xml'
-        Globals.configfile = 'config.xml'
+        Globals.configfile = 'Projects/config.xml'
         Globals.configData = Configuration(Globals.configfile)
 
     # load graces folder config if it's available
@@ -112,7 +114,7 @@ def SetupEnvironment():
 
     Globals.Cache = DatabaseCache.DatabaseCache()
 
-    return
+    return True
 
 class SearchAction(QtGui.QAction):
  

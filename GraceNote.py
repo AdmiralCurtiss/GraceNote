@@ -3,7 +3,6 @@
 import sys
 sys.path.append('GraceNote')
 from Scripts import *
-Scripts.SetupEnvironment()
 from MainWindow import *
 import Globals
 
@@ -13,27 +12,9 @@ if __name__ == '__main__':
 
     app = QtGui.QApplication(sys.argv)
     app.setApplicationName('Grace Note')
-    try:
-        if sys.argv[1] == '-ruta':
     
-#            print 'Available Styles:'
-#            for item in QtGui.QStyleFactory.keys():
-#                print item
-    
-            app.setStyle(QtGui.QStyleFactory.create('Plastique'))
-    
-            colour = QtGui.QColor(255, 245, 250)
-            brush = QtGui.QBrush(colour)
-            palette = QtGui.QPalette(colour)
-    
-            app.setPalette(palette)
-            print 'Sakura Dream Mode Activated'
-    except:
-        pass
-
-    Globals.configData.DelayedLoad()
-
-    window = MainWindow()
-    
-    window.show()
-    sys.exit(app.exec_())
+    if Scripts.SetupEnvironment():
+        Globals.configData.DelayedLoad()
+        window = MainWindow()
+        window.show()
+        sys.exit(app.exec_())
