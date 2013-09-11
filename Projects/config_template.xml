@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<GraceNoteConfig
+ ID="Template"
+ LocalDatabasePath="ExampleDB"
+ RemoteDatabasePath="ExampleDB"
+ 
+ FTPServer="ftp.example.xxx"
+ FTPPort="21"
+ FTPUsername="user"
+ FTPPassword="pass"
+ 
+ UseGracesVoiceHash="false"
+ VoicePathJpPrefix="ExampleVoices/"
+ VoicePathJpPostfix=".mp3"
+ VoicePathEnPrefix="ExampleVoices/US_"
+ VoicePathEnPostfix=".mp3"
+ VoiceEntryOffset="0"
+>
+	<Dictionary>
+		<Entry Word="Example" />
+	</Dictionary>
+	<Fonts>
+		<Replacement old="&lt;Name: EXAMPLE&gt;" new="Example" />
+		<Line style="2" x="700" y="0" color="green" name="Green: Textbox end" />
+		<Font name="default">
+			<Image Path="ExampleFont/Font.png">
+				<Glyph char=" " x="0" y="0" width="14" height="32" />
+			</Image>
+		</Font>
+	</Fonts>
+	<Categories>
+		<Category name="Example Category">
+			<File name="ExampleDatabase" />
+		</Category>
+	</Categories>
+</GraceNoteConfig>
