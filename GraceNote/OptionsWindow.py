@@ -17,6 +17,14 @@ class OptionsWindow(QtGui.QDialog):
         self.cancelButton = QtGui.QPushButton('Cancel')
 
         checkLayout = QtGui.QVBoxLayout()
+        
+        userNameLabel = QtGui.QLabel('Username')
+        self.userNameTextField = QtGui.QLineEdit(Globals.Author)
+        userNameLayout = QtGui.QHBoxLayout()
+        userNameLayout.addWidget(userNameLabel)
+        userNameLayout.addWidget(self.userNameTextField)
+        checkLayout.addLayout(userNameLayout)
+        
         checkLayout.addWidget(self.updateLowerStatusCheckbox)
         checkLayout.addWidget(self.enableFooterCheckbox)
         checkLayout.addWidget(self.writeToHddCheckbox)
@@ -73,6 +81,8 @@ class OptionsWindow(QtGui.QDialog):
 
     def LoadSettings(self):
         try:
+            self.userNameTextField.setText(Globals.Author)
+
             self.writeToHddCheckbox.setChecked(Globals.WriteDatabaseStorageToHddOnEntryChange)
             self.enableFooterCheckbox.setChecked(Globals.FooterVisibleFlag)
             self.updateLowerStatusCheckbox.setChecked(Globals.UpdateLowerStatusFlag)
@@ -110,6 +120,8 @@ class OptionsWindow(QtGui.QDialog):
         return
 
     def ApplySettingsAndClose(self):
+        Globals.Author = unicode(self.userNameTextField.text())
+
         Globals.WriteDatabaseStorageToHddOnEntryChange = self.writeToHddCheckbox.isChecked()
         Globals.Settings.setValue('writeonentrychange', str(Globals.WriteDatabaseStorageToHddOnEntryChange))
 
