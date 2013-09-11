@@ -57,21 +57,14 @@
     <Compile Include="GraceTools\Layout.py" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="config.xml" />
-    <Content Include="config_danganronpa-bestof.xml" />
-    <Content Include="config_danganronpa.xml" />
-    <Content Include="config_graces_byfolder.xml" />
-    <Content Include="config_graces_bytype.xml" />
-    <Content Include="config_luxpain.xml" />
-    <Content Include="config_temp.xml" />
-    <Content Include="config_test.xml" />
-    <Content Include="config_xillia.xml" />
     <Content Include="icons\cdnflag.png" />
     <Content Include="icons\changelog.png" />
     <Content Include="icons\comment.png" />
     <Content Include="icons\completion.png" />
     <Content Include="icons\debugoff.png" />
     <Content Include="icons\debugOn.png" />
+    <Content Include="icons\dialog-declare.png" />
+    <Content Include="icons\dialog-information-4.png" />
     <Content Include="icons\dupe.png" />
     <Content Include="icons\global.png" />
     <Content Include="icons\globe.png" />
@@ -88,6 +81,7 @@
     <Content Include="icons\patchv0.png" />
     <Content Include="icons\patchv2.png" />
     <Content Include="icons\pencil.png" />
+    <Content Include="icons\pictogram-din-m000-general.png" />
     <Content Include="icons\refresh.png" />
     <Content Include="icons\report.png" />
     <Content Include="icons\ruta.png" />
@@ -103,15 +97,16 @@
     <Content Include="icons\twoon.png" />
     <Content Include="icons\twoup.png" />
     <Content Include="icons\upload.png" />
+    <Content Include="Projects\config_template.xml" />
     <Content Include="readme.txt" />
     <Content Include="Resources\CP932.txt" />
     <Content Include="Resources\JPDictionary" />
-    <Content Include="Resources\proper_nouns.txt" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="icons\" />
     <Folder Include="GraceTools\" />
     <Folder Include="GraceNote\" />
+    <Folder Include="Projects\" />
     <Folder Include="Resources\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
