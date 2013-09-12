@@ -1207,11 +1207,10 @@ class Scripts2(QtGui.QWidget):
         self.entryStandardItemModel.setColumnCount(9)
         self.entryStandardItemModel.setHorizontalHeaderLabels(self.entryTreeViewHeaderLabels)
         self.entryTreeView.header().setStretchLastSection(True) 
-        self.entryTreeView.header().setResizeMode(3, QtGui.QHeaderView.Stretch)
         self.entryTreeView.setColumnWidth(0, 10) # status
         self.entryTreeView.setColumnWidth(1, 10) # comment exists?
         self.entryTreeView.setColumnWidth(2, 50) # identifystring
-        #self.entryTreeView.setColumnWidth(3, 200) # text
+        self.entryTreeView.setColumnWidth(3, 200) # text
         self.entryTreeView.setColumnWidth(4, 90) # last updated by
         self.entryTreeView.setColumnWidth(5, 110) # last updated at
         self.entryTreeView.setColumnWidth(6, 20) # debug checkbox
