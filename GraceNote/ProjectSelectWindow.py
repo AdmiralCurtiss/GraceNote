@@ -6,21 +6,13 @@ import Config
 class ProjectSelectWindow(QtGui.QDialog):
     def __init__(self):
         super(ProjectSelectWindow, self).__init__()
+        self.configFileSelected = False
 
         self.configfile = 'Projects/config.xml'
         self.setWindowModality(False)
         
         checkLayout = QtGui.QVBoxLayout()
         self.ProjectList = QtGui.QListWidget()
-        
-        files = os.listdir('Projects')
-        for filename in files:
-            try:
-                cfg = Config.Configuration('Projects/' + filename)
-                self.ProjectList.addItem(filename)
-                #self.ProjectList.addItem(cfg.ID + ' (' + filename + ')')
-            except:
-                pass
         self.ProjectList.itemDoubleClicked.connect(self.OkAndClose)
         checkLayout.addWidget(self.ProjectList)
     
@@ -42,16 +34,29 @@ class ProjectSelectWindow(QtGui.QDialog):
         self.setLayout(layout)
         #self.setMinimumSize(800, 600)
 
+        # auto-load if only one project is available
+        if self.ProjectList.count() == 1:
+            self.ProjectList.setCurrentRow(0)
+            self.OkAndClose()
+
     def LoadProjectList(self):
         try:
-            pass
+            files = os.listdir('Projects')
+            for filename in files:
+                try:
+                    cfg = Config.Configuration('Projects/' + filename)
+                    self.ProjectList.addItem(filename)
+                    #self.ProjectList.addItem(cfg.ID + ' (' + filename + ')')
+                except:
+                    pass
         except:
             pass
         return
 
     def OkAndClose(self):
         item = self.ProjectList.currentItem()
-        self.configfile = 'Projects/' + item.text()
+        self.configfile = u'Projects/' + unicode(item.text())
+        self.configFileSelected = True
 
         self.done(0)
         return

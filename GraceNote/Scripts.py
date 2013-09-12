@@ -59,8 +59,9 @@ def SetupEnvironment():
     # load config
     try:
         projectSelectWindow = ProjectSelectWindow.ProjectSelectWindow()
-        projectWinRetVal = projectSelectWindow.exec_()
-        if projectWinRetVal == 0:
+        if not projectSelectWindow.configFileSelected: # if a file was auto-selected, don't open window
+            projectSelectWindow.exec_()
+        if projectSelectWindow.configFileSelected:
             Globals.configfile = projectSelectWindow.configfile
             Globals.configData = Configuration(Globals.configfile)
         else:
