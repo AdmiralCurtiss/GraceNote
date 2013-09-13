@@ -299,7 +299,7 @@ class Scripts2(QtGui.QWidget):
         self.entryTreeView.setModel(self.entrySortFilterProxyModel)
         self.entryTreeView.setRootIsDecorated(False)
 
-        self.entryTreeViewHeaderLabels = ['Status', 'Comment?', 'IdentifyString', 'Text', 'Last updated by', 'Last updated at', 'Debug?', 'ID', 'Comment']
+        self.entryTreeViewHeaderLabels = ['ID', 'Status', 'Comment?', 'IdentifyString', 'Text', 'Comment', 'Last updated by', 'Last updated at', 'Debug?']
         self.entryTreeViewHeadersVisible = []
         self.entryTreeViewHasBeenFilledOnce = False
 
@@ -1221,7 +1221,7 @@ class Scripts2(QtGui.QWidget):
             editbox.iconToggle(0)
 
         if self.entryTreeViewHeaderWidths is None:
-            self.entryTreeViewHeaderWidths = [10, 10, 50, 200, 90, 110, 20, 30, 100]
+            self.entryTreeViewHeaderWidths = [30, 10, 10, 50, 200, 100, 90, 110, 20]
         
         if self.entryTreeViewHasBeenFilledOnce:
             self.StoreWidthsOfEntryList()
@@ -1307,7 +1307,7 @@ class Scripts2(QtGui.QWidget):
                 TempUpdatedTimestamp = 'Unknown'
             
             if TempCOM == None:
-                TempCOM = 'None'
+                TempCOM = ''
 
             commentString = ''
             if TempCOM != '':
@@ -1315,10 +1315,13 @@ class Scripts2(QtGui.QWidget):
                 commentString = 'C'
 
             entryDisplayString = Globals.VariableReplace( TempENG.replace('\f', ' ').replace('\n', ' ') )
+            commentDisplayString = Globals.VariableReplace( TempCOM.replace('\f', ' ').replace('\n', ' ') )
                         
+            additemEntryEnglishID = QtGui.QStandardItem(str(TempID))
+            additemEntryEnglishID.setStatusTip(TempIdentifyString)
+            additemEntryEnglishID.GraceNoteEntryId = i+1
+            additemEntryEnglishID.setEditable(False)
             additemEntryStatus = QtGui.QStandardItem(str(TempStatus))
-            additemEntryStatus.setStatusTip(TempIdentifyString)
-            additemEntryStatus.GraceNoteEntryId = i+1
             additemEntryStatus.setEditable(False)
             additemEntryText = QtGui.QStandardItem(entryDisplayString)
             additemEntryText.setEditable(False)
@@ -1332,9 +1335,7 @@ class Scripts2(QtGui.QWidget):
             additemEntryUpdatedBy.setEditable(False)
             additemEntryIsDebug = QtGui.QStandardItem('')
             additemEntryIsDebug.setCheckable(True)
-            additemEntryEnglishID = QtGui.QStandardItem(str(TempID))
-            additemEntryEnglishID.setEditable(False)
-            additemEntryCommentText = QtGui.QStandardItem(TempCOM)
+            additemEntryCommentText = QtGui.QStandardItem(commentDisplayString)
             additemEntryCommentText.setEditable(False)
     
             self.FormatEntryListItemColor(additemEntryStatus, TempStatus)        
@@ -1352,10 +1353,10 @@ class Scripts2(QtGui.QWidget):
             elif (TempDebug == 1) and (self.debug.isChecked()):
                 additemEntryIsDebug.setCheckState(QtCore.Qt.Checked)
                 additemEntryStatus.setWhatsThis("d") #debug
-                self.entryStandardItemModel.appendRow([additemEntryStatus, additemEntryCommentExists, additemEntryIdentifyString, additemEntryText, additemEntryUpdatedBy, additemEntryTimestamp, additemEntryIsDebug, additemEntryEnglishID, additemEntryCommentText])
+                self.entryStandardItemModel.appendRow([additemEntryEnglishID, additemEntryStatus, additemEntryCommentExists, additemEntryIdentifyString, additemEntryText, additemEntryCommentText, additemEntryUpdatedBy, additemEntryTimestamp, additemEntryIsDebug])
             else:
                 additemEntryStatus.setWhatsThis("n") #not debug
-                self.entryStandardItemModel.appendRow([additemEntryStatus, additemEntryCommentExists, additemEntryIdentifyString, additemEntryText, additemEntryUpdatedBy, additemEntryTimestamp, additemEntryIsDebug, additemEntryEnglishID, additemEntryCommentText])
+                self.entryStandardItemModel.appendRow([additemEntryEnglishID, additemEntryStatus, additemEntryCommentExists, additemEntryIdentifyString, additemEntryText, additemEntryCommentText, additemEntryUpdatedBy, additemEntryTimestamp, additemEntryIsDebug])
             
             if TempStatus != -1 and TempDebug == 1:
                 SaveCur.execute("update Text set status=-1 where ID=?", (TempString[0][0],))
@@ -1837,7 +1838,7 @@ class Scripts2(QtGui.QWidget):
 
     def UpdateDebug(self):
         index = self.entryTreeView.currentIndex()
-        if self.entryStandardItemModel.item(index.row(), 6).checkState() == 0:
+        if self.entryStandardItemModel.item(index.row(), 8).checkState() == 0:
             if self.entryStandardItemModel.item(index.row()).whatsThis() == "n":
                 return # no change, was already not debug
             DebugState = False
