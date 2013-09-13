@@ -251,6 +251,10 @@ class Scripts2(QtGui.QWidget):
         else:
             self.entryTreeViewHeaderWidths = None
 
+        if Globals.Settings.contains('Scripts2.entryTreeViewHeaderState'):
+            self.entryTreeViewHeaderState = Globals.Settings.value('Scripts2.entryTreeViewHeaderState')
+        else:
+            self.entryTreeViewHeaderState = None
 
         self.rolenames = ['None', 'Translation', 'Translation Review', 'Contextual Review', 'Editing']
         self.roletext = ['Doing Nothing', 'Translating', 'Reviewing Translations', 'Reviewing Context', 'Editing']
@@ -885,6 +889,8 @@ class Scripts2(QtGui.QWidget):
         if self.entryTreeViewHeaderWidths is not None:
             widths = ','.join([str(w) for w in self.entryTreeViewHeaderWidths])
             Globals.Settings.setValue('Scripts2.entryTreeViewHeaderWidths', widths)
+        if self.entryTreeViewHeaderState is not None:
+            Globals.Settings.setValue('Scripts2.entryTreeViewHeaderState', self.entryTreeViewHeaderState)
 
         Globals.Settings.sync()
         self.close()
@@ -1210,6 +1216,7 @@ class Scripts2(QtGui.QWidget):
     def StoreWidthsOfEntryList(self):
         widths = [self.entryTreeView.columnWidth(index) for index in range(len(self.entryTreeViewHeaderWidths))]
         self.entryTreeViewHeaderWidths = widths
+        self.entryTreeViewHeaderState = self.entryTreeView.header().saveState()
 
     # fills in the entry list to the right        
     def PopulateEntryList(self):
@@ -1230,10 +1237,11 @@ class Scripts2(QtGui.QWidget):
         self.entryStandardItemModel.clear()
         self.entryStandardItemModel.setColumnCount(9)
         self.entryStandardItemModel.setHorizontalHeaderLabels(self.entryTreeViewHeaderLabels)
+        if self.entryTreeViewHeaderState is not None:
+            self.entryTreeView.header().restoreState(self.entryTreeViewHeaderState)
         self.entryTreeView.header().setStretchLastSection(True)
         for i in xrange( len(self.entryTreeViewHeaderWidths) ):
             self.entryTreeView.setColumnWidth( i, self.entryTreeViewHeaderWidths[i] )
-
         for i in xrange( len(self.entryTreeViewHeaderLabels) ):
             self.entryTreeView.setColumnHidden( i, self.entryTreeViewHeadersVisible[i] == False )
 
