@@ -1423,7 +1423,7 @@ class Scripts2(QtGui.QWidget):
         for i in range(len(self.textEditingBoxes)):
             try:
                 idx = index.sibling(index.row()+(i-1), index.column())
-                entryitem = self.entryStandardItemModel.item(idx.row())
+                entryitem = self.entryStandardItemModel.item(idx.row(), 0)
                 entrytextdisplay = self.entrySortFilterProxyModel.data(idx)
 
                 if entrytextdisplay != None:
@@ -1722,7 +1722,7 @@ class Scripts2(QtGui.QWidget):
 
                     try:
                         for i in xrange(self.entryStandardItemModel.rowCount()):
-                            item = self.entryStandardItemModel.item(i)
+                            item = self.entryStandardItemModel.item(i, 0)
                             if item.GraceNoteEntryId == entry:
                                 entryIndex = self.entryStandardItemModel.indexFromItem(item)
                                 sortIndex = self.entrySortFilterProxyModel.mapFromSource(entryIndex)
@@ -1847,11 +1847,11 @@ class Scripts2(QtGui.QWidget):
     def UpdateDebug(self):
         index = self.entryTreeView.currentIndex()
         if self.entryStandardItemModel.item(index.row(), 8).checkState() == 0:
-            if self.entryStandardItemModel.item(index.row()).whatsThis() == "n":
+            if self.entryStandardItemModel.item(index.row(), 0).whatsThis() == "n":
                 return # no change, was already not debug
             DebugState = False
         else:
-            if self.entryStandardItemModel.item(index.row()).whatsThis() == "d":
+            if self.entryStandardItemModel.item(index.row(), 0).whatsThis() == "d":
                 return # no change, was already debug
             DebugState = True
         
@@ -1867,11 +1867,11 @@ class Scripts2(QtGui.QWidget):
         if DebugState:
             Globals.CursorGracesJapanese.execute("UPDATE Japanese SET debug = 1 WHERE ID = {0} AND debug != 1".format(NextID))
             SaveCur.execute("UPDATE Text SET status = -1, updated = 1 WHERE ID = {0} AND status != -1".format(selectedEntryId+1))
-            self.entryStandardItemModel.item(index.row()).setWhatsThis("d")
+            self.entryStandardItemModel.item(index.row(), 0).setWhatsThis("d")
         else:
             Globals.CursorGracesJapanese.execute("UPDATE Japanese SET debug = 0 WHERE ID = {0} AND debug != 0".format(NextID))
             SaveCur.execute("UPDATE Text SET status =  0, updated = 1 WHERE ID = {0} AND status  = -1".format(selectedEntryId+1))
-            self.entryStandardItemModel.item(index.row()).setWhatsThis("n")
+            self.entryStandardItemModel.item(index.row(), 0).setWhatsThis("n")
         self.update.add(str(databasefilename))
         SaveCon.commit()
         Globals.ConnectionGracesJapanese.commit()
@@ -1882,12 +1882,12 @@ class Scripts2(QtGui.QWidget):
             SaveCur.execute("select status from Text where ID={0}".format(selectedEntryId+1))
             status = SaveCur.fetchall()[0][0]
             if status >= self.role:
-                self.entryStandardItemModel.item(index.row()).setBackground(QtGui.QBrush( Globals.ColorCurrentStatus ))
+                self.entryStandardItemModel.item(index.row(), 0).setBackground(QtGui.QBrush( Globals.ColorCurrentStatus ))
             else:
-                self.entryStandardItemModel.item(index.row()).setBackground(QtGui.QBrush( Globals.ColorLowerStatus ))
+                self.entryStandardItemModel.item(index.row(), 0).setBackground(QtGui.QBrush( Globals.ColorLowerStatus ))
                 
         else:
-            self.entryStandardItemModel.item(index.row()).setBackground(QtGui.QBrush(QtGui.QColor(255, 220, 220)))
+            self.entryStandardItemModel.item(index.row(), 0).setBackground(QtGui.QBrush(QtGui.QColor(255, 220, 220)))
         
     def DebugPrintDatabaseWriteStorage(self):
         for d in self.databaseWriteStorage:
