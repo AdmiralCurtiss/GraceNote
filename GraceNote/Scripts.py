@@ -306,6 +306,7 @@ class Scripts2(QtGui.QWidget):
         self.entryTreeViewHeaderLabels = ['ID', 'Status', 'Comment?', 'IdentifyString', 'Text', 'Comment', 'Last updated by', 'Last updated at', 'Debug?']
         self.entryTreeViewHeadersVisible = []
         self.entryTreeViewHasBeenFilledOnce = False
+        self.entryTreeViewHeaderWidthsDefaults = [30, 10, 10, 50, 200, 100, 90, 110, 20]
 
         visibleCount = 0
         try:
@@ -1228,7 +1229,7 @@ class Scripts2(QtGui.QWidget):
             editbox.iconToggle(0)
 
         if self.entryTreeViewHeaderWidths is None:
-            self.entryTreeViewHeaderWidths = [30, 10, 10, 50, 200, 100, 90, 110, 20]
+            self.entryTreeViewHeaderWidths = self.entryTreeViewHeaderWidthsDefaults[:] # copy list
         
         if self.entryTreeViewHasBeenFilledOnce:
             self.StoreWidthsOfEntryList()
@@ -1835,6 +1836,7 @@ class Scripts2(QtGui.QWidget):
         for i in xrange( len(menuOptions) ):
             if menuOptions[i] == selected:
                 self.entryTreeView.setColumnHidden(i, self.entryTreeView.header().isSectionHidden(i) == False)
+                self.entryTreeView.setColumnWidth(i, self.entryTreeViewHeaderWidthsDefaults[i])
                 # make sure people don't disable all sections
                 if self.entryTreeView.header().hiddenSectionCount() == self.entryTreeView.header().count():
                     self.entryTreeView.setColumnHidden(i, False)
