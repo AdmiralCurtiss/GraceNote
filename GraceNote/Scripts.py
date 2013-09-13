@@ -245,6 +245,13 @@ class Scripts2(QtGui.QWidget):
         else:
             Globals.ColorLowerStatus = QtGui.QColor(255, 160, 160)
 
+        if Globals.Settings.contains('Scripts2.entryTreeViewHeaderWidths'):
+            widths = str(Globals.Settings.value('Scripts2.entryTreeViewHeaderWidths')).split(',')
+            self.entryTreeViewHeaderWidths = [int(w) for w in widths]
+        else:
+            self.entryTreeViewHeaderWidths = None
+
+
         self.rolenames = ['None', 'Translation', 'Translation Review', 'Contextual Review', 'Editing']
         self.roletext = ['Doing Nothing', 'Translating', 'Reviewing Translations', 'Reviewing Context', 'Editing']
 
@@ -294,6 +301,7 @@ class Scripts2(QtGui.QWidget):
 
         self.entryTreeViewHeaderLabels = ['Status', 'Comment?', 'IdentifyString', 'Text', 'Last updated by', 'Last updated at', 'Debug?', 'ID', 'Comment']
         self.entryTreeViewHeadersVisible = []
+        self.entryTreeViewHasBeenFilledOnce = False
 
         visibleCount = 0
         try:
@@ -872,6 +880,12 @@ class Scripts2(QtGui.QWidget):
         Globals.Settings.setValue('Geometry/Scripts2.mainAreaSplitLayout', self.mainAreaSplitLayout.saveGeometry())
         Globals.Settings.setValue('States/Scripts2.mainAreaSplitLayout', self.mainAreaSplitLayout.saveState())
 
+        if self.entryTreeViewHasBeenFilledOnce:
+            self.StoreWidthsOfEntryList()
+        if self.entryTreeViewHeaderWidths is not None:
+            widths = ','.join([str(w) for w in self.entryTreeViewHeaderWidths])
+            Globals.Settings.setValue('Scripts2.entryTreeViewHeaderWidths', widths)
+
         Globals.Settings.sync()
         self.close()
         quit()
@@ -1193,6 +1207,9 @@ class Scripts2(QtGui.QWidget):
         else:
             item.setBackground(QtGui.QBrush( Globals.ColorLowerStatus ))
 
+    def StoreWidthsOfEntryList(self):
+        widths = [self.entryTreeView.columnWidth(index) for index in range(len(self.entryTreeViewHeaderWidths))]
+        self.entryTreeViewHeaderWidths = widths
 
     # fills in the entry list to the right        
     def PopulateEntryList(self):
@@ -1203,19 +1220,19 @@ class Scripts2(QtGui.QWidget):
         for editbox in self.regularEditingTextBoxes:
             editbox.iconToggle(0)
 
+        if self.entryTreeViewHeaderWidths is None:
+            self.entryTreeViewHeaderWidths = [10, 10, 50, 200, 90, 110, 20, 30, 100]
+        
+        if self.entryTreeViewHasBeenFilledOnce:
+            self.StoreWidthsOfEntryList()
+        self.entryTreeViewHasBeenFilledOnce = True
+
         self.entryStandardItemModel.clear()
         self.entryStandardItemModel.setColumnCount(9)
         self.entryStandardItemModel.setHorizontalHeaderLabels(self.entryTreeViewHeaderLabels)
-        self.entryTreeView.header().setStretchLastSection(True) 
-        self.entryTreeView.setColumnWidth(0, 10) # status
-        self.entryTreeView.setColumnWidth(1, 10) # comment exists?
-        self.entryTreeView.setColumnWidth(2, 50) # identifystring
-        self.entryTreeView.setColumnWidth(3, 200) # text
-        self.entryTreeView.setColumnWidth(4, 90) # last updated by
-        self.entryTreeView.setColumnWidth(5, 110) # last updated at
-        self.entryTreeView.setColumnWidth(6, 20) # debug checkbox
-        self.entryTreeView.setColumnWidth(7, 30) # entry ID
-        self.entryTreeView.setColumnWidth(8, 100) # comment text
+        self.entryTreeView.header().setStretchLastSection(True)
+        for i in xrange( len(self.entryTreeViewHeaderWidths) ):
+            self.entryTreeView.setColumnWidth( i, self.entryTreeViewHeaderWidths[i] )
 
         for i in xrange( len(self.entryTreeViewHeaderLabels) ):
             self.entryTreeView.setColumnHidden( i, self.entryTreeViewHeadersVisible[i] == False )
