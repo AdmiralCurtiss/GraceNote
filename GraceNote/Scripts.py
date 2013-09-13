@@ -1231,6 +1231,7 @@ class Scripts2(QtGui.QWidget):
         self.entryStandardItemModel.setColumnCount(9)
         self.entryStandardItemModel.setHorizontalHeaderLabels(self.entryTreeViewHeaderLabels)
         self.entryTreeView.header().setStretchLastSection(True)
+        self.entryTreeView.header().setMovable(False)
         for i in xrange( len(self.entryTreeViewHeaderWidths) ):
             self.entryTreeView.setColumnWidth( i, self.entryTreeViewHeaderWidths[i] )
 
