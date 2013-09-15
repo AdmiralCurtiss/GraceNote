@@ -1344,6 +1344,7 @@ class Scripts2(QtGui.QWidget):
             additemEntryUpdatedBy.setEditable(False)
             additemEntryIsDebug = QtGui.QStandardItem('')
             additemEntryIsDebug.setCheckable(True)
+            additemEntryIsDebug.setEditable(False)
             additemEntryCommentText = QtGui.QStandardItem(commentDisplayString)
             additemEntryCommentText.setEditable(False)
     
@@ -1878,18 +1879,11 @@ class Scripts2(QtGui.QWidget):
         SaveCon.commit()
         Globals.ConnectionGracesJapanese.commit()
         
-
         # color
-        if not DebugState:
-            SaveCur.execute("select status from Text where ID={0}".format(selectedEntryId+1))
-            status = SaveCur.fetchall()[0][0]
-            if status >= self.role:
-                self.entryStandardItemModel.item(index.row(), 0).setBackground(QtGui.QBrush( Globals.ColorCurrentStatus ))
-            else:
-                self.entryStandardItemModel.item(index.row(), 0).setBackground(QtGui.QBrush( Globals.ColorLowerStatus ))
-                
-        else:
-            self.entryStandardItemModel.item(index.row(), 0).setBackground(QtGui.QBrush(QtGui.QColor(255, 220, 220)))
+        SaveCur.execute("select status from Text where ID={0}".format(selectedEntryId+1))
+        status = SaveCur.fetchall()[0][0]
+        for i in xrange( len(self.entryTreeViewHeaderLabels) ):
+            self.FormatEntryListItemColor( self.entryStandardItemModel.item(index.row(), i), status )
         
     def DebugPrintDatabaseWriteStorage(self):
         for d in self.databaseWriteStorage:
