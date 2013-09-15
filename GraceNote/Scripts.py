@@ -411,7 +411,7 @@ class Scripts2(QtGui.QWidget):
         # Connections
         self.tree.selectionModel().selectionChanged.connect(self.PopulateEntryList)
         self.entryTreeView.selectionModel().selectionChanged.connect(self.PopulateTextEdit)
-        self.entryTreeView.clicked.connect(self.UpdateDebug)
+        self.entryStandardItemModel.itemChanged.connect(self.UpdateDebug)
         self.entryTreeView.header().setClickable(True)
         self.entryTreeView.header().setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.entryTreeView.header().customContextMenuRequested.connect(self.SpawnEntryListColumnHideMenu)
@@ -1362,10 +1362,10 @@ class Scripts2(QtGui.QWidget):
                 pass
             elif (TempDebug == 1) and (self.debug.isChecked()):
                 additemEntryIsDebug.setCheckState(QtCore.Qt.Checked)
-                additemEntryEnglishID.DebugStatus = True
+                additemEntryIsDebug.DebugStatus = True
                 self.entryStandardItemModel.appendRow([additemEntryEnglishID, additemEntryStatus, additemEntryCommentExists, additemEntryIdentifyString, additemEntryText, additemEntryCommentText, additemEntryUpdatedBy, additemEntryTimestamp, additemEntryIsDebug])
             else:
-                additemEntryEnglishID.DebugStatus = False
+                additemEntryIsDebug.DebugStatus = False
                 self.entryStandardItemModel.appendRow([additemEntryEnglishID, additemEntryStatus, additemEntryCommentExists, additemEntryIdentifyString, additemEntryText, additemEntryCommentText, additemEntryUpdatedBy, additemEntryTimestamp, additemEntryIsDebug])
             
             if TempStatus != -1 and TempDebug == 1:
@@ -1847,18 +1847,21 @@ class Scripts2(QtGui.QWidget):
 
         return
 
-    def UpdateDebug(self):
-        index = self.entryTreeView.currentIndex()
-        if self.entryStandardItemModel.item(index.row(), 8).checkState() == 0:
-            if self.entryStandardItemModel.item(index.row(), 0).DebugStatus == False:
-                return # no change, was already not debug
-            DebugState = False
-        else:
-            if self.entryStandardItemModel.item(index.row(), 0).DebugStatus == True:
-                return # no change, was already debug
-            DebugState = True
+    def UpdateDebug(self, additemEntryIsDebug):
+        try:
+            if additemEntryIsDebug.checkState() == 0:
+                if additemEntryIsDebug.DebugStatus == False:
+                    return # no change, was already not debug
+                DebugState = False
+            else:
+                if additemEntryIsDebug.DebugStatus == True:
+                    return # no change, was already debug
+                DebugState = True
+        except: # item is not the debug checkbox item, might be a better way to do this (.whatsThis()?) but this should work
+            return
         
-        #print("updateDebug")
+        index = self.entryStandardItemModel.indexFromItem(additemEntryIsDebug)
+
         self.WriteDatabaseStorageToHdd()
         
         selectedEntryId = self.entryStandardItemModel.item(index.row(), 0).GraceNoteEntryId - 1
@@ -1870,11 +1873,11 @@ class Scripts2(QtGui.QWidget):
         if DebugState:
             Globals.CursorGracesJapanese.execute("UPDATE Japanese SET debug = 1 WHERE ID = {0} AND debug != 1".format(NextID))
             SaveCur.execute("UPDATE Text SET status = -1, updated = 1 WHERE ID = {0} AND status != -1".format(selectedEntryId+1))
-            self.entryStandardItemModel.item(index.row(), 0).DebugStatus = True
+            additemEntryIsDebug.DebugStatus = True
         else:
             Globals.CursorGracesJapanese.execute("UPDATE Japanese SET debug = 0 WHERE ID = {0} AND debug != 0".format(NextID))
             SaveCur.execute("UPDATE Text SET status =  0, updated = 1 WHERE ID = {0} AND status  = -1".format(selectedEntryId+1))
-            self.entryStandardItemModel.item(index.row(), 0).DebugStatus = False
+            additemEntryIsDebug.DebugStatus = False
         self.update.add(str(databasefilename))
         SaveCon.commit()
         Globals.ConnectionGracesJapanese.commit()
