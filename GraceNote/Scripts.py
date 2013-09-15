@@ -1361,10 +1361,10 @@ class Scripts2(QtGui.QWidget):
                 pass
             elif (TempDebug == 1) and (self.debug.isChecked()):
                 additemEntryIsDebug.setCheckState(QtCore.Qt.Checked)
-                additemEntryStatus.setWhatsThis("d") #debug
+                additemEntryEnglishID.DebugStatus = True
                 self.entryStandardItemModel.appendRow([additemEntryEnglishID, additemEntryStatus, additemEntryCommentExists, additemEntryIdentifyString, additemEntryText, additemEntryCommentText, additemEntryUpdatedBy, additemEntryTimestamp, additemEntryIsDebug])
             else:
-                additemEntryStatus.setWhatsThis("n") #not debug
+                additemEntryEnglishID.DebugStatus = False
                 self.entryStandardItemModel.appendRow([additemEntryEnglishID, additemEntryStatus, additemEntryCommentExists, additemEntryIdentifyString, additemEntryText, additemEntryCommentText, additemEntryUpdatedBy, additemEntryTimestamp, additemEntryIsDebug])
             
             if TempStatus != -1 and TempDebug == 1:
@@ -1849,11 +1849,11 @@ class Scripts2(QtGui.QWidget):
     def UpdateDebug(self):
         index = self.entryTreeView.currentIndex()
         if self.entryStandardItemModel.item(index.row(), 8).checkState() == 0:
-            if self.entryStandardItemModel.item(index.row(), 0).whatsThis() == "n":
+            if self.entryStandardItemModel.item(index.row(), 0).DebugStatus == False:
                 return # no change, was already not debug
             DebugState = False
         else:
-            if self.entryStandardItemModel.item(index.row(), 0).whatsThis() == "d":
+            if self.entryStandardItemModel.item(index.row(), 0).DebugStatus == True:
                 return # no change, was already debug
             DebugState = True
         
@@ -1869,11 +1869,11 @@ class Scripts2(QtGui.QWidget):
         if DebugState:
             Globals.CursorGracesJapanese.execute("UPDATE Japanese SET debug = 1 WHERE ID = {0} AND debug != 1".format(NextID))
             SaveCur.execute("UPDATE Text SET status = -1, updated = 1 WHERE ID = {0} AND status != -1".format(selectedEntryId+1))
-            self.entryStandardItemModel.item(index.row(), 0).setWhatsThis("d")
+            self.entryStandardItemModel.item(index.row(), 0).DebugStatus = True
         else:
             Globals.CursorGracesJapanese.execute("UPDATE Japanese SET debug = 0 WHERE ID = {0} AND debug != 0".format(NextID))
             SaveCur.execute("UPDATE Text SET status =  0, updated = 1 WHERE ID = {0} AND status  = -1".format(selectedEntryId+1))
-            self.entryStandardItemModel.item(index.row(), 0).setWhatsThis("n")
+            self.entryStandardItemModel.item(index.row(), 0).DebugStatus = False
         self.update.add(str(databasefilename))
         SaveCon.commit()
         Globals.ConnectionGracesJapanese.commit()
