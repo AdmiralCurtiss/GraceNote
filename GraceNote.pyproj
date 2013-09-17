@@ -68,6 +68,9 @@
     <Content Include="icons\dupe.png" />
     <Content Include="icons\global.png" />
     <Content Include="icons\globe.png" />
+    <Content Include="icons\GraceNote_16px.png" />
+    <Content Include="icons\GraceNote_32px.png" />
+    <Content Include="icons\GraceNote_48px.png" />
     <Content Include="icons\japan.png" />
     <Content Include="icons\japanflag.png" />
     <Content Include="icons\massreplace.png" />

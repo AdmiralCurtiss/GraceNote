@@ -130,11 +130,10 @@ class Scripts2(QtGui.QWidget):
 
     def __init__(self, parent=None):
         super(Scripts2, self).__init__(parent)
-        
         self.parent = parent
+        self.parent.setWindowIcon(QtGui.QIcon('icons/GraceNote_48px.png'))
 
         self.splashScreen = SplashScreen()
-
         self.splashScreen.show()
         self.splashScreen.raise_()
         self.splashScreen.activateWindow()
