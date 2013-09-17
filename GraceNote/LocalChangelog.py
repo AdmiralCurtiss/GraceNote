@@ -7,8 +7,8 @@ import time
 class LocalChangelog(QtGui.QDialog):
 
     def __init__(self, file):
-    
         super(LocalChangelog, self).__init__()
+        self.setWindowIcon(QtGui.QIcon('icons/changelog.png'))
 
         self.setWindowModality(False)        
         self.listwidget = QtGui.QListWidget()

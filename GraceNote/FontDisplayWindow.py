@@ -9,6 +9,7 @@ class FontDisplayWindow(QtGui.QDialog):
 
     def __init__(self, parent):
         super(FontDisplayWindow, self).__init__()
+        self.setWindowIcon(QtGui.QIcon('icons/font.png'))
         self.parent = parent
         self.setWindowModality(False)        
         

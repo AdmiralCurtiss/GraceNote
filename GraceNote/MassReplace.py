@@ -11,6 +11,7 @@ class MassReplace(QtGui.QDialog):
 
     def __init__(self, parent):
         super(MassReplace, self).__init__()
+        self.setWindowIcon(QtGui.QIcon('icons/massreplace.png'))
 
         self.parent = parent
 

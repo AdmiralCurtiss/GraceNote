@@ -9,6 +9,7 @@ class DuplicateText(QtGui.QDialog):
 
     def __init__(self, parent):
         super(DuplicateText, self).__init__()
+        self.setWindowIcon(QtGui.QIcon('icons/ruta.png'))
 
         self.setWindowModality(False)        
         

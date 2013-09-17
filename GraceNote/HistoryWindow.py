@@ -7,6 +7,7 @@ class HistoryWindow(QtGui.QDialog):
 
     def __init__(self, parent):
         super(HistoryWindow, self).__init__()
+        self.setWindowIcon(QtGui.QIcon('icons/image-loading-2.png'))
         self.parent = parent
         self.setWindowModality(False)        
         self.setWindowTitle("History")

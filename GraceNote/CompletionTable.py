@@ -10,7 +10,7 @@ class CompletionTable(QtGui.QDialog):
 
     def __init__(self, parent):
         super(CompletionTable, self).__init__()
-
+        self.setWindowIcon(QtGui.QIcon('icons/completion.png'))
 
         self.parent = parent
         self.setWindowModality(False)        

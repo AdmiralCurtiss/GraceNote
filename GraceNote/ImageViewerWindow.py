@@ -9,6 +9,7 @@ class ImageViewerWindow(QtGui.QDialog):
 
     def __init__(self, parent, image):
         super(ImageViewerWindow, self).__init__()
+        self.setWindowIcon(QtGui.QIcon('icons/image-x-generic.png'))
         self.parent = parent
         self.medium = image
         self.setWindowModality(False)        

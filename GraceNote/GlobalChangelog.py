@@ -8,6 +8,7 @@ class GlobalChangelog(QtGui.QDialog):
 
     def __init__(self, parent):
         super(GlobalChangelog, self).__init__()
+        self.setWindowIcon(QtGui.QIcon('icons/global.png'))
 
         self.parent = parent
         

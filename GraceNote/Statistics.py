@@ -8,6 +8,8 @@ class Statistics(QtGui.QDialog):
 
     def __init__(self):
         super(Statistics, self).__init__()
+        self.setWindowIcon(QtGui.QIcon('icons/report.png'))
+        self.setWindowTitle('Reports')
 
         self.setWindowModality(False)        
         layout = QtGui.QVBoxLayout()
