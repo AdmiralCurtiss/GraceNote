@@ -406,6 +406,10 @@ class Scripts2(QtGui.QWidget):
         self.debug = QtGui.QAction(QtGui.QIcon('icons/debugoff.png'), 'Display Debug', None)
         self.debug.setCheckable(True)
         self.debug.setChecked(0)
+
+        self.alwaysOnTopButton = QtGui.QAction('Always on Top', None)
+        self.alwaysOnTopButton.setCheckable(True)
+        self.alwaysOnTopButton.setChecked(0)
         
         # Connections
         self.tree.selectionModel().selectionChanged.connect(self.PopulateEntryList)
@@ -418,6 +422,7 @@ class Scripts2(QtGui.QWidget):
         for editbox in self.regularEditingTextBoxes:
             editbox.manualEdit.connect(self.UpdateTextGenericFunc)
         self.debug.toggled.connect(self.DebugFilter)
+        self.alwaysOnTopButton.toggled.connect(self.AlwaysOnTopToggle)
         self.filter.returnPressed.connect(self.LiveSearch)
         self.jumptobox.returnPressed.connect(self.JumpToDatabase)
 
@@ -656,6 +661,7 @@ class Scripts2(QtGui.QWidget):
         
         
         self.Toolbar.addAction(self.debug)
+        self.Toolbar.addAction(self.alwaysOnTopButton)
         self.Toolbar.setToolButtonStyle(3)
         
         
@@ -1542,6 +1548,7 @@ class Scripts2(QtGui.QWidget):
             for i in range(len(self.textEditingBoxes)):
                 self.regularEditingTextBoxes[i].manualEdit.emit(-2, self.regularEditingTextBoxes[i], self.textEditingFooters[i])
 
+
         
     def GetFullText(self, replaceVariables):
         string = ''
@@ -1743,7 +1750,12 @@ class Scripts2(QtGui.QWidget):
         else:
             self.debug.setIcon(QtGui.QIcon('icons/debugoff.png'))
         
-    
+    def AlwaysOnTopToggle(self, enabled):
+        if enabled:
+            self.parent.setWindowFlags(self.parent.windowFlags() | QtCore.Qt.WindowStaysOnTopHint)
+        else:
+            self.parent.setWindowFlags(self.parent.windowFlags() & ~QtCore.Qt.WindowStaysOnTopHint)
+        self.parent.show()
     
     def ShowChangelog(self):
         item = self.treemodel.itemFromIndex(self.tree.currentIndex())
