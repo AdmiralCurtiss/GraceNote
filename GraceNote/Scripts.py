@@ -198,7 +198,7 @@ class Scripts2(QtGui.QWidget):
             Globals.ModeFlag = 'Semi-Auto'
         
         if Globals.Settings.contains('voicelanguage'):
-            Globals.EnglishVoiceLanguageFlag = Globals.Settings.value('voicelanguage') == 'EN'
+            Globals.EnglishVoiceLanguageFlag = False
         else:
             Globals.Settings.setValue('voicelanguage', 'JP')
             Globals.EnglishVoiceLanguageFlag = False

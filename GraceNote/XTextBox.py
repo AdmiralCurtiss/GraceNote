@@ -126,9 +126,10 @@ class XTextBox(QtGui.QTextEdit):
     
     def makePlaybackButtons(self, clipList):
     
+        self.audioClips = clipList
+
         topLayout = self.layout()
         thing = topLayout.itemAt(0)
-
         topLayout.removeItem(thing)
 
 
@@ -138,13 +139,18 @@ class XTextBox(QtGui.QTextEdit):
         layout.addWidget(self.tlCheck)
         layout.addWidget(self.translate)
 
-        self.audioClips = clipList
-
         self.button = QtGui.QToolButton()
         self.button.setIcon(self.style().standardIcon(QtGui.QStyle.SP_MediaPlay))
         self.button.setAutoRaise(True)
-        self.button.released.connect(self.playAudio)
+        self.button.released.connect(self.playAudioNormal)
+        self.buttonAlt = QtGui.QToolButton()
+        self.buttonAlt.setIcon(self.style().standardIcon(QtGui.QStyle.SP_MediaPlay))
+        self.buttonAlt.setAutoRaise(True)
+        self.buttonAlt.released.connect(self.playAudioAlt)
 
+        # only display the second button if there are actually two different voice clips
+        if not ( Globals.configData.VoicePathEnPrefix == Globals.configData.VoicePathJpPrefix and Globals.configData.VoicePathEnPostfix == Globals.configData.VoicePathJpPostfix ):
+            layout.addWidget(self.buttonAlt)
         layout.addWidget(self.button)
         topLayout.addLayout(layout)        
        
@@ -167,10 +173,10 @@ class XTextBox(QtGui.QTextEdit):
         topLayout.addLayout(layout)        
 
                         
-    def lookupAudioHash(self, name):
+    def lookupAudioHash(self, name, forceAlternateLanguage):
         
         if not Globals.configData.UseGracesVoiceHash:
-            if Globals.EnglishVoiceLanguageFlag:
+            if Globals.EnglishVoiceLanguageFlag or forceAlternateLanguage:
                 return Globals.configData.VoicePathEnPrefix + name + Globals.configData.VoicePathEnPostfix
             return Globals.configData.VoicePathJpPrefix + name + Globals.configData.VoicePathJpPostfix
         
@@ -191,17 +197,22 @@ class XTextBox(QtGui.QTextEdit):
             index = hashtable.hashtable[8].index(temphash)
             filename = 'VOSCE16' + '_' + str(index+1).zfill(5)
         
-        if Globals.EnglishVoiceLanguageFlag:
+        if Globals.EnglishVoiceLanguageFlag or forceAlternateLanguage:
             return Globals.configData.VoicePathEnPrefix + filename + Globals.configData.VoicePathEnPostfix
         return Globals.configData.VoicePathJpPrefix + filename + Globals.configData.VoicePathJpPostfix
 
-    def playAudio(self):
+    def playAudioNormal(self):
+        self.playAudio(self.audioClips, False)
+    def playAudioAlt(self):
+        self.playAudio(self.audioClips, True)
+
+    def playAudio(self, clips, forceAlternateLanguage):
     
         self.player.clear()
         playerQueue = []
     
-        for clip in self.audioClips:
-            filename = self.lookupAudioHash(clip)
+        for clip in clips:
+            filename = self.lookupAudioHash(clip, forceAlternateLanguage)
             if os.path.exists(filename):
                 #print 'playing audio: "' + filename + '"'
                 playerQueue.append(Phonon.MediaSource(filename))

@@ -42,15 +42,6 @@ class OptionsWindow(QtGui.QDialog):
         entryBoxAmountLayout.addWidget(textboxAmountLabel)
         checkLayout.addLayout(entryBoxAmountLayout)
 
-        voiceLanguageLabel = QtGui.QLabel('Voice Language')
-        self.voiceLanguageComboBox = QtGui.QComboBox()
-        self.voiceLanguageComboBox.addItem('Japanese')
-        self.voiceLanguageComboBox.addItem('English')
-        voiceLanguageLayout = QtGui.QHBoxLayout()
-        voiceLanguageLayout.addWidget(self.voiceLanguageComboBox)
-        voiceLanguageLayout.addWidget(voiceLanguageLabel)
-        checkLayout.addLayout(voiceLanguageLayout)
-
         self.colorButtonLowerStatus = QtGui.QPushButton('Color')
         self.colorButtonLowerStatus.released.connect(self.LaunchColorPickerLowerStatus)
         colorLabelLowerStatus = QtGui.QLabel('Color for lower status')
@@ -90,12 +81,6 @@ class OptionsWindow(QtGui.QDialog):
             idx = self.textboxAmountComboBox.findText( str(Globals.AmountEditingWindows) )
             self.textboxAmountComboBox.setCurrentIndex(idx)
             
-            if Globals.EnglishVoiceLanguageFlag:
-                idx = self.voiceLanguageComboBox.findText('English')
-            else:
-                idx = self.voiceLanguageComboBox.findText('Japanese')
-            self.voiceLanguageComboBox.setCurrentIndex(idx)
-
             self.ColorLowerStatus = Globals.ColorLowerStatus
             self.colorButtonLowerStatus.setText( str(self.ColorLowerStatus.red()) +  ' / ' + str(self.ColorLowerStatus.green()) + ' / ' + str(self.ColorLowerStatus.blue()) )
             self.ColorCurrentStatus = Globals.ColorCurrentStatus
@@ -134,14 +119,6 @@ class OptionsWindow(QtGui.QDialog):
         Globals.AmountEditingWindows = int(self.textboxAmountComboBox.currentText())
         Globals.Settings.setValue('editpane_amount', str(Globals.AmountEditingWindows))
         
-        lang = self.voiceLanguageComboBox.currentText()
-        if lang == 'English':
-            Globals.EnglishVoiceLanguageFlag = True
-            Globals.Settings.setValue('voicelanguage', 'EN')
-        elif lang == 'Japanese':
-            Globals.EnglishVoiceLanguageFlag = False
-            Globals.Settings.setValue('voicelanguage', 'JP')
-
         Globals.ColorLowerStatus = self.ColorLowerStatus
         Globals.Settings.setValue('ColorLowerStatus', str( self.ColorLowerStatus.rgba() ) )
         Globals.ColorCurrentStatus = self.ColorCurrentStatus
