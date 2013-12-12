@@ -7,6 +7,8 @@ configData = None
 enchanted = False
 HashTableExists = False
 
+HaveUnsavedChanges = False
+
 ConnectionGracesJapanese = None
 CursorGracesJapanese = None
 LogCon = None

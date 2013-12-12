@@ -352,9 +352,17 @@ def SavetoServer(scripts):
             scripts.update = set(saveUpdate)
             Globals.Settings.setValue('update', scripts.update)
             Globals.Settings.sync()
-                
+
             if autoRestartAfter:
                 SavetoServer(scripts)
+
+            if len(scripts.update) > 0:
+                Globals.HaveUnsavedChanges = True
+            else:
+                Globals.HaveUnsavedChanges = False
+
+            scripts.SetWindowTitle()
+
             break
         except ftplib.all_errors:
             if ftperrorcount >= 20:
@@ -416,6 +424,8 @@ def RevertFromServer(scripts):
             scripts.update.clear()
             Globals.Settings.setValue('update', scripts.update)
             Globals.Settings.sync()
+            Globals.HaveUnsavedChanges = False
+            scripts.SetWindowTitle()
             print 'Reverted!'
             break
         except ftplib.all_errors:

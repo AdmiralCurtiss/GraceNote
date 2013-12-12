@@ -180,6 +180,8 @@ class Scripts2(QtGui.QWidget):
             except:
                 self.update = set()
         print str(len(self.update)) + ' files retained from last session: ', ''.join(["%s, " % (k) for k in self.update])[:-2]
+        if len(self.update) > 0:
+            Globals.HaveUnsavedChanges = True
 
         if Globals.Settings.contains('role'):
             self.role = int(Globals.Settings.value('role'))
@@ -987,10 +989,15 @@ class Scripts2(QtGui.QWidget):
         self.PopulateEntryList()
 
     def SetWindowTitle(self):
+        t = "GraceNote"
         if Globals.ModeFlag == 'Auto':
-            t = "Grace Note - {0} in {1} mode (Threshold: {2})".format(self.roletext[self.role], Globals.ModeFlag, self.rolenames[self.autoThreshold])
+            t = t + " - {0} in {1} mode (Threshold: {2})".format(self.roletext[self.role], Globals.ModeFlag, self.rolenames[self.autoThreshold])
         else:
-            t = "Grace Note - {0} in {1} mode".format(self.roletext[self.role], Globals.ModeFlag)
+            t = t + " - {0} in {1} mode".format(self.roletext[self.role], Globals.ModeFlag)
+        t = t + " - "
+        if Globals.HaveUnsavedChanges:
+            t = t + "*"
+        t = t + Globals.configfile
         self.parent.setWindowTitle(t)
 
     def setMode(self, action):
@@ -1889,7 +1896,7 @@ class Scripts2(QtGui.QWidget):
             Globals.CursorGracesJapanese.execute("UPDATE Japanese SET debug = 0 WHERE ID = {0} AND debug != 0".format(NextID))
             SaveCur.execute("UPDATE Text SET status =  0, updated = 1 WHERE ID = {0} AND status  = -1".format(selectedEntryId+1))
             additemEntryIsDebug.DebugStatus = False
-        self.update.add(str(databasefilename))
+        self.AddDatabaseToUpdateSet(str(databasefilename))
         SaveCon.commit()
         Globals.ConnectionGracesJapanese.commit()
         
@@ -1903,7 +1910,22 @@ class Scripts2(QtGui.QWidget):
         for d in self.databaseWriteStorage:
             print("current contents: " + d.databaseName + "/" + str(d.entry) + ": " + d.cleanString)
     
+    def AddDatabaseToUpdateSet(self, databasename):
+        if not Globals.HaveUnsavedChanges:
+            Globals.HaveUnsavedChanges = True
+            self.SetWindowTitle()
+        self.update.add(databasename)
+        return
+
+    def ClearUpdateSet(self):
+        self.update.clear()
+        return
+    
     def InsertOrUpdateEntryToWrite(self, entryStruct):
+        if not Globals.HaveUnsavedChanges:
+            Globals.HaveUnsavedChanges = True
+            self.SetWindowTitle()
+
         #DatabaseEntryStruct(cleanString, databaseName, entry, role, state)
         for i, d in enumerate(self.databaseWriteStorage):
             if d.entry == entryStruct.entry and d.state == entryStruct.state and d.databaseName == entryStruct.databaseName:
@@ -2024,7 +2046,7 @@ class Scripts2(QtGui.QWidget):
             if lastDatabase != d.databaseName: # open up new DB connection if neccesary, otherwise just reuse the old one
                 if SaveCon is not None:
                     SaveCon.commit()
-                self.update.add(str(d.databaseName))
+                self.AddDatabaseToUpdateSet(str(d.databaseName))
                 SaveCon = DatabaseHandler.OpenEntryDatabase(d.databaseName)
                 SaveCur = SaveCon.cursor()
                 lastDatabase = d.databaseName
@@ -2083,7 +2105,7 @@ class Scripts2(QtGui.QWidget):
     def RecalculateFilesToBeUploaded(self):
         self.WriteDatabaseStorageToHdd()
         
-        self.update.clear()
+        self.ClearUpdateSet()
         print 'Searching for databases with unsaved changes...'
         i = 1
         for item in Globals.configData.FileList[0]:
@@ -2093,7 +2115,7 @@ class Scripts2(QtGui.QWidget):
                 RecalcDbCur.execute("SELECT Count(1) FROM Text WHERE updated = 1")
                 exists = RecalcDbCur.fetchall()[0][0]
                 if exists > 0:
-                    self.update.add(str(item))
+                    self.AddDatabaseToUpdateSet(str(item))
                     print 'Found database: ' + item
                 RecalcDbConn.close()
             i = i + 1
