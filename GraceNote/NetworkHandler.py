@@ -225,7 +225,7 @@ def SavetoServer(scripts):
                 if ftperrorcount >= 20:
                     print "Warning:\n\nYour computer is currently offline, and will not be able to recieve updates or save to the server. Your progress will instead be saved for uploading upon re-establishment of a network connection, and any text you enter will be preserved automatically until such time."
                     Globals.Settings.setValue('update', set(scripts.update))
-                    return
+                    return False
                 print 'Error during FTP transfer, retrying...'
                 continue
 
@@ -276,7 +276,7 @@ def SavetoServer(scripts):
                             if ftpSingleFileUpErrorCount >= 20:
                                 print 'Failed on single file 20 files, try again later and confirm the server file is not corrupted.'
                                 print 'File in question: ' + filename
-                                return
+                                return False
                             result = UploadFile(scripts, scripts.ftp, 'temp', str(filename))
                             if isinstance(result, str):
                                 continue
@@ -363,13 +363,15 @@ def SavetoServer(scripts):
 
             scripts.SetWindowTitle()
 
-            break
+            return True
+            
         except ftplib.all_errors:
             if ftperrorcount >= 20:
                 print '20 errors is enough, this is not gonna work. There is probably some fucked up file on the FTP server now, please fix manually or contact someone that knows how to.'
                 break
             print 'Error during FTP transfer, retrying...'
             continue
+    return False
 
 def RevertFromServer(scripts):
     scripts.WriteDatabaseStorageToHdd()

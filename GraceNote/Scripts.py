@@ -858,6 +858,23 @@ class Scripts2(QtGui.QWidget):
     def cleanupAndQuit(self):
         self.WriteDatabaseStorageToHdd()
 
+        # display warning to user if there are unsaved changes
+        if Globals.HaveUnsavedChanges:
+            msg = QtGui.QMessageBox()
+            msg.setText("Local changes have not been saved to the server!")
+            msg.setInformativeText("It is recommended to upload changes before closing. If changes are not saved, they will be available for later upload the next time this project is opened.")
+            msg.setStandardButtons( QtGui.QMessageBox.Save | QtGui.QMessageBox.Close | QtGui.QMessageBox.Cancel )
+            ret = msg.exec_()
+            
+            if ret == QtGui.QMessageBox.Save:
+                # try saving, keep program open if save fails
+                if not self.CallSavetoServer():
+                    return False
+            elif ret == QtGui.QMessageBox.Close:
+                pass
+            elif ret == QtGui.QMessageBox.Cancel:
+                return False
+
         for key, win in self.media.iteritems():
             win.close()
         self.fontWindow.close()
@@ -903,6 +920,8 @@ class Scripts2(QtGui.QWidget):
         Globals.Settings.sync()
         self.close()
         quit()
+
+        return True
         
 
     def scrollUp(self, action):
@@ -2147,7 +2166,7 @@ class Scripts2(QtGui.QWidget):
         self.timeoutTimer.start( 120000 ) # 2 minutes
 
     def CallSavetoServer(self):
-        NetworkHandler.SavetoServer(self)
+        return NetworkHandler.SavetoServer(self)
         return
     
     def CallRevertFromServer(self):
