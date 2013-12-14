@@ -30,6 +30,8 @@ ColorCurrentStatus = None
 
 Cache = None
 
+GraceNoteIsTerminating = False
+
 import re
 
 def VariableSwap(raw):        

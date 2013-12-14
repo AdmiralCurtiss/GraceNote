@@ -16,6 +16,9 @@ def ConnectToFtp():
 def RetrieveModifiedFiles(scripts, splash):
     scripts.WriteDatabaseStorageToHdd()
         
+
+    Globals.Cache.databaseAccessRLock.acquire()
+
     # Nab the online changelog
     try:
         splash.text = 'Downloading updated files...'
@@ -40,6 +43,7 @@ def RetrieveModifiedFiles(scripts, splash):
                         splash.offline = True
                     except:
                         pass
+                    Globals.Cache.databaseAccessRLock.release()
                     return
                 print 'Failed connecting to FTP, retrying...'
                 continue
@@ -49,7 +53,8 @@ def RetrieveModifiedFiles(scripts, splash):
             changes = DownloadFile(scripts, ftp, 'ChangeLog', 'NewChangeLog')
                 
             if not changes:
-                "This isn't going to work, is it? Try again later."
+                print "Couldn't download ChangeLog"
+                Globals.Cache.databaseAccessRLock.release()
                 return
 
 
@@ -132,6 +137,8 @@ def RetrieveModifiedFiles(scripts, splash):
         pass
     print 'Downloaded updated files!'
 
+    Globals.Cache.databaseAccessRLock.release()
+    return
 
 def DownloadFile(scripts, ftp, source, dest):
     scripts.WriteDatabaseStorageToHdd()
@@ -204,12 +211,19 @@ def UploadFile(scripts, ftp, source, dest, confirmUpload=False):
     return True
 
 
-        
-def SavetoServer(scripts):
+def SavetoServer(scripts, filesUploaded=None, totalFilesToUpload=None):
+    Globals.Cache.databaseAccessRLock.acquire()
+
+    if filesUploaded is None:
+        filesUploaded = 0
+    if totalFilesToUpload is None:
+        totalFilesToUpload = len(scripts.update)
+
     scripts.WriteDatabaseStorageToHdd()
         
     if len(scripts.update) == 0:
         print 'Nothing to save!'
+        Globals.Cache.databaseAccessRLock.release()
         return
 
     print 'Beginning Save...'
@@ -225,13 +239,14 @@ def SavetoServer(scripts):
                 if ftperrorcount >= 20:
                     print "Warning:\n\nYour computer is currently offline, and will not be able to recieve updates or save to the server. Your progress will instead be saved for uploading upon re-establishment of a network connection, and any text you enter will be preserved automatically until such time."
                     Globals.Settings.setValue('update', set(scripts.update))
+                    Globals.Cache.databaseAccessRLock.release()
                     return False
                 print 'Error during FTP transfer, retrying...'
                 continue
 
             progress = QtGui.QProgressDialog("Saving to Server...", "Abort", 0, len(scripts.update)+1)
             progress.setWindowModality(QtCore.Qt.WindowModal)
-
+            
             i = 0
             progress.setValue(i)
             progress.setLabelText('Connecting to server...')
@@ -276,6 +291,7 @@ def SavetoServer(scripts):
                             if ftpSingleFileUpErrorCount >= 20:
                                 print 'Failed on single file 20 files, try again later and confirm the server file is not corrupted.'
                                 print 'File in question: ' + filename
+                                Globals.Cache.databaseAccessRLock.release()
                                 return False
                             result = UploadFile(scripts, scripts.ftp, 'temp', str(filename))
                             if isinstance(result, str):
@@ -339,6 +355,7 @@ def SavetoServer(scripts):
                     print 'Error uploading Changelog, retrying...'
                     continue
             if not changeLogUploadSuccess:
+                Globals.Cache.databaseAccessRLock.release()
                 return
                 
             # Everything is done.
@@ -363,6 +380,7 @@ def SavetoServer(scripts):
 
             scripts.SetWindowTitle()
 
+            Globals.Cache.databaseAccessRLock.release()
             return True
             
         except ftplib.all_errors:
@@ -371,13 +389,17 @@ def SavetoServer(scripts):
                 break
             print 'Error during FTP transfer, retrying...'
             continue
+
+    Globals.Cache.databaseAccessRLock.release()
     return False
 
 def RevertFromServer(scripts):
+    Globals.Cache.databaseAccessRLock.acquire()
     scripts.WriteDatabaseStorageToHdd()
         
     if len(scripts.update) == 0:
         print 'Nothing to revert!'
+        Globals.Cache.databaseAccessRLock.release()
         return
 
     print 'Reverting databases...'
@@ -392,6 +414,7 @@ def RevertFromServer(scripts):
                     print "FTP connection failed, revert didn't succeed.\nPlease try to revert again at a later date."
                     Globals.Settings.setValue('update', set(scripts.update))
                     Globals.Settings.sync()
+                    Globals.Cache.databaseAccessRLock.release()
                     return
                 print 'Error during FTP transfer, retrying...'
                 continue
@@ -436,4 +459,6 @@ def RevertFromServer(scripts):
                 break
             print 'Error during FTP transfer, retrying...'
             continue
+    Globals.Cache.databaseAccessRLock.release()
+    return
     

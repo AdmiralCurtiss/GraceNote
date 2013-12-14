@@ -828,6 +828,8 @@ class Scripts2(QtGui.QWidget):
         self.openMediumWindows()
         self.openFontWindow()
         self.openHistoryWindow()
+
+        Globals.Cache.StartBackgroundDatabaseLoadingThread()
         
     def openMediumWindows(self):
         self.media = {}
@@ -874,6 +876,9 @@ class Scripts2(QtGui.QWidget):
                 pass
             elif ret == QtGui.QMessageBox.Cancel:
                 return False
+
+
+        Globals.GraceNoteIsTerminating = True
 
         for key, win in self.media.iteritems():
             win.close()
@@ -1113,7 +1118,9 @@ class Scripts2(QtGui.QWidget):
         self.WriteDatabaseStorageToHdd()
         
         # Applies the debug status in GracesJapanese to all databases
-            
+        
+        Globals.Cache.databaseAccessRLock.acquire()
+
         i = 1
         aList = Globals.configData.FileList
             
@@ -1144,11 +1151,15 @@ class Scripts2(QtGui.QWidget):
                 
             i += 1
 
+        Globals.Cache.databaseAccessRLock.release()
+
     def ReverseConsolidateDebug(self):
         self.WriteDatabaseStorageToHdd()
         
         # Applies the debug status in Databases to GracesJapanese
         
+        Globals.Cache.databaseAccessRLock.acquire()
+
         i = 1
         aList = Globals.configData.FileList
             
@@ -1169,6 +1180,7 @@ class Scripts2(QtGui.QWidget):
                 
             i += 1
         Globals.ConnectionGracesJapanese.commit()
+        Globals.Cache.databaseAccessRLock.release()
 
     # fills in the database list to the left
     def PopulateModel(self, FileList):
@@ -1309,6 +1321,9 @@ class Scripts2(QtGui.QWidget):
             self.currentTreeIndex = None
             return
 
+
+        Globals.Cache.databaseAccessRLock.acquire()
+
         self.currentTreeIndex = index
         self.currentlyOpenDatabase = str(databasefilename)
         SaveCon = DatabaseHandler.OpenEntryDatabase(databasefilename)
@@ -1417,6 +1432,7 @@ class Scripts2(QtGui.QWidget):
         self.entryTreeView.setCurrentIndex(index)
         self.entryTreeView.selectionModel().select(index, QtGui.QItemSelectionModel.SelectionFlags(3))
 
+        Globals.Cache.databaseAccessRLock.release()
 
     def FormatCurrentlyOpenedEntryIndexes(self):
         ## DOESNT WORK YET since I can't figure out how to get the QStandardItem() from the self.entrymodel again
@@ -1901,6 +1917,8 @@ class Scripts2(QtGui.QWidget):
 
         self.WriteDatabaseStorageToHdd()
         
+        Globals.Cache.databaseAccessRLock.acquire()
+
         selectedEntryId = self.entryStandardItemModel.item(index.row(), 0).GraceNoteEntryId - 1
         databasefilename = self.treemodel.itemFromIndex(self.tree.currentIndex()).statusTip()
         SaveCon = DatabaseHandler.OpenEntryDatabase(databasefilename)
@@ -1924,7 +1942,9 @@ class Scripts2(QtGui.QWidget):
         status = SaveCur.fetchall()[0][0]
         for i in xrange( len(self.entryTreeViewHeaderLabels) ):
             self.FormatEntryListItemColor( self.entryStandardItemModel.item(index.row(), i), status )
-        
+
+        Globals.Cache.databaseAccessRLock.release()
+
     def DebugPrintDatabaseWriteStorage(self):
         for d in self.databaseWriteStorage:
             print("current contents: " + d.databaseName + "/" + str(d.entry) + ": " + d.cleanString)
@@ -2050,6 +2070,8 @@ class Scripts2(QtGui.QWidget):
             #print("Database storage empty, no need to write.")
             return
     
+        Globals.Cache.databaseAccessRLock.acquire()
+
         lastDatabase = ""
         
         print("Writing database storage in memory to HDD...")
@@ -2085,6 +2107,7 @@ class Scripts2(QtGui.QWidget):
 
         self.databaseWriteStorage.clear()
 
+        Globals.Cache.databaseAccessRLock.release()
         
     def SwapEnglish(self):
 
@@ -2124,6 +2147,7 @@ class Scripts2(QtGui.QWidget):
     def RecalculateFilesToBeUploaded(self):
         self.WriteDatabaseStorageToHdd()
         
+        Globals.Cache.databaseAccessRLock.acquire()
         self.ClearUpdateSet()
         print 'Searching for databases with unsaved changes...'
         i = 1
@@ -2141,6 +2165,7 @@ class Scripts2(QtGui.QWidget):
         Globals.Settings.setValue('update', set(self.update))
         Globals.Settings.sync()
         print 'Done searching for databases with unsaved changes!'
+        Globals.Cache.databaseAccessRLock.release()
         return
     
     def FindAllUsedSymbols(self):
@@ -2199,6 +2224,9 @@ class Scripts2(QtGui.QWidget):
 
 
 def TrueCount():
+
+    Globals.Cache.databaseAccessRLock.acquire()
+
     i = 1
     aList = Globals.configData.FileList[0]
 
@@ -2217,3 +2245,5 @@ def TrueCount():
                     
         print '{0}: {1} entries'.format(item, len(typeset))
         i += 1
+
+    Globals.Cache.databaseAccessRLock.release()

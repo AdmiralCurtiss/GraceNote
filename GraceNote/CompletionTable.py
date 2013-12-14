@@ -136,6 +136,8 @@ def CalculateAllCompletionPercentagesForDatabase():
 def CalculateCompletionForDatabase(database):
     #print 'Calculating percentages for ' + database + '...'
     
+    Globals.Cache.databaseAccessRLock.acquire()
+
     tempCon = DatabaseHandler.OpenEntryDatabase(database)
     tempCur = tempCon.cursor()
     
@@ -168,4 +170,6 @@ def CalculateCompletionForDatabase(database):
     else:
         tempCur.execute("INSERT INTO Percentages (entries, translation, editing1, editing2, editing3, comments, Database) VALUES (?, ?, ?, ?, ?, ?, ?)", [totalDB, translated, tlCheck, rewrite, grammar, commentAmount, database])
     tempCon.commit()
+
+    Globals.Cache.databaseAccessRLock.release()
 

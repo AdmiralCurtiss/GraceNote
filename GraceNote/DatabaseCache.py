@@ -1,6 +1,8 @@
 # Caches access to the databasese
 import DatabaseHandler
 import time
+import threading
+import Globals
 
 # Setup is:
 # Dictionary "Databases" ->
@@ -34,6 +36,20 @@ class UpdatedDatabaseEntry():
 class DatabaseCache(object):
     def __init__(self):
         self.Databases = {}
+        self.loadDatabaseThread = threading.Thread(target=self.GetAllDatabasesViaThread)
+        self.databaseAccessRLock = threading.RLock()
+
+    def StartBackgroundDatabaseLoadingThread(self):
+        self.loadDatabaseThread.start()
+
+    def GetAllDatabasesViaThread(self):
+        aList = Globals.configData.FileList
+        for j in range(1, len(aList)):
+            for File in aList[j]:
+                if Globals.GraceNoteIsTerminating:
+                    return
+                self.GetDatabase(File)
+        return
 
     def GetDatabase(self, name):
         name = str(name)
@@ -42,6 +58,9 @@ class DatabaseCache(object):
         return self.Databases[name]
 
     def LoadDatabase(self, name):
+        self.databaseAccessRLock.acquire()
+        print 'Loading Database ' + name
+
         Connection = DatabaseHandler.OpenEntryDatabase(name)
         Cursor = Connection.cursor()
         Cursor.execute("SELECT ID, StringID, english, comment, status, IdentifyString FROM Text")
@@ -53,4 +72,5 @@ class DatabaseCache(object):
 
         self.Databases[name] = db
 
+        self.databaseAccessRLock.release()
         return
