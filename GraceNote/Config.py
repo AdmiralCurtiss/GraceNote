@@ -23,6 +23,7 @@ class Configuration:
     FTPPassword = ''
     
     UseGracesVoiceHash = False
+    UseLegacyApostropheSettings = False
     VoicePathJpPrefix = ''
     VoicePathJpPostfix = ''
     VoicePathEnPrefix = ''
@@ -65,6 +66,13 @@ class Configuration:
             self.UseGracesVoiceHash = True
         else:
             self.UseGracesVoiceHash = False
+
+        try:
+            if mainNode.getAttribute('UseLegacyApostropheSettings') == 'true':
+                self.UseLegacyApostropheSettings = True
+        except:
+            self.UseLegacyApostropheSettings = False
+
         self.VoicePathJpPrefix = self.ConfigFileDir + '/' + mainNode.getAttribute('VoicePathJpPrefix')
         self.VoicePathJpPostfix = mainNode.getAttribute('VoicePathJpPostfix')
         self.VoicePathEnPrefix = self.ConfigFileDir + '/' + mainNode.getAttribute('VoicePathEnPrefix')

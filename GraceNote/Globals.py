@@ -169,9 +169,10 @@ def Sub(string, subsection):
     
 
 def VariableReplace(string):
-    string = re.sub(u"'+", "'", unicode(string))
+    if configData.UseLegacyApostropheSettings:
+        string = re.sub(u"'+", "'", unicode(string))
     string = re.sub('(.|\r)\(.*?\)', VariableSwap, unicode(string), re.DOTALL)
-    string = re.sub(u"\x0A", u"\u21B5\x0A", unicode(string))
+    string = re.sub(u"\x0A", u"\u21B5\x0A", unicode(string)) # put that return-symbol on newlines
     string = re.sub(u"\x0C", u"<Feed>\x0A", unicode(string))
     string = re.sub(u"\x00", u"<Null>", unicode(string))
     string = re.sub(u"\uFEFF", u"<UTF16 BOM BE>", unicode(string))
@@ -181,14 +182,15 @@ def VariableReplace(string):
     
     
 def VariableRemove(string):
-    string = re.sub(u"'+", "''", unicode(string))
+    if configData.UseLegacyApostropheSettings:
+        string = re.sub(u"'+", "''", unicode(string))
     string = re.sub(u"<Feed>\x0A", u"\x0C", unicode(string))
     string = re.sub(u"<Feed>", u"\x0C", unicode(string))
     string = re.sub(u"<Null>", u"\x00", unicode(string))
     string = re.sub(u"<UTF16 BOM BE>", u"\uFEFF", unicode(string))
     string = re.sub(u"<UTF16 BOM LE>", u"\uFFEE", unicode(string))
     string = re.sub(u"<UTF8 BOM>", u"\uEFBBBF", unicode(string))
-    string = re.sub(u"\u21B5\x0A", u"\x0A", unicode(string))
+    string = re.sub(u"\u21B5\x0A", u"\x0A", unicode(string)) # remove all those return symbols
     string = re.sub(u"\u21B5", u"\x0A", unicode(string))
     string = re.sub(u'<.*?>', VariableSwap, unicode(string), re.DOTALL)
     return string
