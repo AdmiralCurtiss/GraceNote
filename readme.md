@@ -171,6 +171,60 @@ This changes the behavoir when edits made to entires are written to the local Da
 
 ## Setting up a Project ##
 
-todo
+A GraceNote project requires:
 
+* An FTP server (technically optional, but you won't be able to collaborate with other people without one)
+* SQLite database files containing the game's text
+* And a configuration file
+
+Optionally, it can also have:
+
+* Audio samples, for voice acting
+* Images, for character poses
+* Font images, to display text as it would show up in-game
+
+### Creating the Databases ###
+
+First off, create a SQLite file named `ChangeLog` with the following table:
+	CREATE TABLE Log(id INT PRIMARY KEY, file TEXT, name TEXT, timestamp INT);
+This is used to store which user made changes to what files when, or in other words which files were changed since the last check and should be updated from the server.
+
+Then, create a SQLite file named `GracesJapanese` with the following tables:
+	CREATE TABLE Japanese(id INT PRIMARY KEY, string TEXT, debug INT);
+	CREATE TABLE descriptions(filename TEXT PRIMARY KEY, shortdesc TEXT, desc TEXT);
+This stores the original, unmodified text from the game, and provides a way to change the displayed name of a database within GraceNote without changing the actual database filename.
+
+With these, you can get to the actual text ripping. If you're comfortable with C#, I recommend using my [HyoutaTools](https://github.com/AdmiralCurtiss/HyoutaTools/tree/master/GraceNote)' [GraceNoteDatabaseEntry](https://github.com/AdmiralCurtiss/HyoutaTools/blob/master/GraceNote/GraceNoteDatabaseEntry.cs) class, filling an array of those with the extracted game text, and using the static InsertSQL function to insert them into database files based on [this database template](https://github.com/AdmiralCurtiss/HyoutaTools/blob/master/Files/gndb_template). For example:
+
+	RandomGameFile GameFile = new RandomGameFile( System.IO.File.ReadAllBytes( "gamefile.arc" ) );
+	System.IO.File.WriteAllBytes( "gamefile.db", Properties.Resources.gndb_template );
+	List<GraceNoteDatabaseEntry> Entries = new List<GraceNoteDatabaseEntry>( GameFile.Strings.Count );
+	foreach ( var x in GameFile.Strings ) {
+		Entries.Add( new GraceNoteDatabaseEntry( x.Text ) );
+	}
+	GraceNoteDatabaseEntry.InsertSQL( Entries.ToArray(), "Data Source=gamefile.db", "Data Source=GracesJapanese" );
+
+If you cannot use the provided template database, create one using the following SQL commands:
+	CREATE TABLE History(id INT, english TEXT, comment TEXT, status TINYINT, UpdatedBy TEXT, UpdatedTimestamp INT);
+	CREATE TABLE Text(id INT PRIMARY KEY, StringID INT, english TEXT, comment TEXT, updated TINYINT, status TINYINT, PointerRef integer, IdentifyString TEXT, IdentifyPointerRef INT, UpdatedBy TEXT, UpdatedTimestamp INT);
+	CREATE INDEX History_ID_Index ON History(id);
+
+Some additional info, such as the location of a pointer to the string in the original file, may be needed to reinsert the translated text later. If so, provide them to the GraceNoteDatabaseEntry constructor as PointerRef, IdentifyString or IdentifyPointerRef -- the names are kind of arbitrary, but you can use them as you like. Do note that IdentifyString is displayed within GraceNote next to the entry itself, so it can be used to provide additional info to the translator if possible, such as the name of the person speaking the line.
+
+As a rule, one game file database should be created for each actual game file. If the game you're working with has lots of entries (several thousand or more) in one file, it might make sense to split it into several game file databases.
+
+If you would rather create those databases using your own code, keep these things in mind:
+* Feel free to ignore the History table, it will be used by GraceNote itself. Insert your strings into the Text table.
+* Each original language (usually Japanese) entry also needs to be inserted into the GracesJapanese database. For GraceNote's Duplicate Text feature, each original language string should only be inserted once, even if it appears multiple times in the game files.
+* The 'id' column of the game file must start at 1 and not skip any number as it goes up.
+* The 'StringId' column must reference the 'id' column of the GracesJapanese database's corresponding original language entry.
+* The 'comment' column should be, unless some special information to the translator is neccesary, an empty string. It will be visible and editable in GraceNote.
+* The 'status' column should be 0.
+* You may want to set the UpdatedBy to the name of your ripping tool and the UpdatedTimestamp to the current timestamp (unix time), but it's not necessary.
+
+### Creating the Config File ###
+
+Compared to the databases, this is very easy. All you need here is some settings and a list of all your databases. Take a look at the [template config file](https://github.com/AdmiralCurtiss/GraceNote/blob/master/Projects/config_template.xml) and base yours off that.
+
+The ID should be a unique string naming the project, usually you can take the game name. It will be used to store user info such as the settings and state of the program when you close it, so it can be restored later. Local paths are relative to the location of the config file. There is no limit on the number of categories, but each game file database should only be listed once. Things like Terms, Fonts, Images or the Dictionary are optional.
 
