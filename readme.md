@@ -186,12 +186,16 @@ Optionally, it can also have:
 ### Creating the Databases ###
 
 First off, create a SQLite file named `ChangeLog` with the following table:
+
 	CREATE TABLE Log(id INT PRIMARY KEY, file TEXT, name TEXT, timestamp INT);
+
 This is used to store which user made changes to what files when, or in other words which files were changed since the last check and should be updated from the server.
 
 Then, create a SQLite file named `GracesJapanese` with the following tables:
+
 	CREATE TABLE Japanese(id INT PRIMARY KEY, string TEXT, debug INT);
 	CREATE TABLE descriptions(filename TEXT PRIMARY KEY, shortdesc TEXT, desc TEXT);
+
 This stores the original, unmodified text from the game, and provides a way to change the displayed name of a database within GraceNote without changing the actual database filename.
 
 With these, you can get to the actual text ripping. If you're comfortable with C#, I recommend using my [HyoutaTools](https://github.com/AdmiralCurtiss/HyoutaTools/tree/master/GraceNote)' [GraceNoteDatabaseEntry](https://github.com/AdmiralCurtiss/HyoutaTools/blob/master/GraceNote/GraceNoteDatabaseEntry.cs) class, filling an array of those with the extracted game text, and using the static InsertSQL function to insert them into database files based on [this database template](https://github.com/AdmiralCurtiss/HyoutaTools/blob/master/Files/gndb_template). For example:
@@ -205,11 +209,14 @@ With these, you can get to the actual text ripping. If you're comfortable with C
 	GraceNoteDatabaseEntry.InsertSQL( Entries.ToArray(), "Data Source=gamefile.db", "Data Source=GracesJapanese" );
 
 If you cannot use the provided template database, create one using the following SQL commands:
+
 	CREATE TABLE History(id INT, english TEXT, comment TEXT, status TINYINT, UpdatedBy TEXT, UpdatedTimestamp INT);
 	CREATE TABLE Text(id INT PRIMARY KEY, StringID INT, english TEXT, comment TEXT, updated TINYINT, status TINYINT, PointerRef integer, IdentifyString TEXT, IdentifyPointerRef INT, UpdatedBy TEXT, UpdatedTimestamp INT);
 	CREATE INDEX History_ID_Index ON History(id);
 
 Some additional info, such as the location of a pointer to the string in the original file, may be needed to reinsert the translated text later. If so, provide them to the GraceNoteDatabaseEntry constructor as PointerRef, IdentifyString or IdentifyPointerRef -- the names are kind of arbitrary, but you can use them as you like. Do note that IdentifyString is displayed within GraceNote next to the entry itself, so it can be used to provide additional info to the translator if possible, such as the name of the person speaking the line.
+
+If the game uses special characters for things like variables or formatting, you should replace them with something more user friendly in this process, then revert that when it comes to reinserting the translated text. For example, if a game uses a 0x06 byte for printing the name of an in-game renamable hero character, replace that with something nicer like '<Hero>'. Pointy brackets are recommended.
 
 As a rule, one game file database should be created for each actual game file. If the game you're working with has lots of entries (several thousand or more) in one file, it might make sense to split it into several game file databases.
 
