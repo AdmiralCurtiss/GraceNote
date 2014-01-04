@@ -12,15 +12,18 @@ class HistoryWindow(QtGui.QDialog):
         self.setWindowModality(False)        
         self.setWindowTitle("History")
 
-        self.entryList = QtGui.QListView()
-        self.entryList.setWrapping(False)
+        self.entryList = QtGui.QTreeView()
         self.entryModel = QtGui.QStandardItemModel()
+        self.entryModelHeaderLabels = ['E', 'S', 'C', 'Status', 'Time', 'Author']
+        self.entryModel.setColumnCount(len(self.entryModelHeaderLabels))
         self.entryList.setModel(self.entryModel)
         self.entryTextTextbox = XTextBox.XTextBox(None, self, True)
         self.entryTextTextbox.setReadOnly(True)
         self.entryCommentTextbox = QtGui.QTextEdit()
         self.entryCommentTextbox.setReadOnly(True)
         self.entryList.selectionModel().selectionChanged.connect(self.EntryModelSelectionChanged)
+
+        self.entryList.setRootIsDecorated(False)
 
         self.layout = QtGui.QVBoxLayout()
         self.layout.addWidget(self.entryList)
@@ -48,15 +51,49 @@ class HistoryWindow(QtGui.QDialog):
     def displayHistoryOfEntry(self, entryId):
         self.entryId = entryId
         self.entryModel.clear()
-        for entry in self.History[entryId]:
+        self.entryModel.setColumnCount(len(self.entryModelHeaderLabels))
+        self.entryModel.setHorizontalHeaderLabels(self.entryModelHeaderLabels)
+        self.entryList.setColumnWidth(0, 10)
+        self.entryList.setColumnWidth(1, 10)
+        self.entryList.setColumnWidth(2, 10)
+        self.entryList.setColumnWidth(3, 10)
+        self.entryList.setColumnWidth(4, 115)
+        self.entryList.setColumnWidth(5, 100)
+
+        entryCount = len( self.History[entryId] )
+        for index, entry in enumerate( self.History[entryId] ):
             if entry[5] is not None:
                 date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(entry[5]))
             else:
                 date = 'Unknown'
-            item = QtGui.QStandardItem('[' + str(entry[3]) + '] ' + date + ' by ' + str(entry[4]))
-            item.setEditable(False)
-            #item.setData(entry)
-            self.entryModel.appendRow(item)
+            
+            # check what was changed
+            englishChanged = False
+            commentChanged = False
+            statusChanged = False
+            if index + 1 != entryCount:
+                entryNext = self.History[entryId][index + 1]
+                if entry[1] != entryNext[1]:
+                    englishChanged = True
+                if entry[2] != entryNext[2]:
+                    commentChanged = True
+                if entry[3] != entryNext[3]:
+                    statusChanged = True
+                    
+            englishChangedItem = QtGui.QStandardItem('E' if englishChanged else '')
+            englishChangedItem.setEditable(False)
+            commentChangedItem = QtGui.QStandardItem('C' if commentChanged else '')
+            commentChangedItem.setEditable(False)
+            statusChangedItem = QtGui.QStandardItem('S' if statusChanged else '')
+            statusChangedItem.setEditable(False)
+            statusItem = QtGui.QStandardItem(str(entry[3]))
+            statusItem.setEditable(False)
+            timeItem = QtGui.QStandardItem(date)
+            timeItem.setEditable(False)
+            authorItem = QtGui.QStandardItem(str(entry[4]))
+            authorItem.setEditable(False)
+
+            self.entryModel.appendRow([englishChangedItem, statusChangedItem, commentChangedItem, statusItem, timeItem, authorItem])
         
         # display newest history entry automatically
         if self.History[entryId]:
@@ -67,8 +104,8 @@ class HistoryWindow(QtGui.QDialog):
         return
     
     def clearInfo(self):
-        self.entryTextTextbox.setText(Globals.VariableReplace(''))
-        self.entryCommentTextbox.setText(Globals.VariableReplace(''))
+        self.entryTextTextbox.setText('')
+        self.entryCommentTextbox.setText('')
         return
 
     def EntryModelSelectionChanged(self, selectedItems):
