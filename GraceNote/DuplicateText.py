@@ -65,9 +65,9 @@ class DuplicateText(QtGui.QDialog):
         layout.addWidget(self.uncollall, y, x)
         self.uncollall.released.connect(self.UncollapseAll)
         
-        self.exceptions = QtGui.QRadioButton('Inconsistent Translations only')
-        self.dupes = QtGui.QRadioButton('All Duplicates')
-        self.exceptions.setChecked(True)
+        self.radioInconsistentTranslation = QtGui.QRadioButton('Inconsistent Translation or Status')
+        self.radioAllDuplicates = QtGui.QRadioButton('All Duplicates')
+        self.radioInconsistentTranslation.setChecked(True)
         
         self.go = QtGui.QPushButton('Search')
 
@@ -77,12 +77,12 @@ class DuplicateText(QtGui.QDialog):
         self.progressLabel = QtGui.QLabel('Pending')
         
         layoutSystemButtons = QtGui.QGridLayout()
-        layoutSystemButtons.addWidget(self.exceptions, 0, 0)
-        layoutSystemButtons.addWidget(self.dupes, 0, 1)
+        layoutSystemButtons.addWidget(self.radioInconsistentTranslation, 0, 0)
+        layoutSystemButtons.addWidget(self.radioAllDuplicates, 0, 1)
         #layoutSystemButtons.addWidget(self.progressbar, 3, 1)
         #layoutSystemButtons.addWidget(self.progressLabel, 4, 1)
         layoutSystemButtons.addWidget(self.go, 0, 2)
-        layoutSystemButtons.setColumnMinimumWidth(0, 200)
+        layoutSystemButtons.setColumnMinimumWidth(0, 100)
         
         self.treewidget.itemDoubleClicked.connect(self.InitiateMassReplaceSearch)
 
@@ -124,7 +124,7 @@ class DuplicateText(QtGui.QDialog):
         Globals.CursorGracesJapanese.execute('SELECT MAX(ID) FROM Japanese')
         maxid = int(Globals.CursorGracesJapanese.fetchall()[0][0])
         for i in xrange( maxid + 1 ):
-            Table.append([0, set([])])
+            Table.append([0, set([])]) # stores number of occurances, set of english+status
             BlackList.append(0)
 
         print 'Fetching debug information...'
@@ -147,7 +147,7 @@ class DuplicateText(QtGui.QDialog):
                         StringId = item.stringId
                         if BlackList[StringId] == 0:
                             Table[StringId][0] += 1
-                            Table[StringId][1].add(item.english)
+                            Table[StringId][1].add((item.english, item.status))
 #                    self.progressbar.setValue(self.progressbar.value() + (6250/len(Globals.configData.FileList[i])))
 #                    self.progressLabel.setText("Processing {0}".format(category))
 #                    self.progressLabel.update()
@@ -157,15 +157,22 @@ class DuplicateText(QtGui.QDialog):
         print 'Displaying entries...'
         i = 0
         for item in Table:
-            if ((not self.exceptions.isChecked()) and item[0] > 1) or (self.exceptions.isChecked() and (((item[0] > 1) and (len(item[1]) >= 2)) or ((item[0] > 1) and (item[1] == set(['']))))):
+            if (
+                    ((self.radioAllDuplicates.isChecked()) and item[0] > 1) or
+                    (self.radioInconsistentTranslation.isChecked() and (((item[0] > 1) and (len(item[1]) >= 2)) or ((item[0] > 1) and (item[1] == set([''])))))
+                ):
                 Globals.CursorGracesJapanese.execute('SELECT String FROM Japanese WHERE ID=?', (i, ))
                 JP = Globals.CursorGracesJapanese.fetchall()[0][0]
-            
-                textOriginalJapaneseText = QtGui.QTreeWidgetItem(self.treewidget, [str(item[0]).zfill(3), '[' + Globals.VariableReplace(JP) + ']' ])
+                JPvarReplaced = Globals.VariableReplace(JP)
+
+                textOriginalJapaneseText = QtGui.QTreeWidgetItem(self.treewidget, [str(item[0]).zfill(3), '[' + JPvarReplaced + ']' ])
                 textOriginalJapaneseText.setBackgroundColor(0, QtGui.QColor(212,236,255,255))
                 textOriginalJapaneseText.setBackgroundColor(1, QtGui.QColor(212,236,255,255))
+                textOriginalJapaneseText.GraceNoteText = JPvarReplaced
                 for exception in item[1]:
-                    newline = QtGui.QTreeWidgetItem(textOriginalJapaneseText, ['', '[' + Globals.VariableReplace(exception) +']' ])
+                    ENvarReplaced = Globals.VariableReplace(exception[0])
+                    newline = QtGui.QTreeWidgetItem(textOriginalJapaneseText, ['', '[' + str(exception[1]) + '] [' + ENvarReplaced +']' ])
+                    newline.GraceNoteText = ENvarReplaced
 #           self.progressLabel.setText("Processing {0}/50000".format(i))
             i += 1
 #           self.progressbar.setValue(self.progressbar.value() + 1)
@@ -176,12 +183,12 @@ class DuplicateText(QtGui.QDialog):
 
     def InitiateMassReplaceSearch(self, item, column):
         parentItem = item.parent()
-        searchstring = item.data(1, 0)[1:-1]
+        searchstring = item.GraceNoteText
         self.parent.ShowMassReplace()
         if parentItem is None: # clicked on the Japanese text, just search for it
             self.parent.massDialog.original.setText(searchstring)
         else: # clicked on the English subentry, search for JP and place ENG in the replacement box
-            self.parent.massDialog.original.setText(parentItem.data(1, 0)[1:-1])
+            self.parent.massDialog.original.setText(parentItem.GraceNoteText)
             self.parent.massDialog.replacement.setText(searchstring)
             
         self.parent.massDialog.matchCompleteRadio.setChecked(True)
