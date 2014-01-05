@@ -37,12 +37,23 @@ class HistoryWindow(QtGui.QDialog):
         else:
             self.resize(350, 300)
         
-    def setHistoryList(self, HistoryList, MaxId):
+    def setHistoryList(self, HistoryList, MaxId, EntryList):
         # HistoryList input: SELECT ID, english, comment, status, UpdatedBy, UpdatedTimestamp FROM History ORDER BY ID ASC, UpdatedTimestamp DESC
+        # EntryList input: SELECT ID, StringID, english, comment, updated, status, IdentifyString, UpdatedBy, UpdatedTimestamp FROM Text ORDER BY ID ASC
         self.History = []
         for i in range(MaxId+1):
             self.History.append([])
         
+        for entry in EntryList:
+            newEntry = []
+            newEntry.append( entry[0] )
+            newEntry.append( entry[2] )
+            newEntry.append( entry[3] )
+            newEntry.append( entry[5] )
+            newEntry.append( entry[7] )
+            newEntry.append( entry[8] )
+            self.History[entry[0]].append( newEntry )
+
         for entry in HistoryList:
             self.History[entry[0]].append( entry )
 
@@ -96,10 +107,12 @@ class HistoryWindow(QtGui.QDialog):
             self.entryModel.appendRow([englishChangedItem, statusChangedItem, commentChangedItem, statusItem, timeItem, authorItem])
         
         # display newest history entry automatically
-        if self.History[entryId]:
-            self.entryList.setCurrentIndex(self.entryModel.index(0, 0))
-        else:
+        if not self.History[entryId]:
             self.clearInfo()
+        elif len( self.History[entryId] ) >= 2:
+            self.entryList.setCurrentIndex(self.entryModel.index(1, 0))
+        else:
+            self.entryList.setCurrentIndex(self.entryModel.index(0, 0))
 
         return
     

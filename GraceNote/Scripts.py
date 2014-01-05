@@ -1357,7 +1357,7 @@ class Scripts2(QtGui.QWidget):
         SaveCon = DatabaseHandler.OpenEntryDatabase(databasefilename)
         SaveCur = SaveCon.cursor()
         
-        SaveCur.execute('SELECT ID, StringID, english, comment, updated, status, IdentifyString, UpdatedBy, UpdatedTimestamp FROM Text')
+        SaveCur.execute('SELECT ID, StringID, english, comment, updated, status, IdentifyString, UpdatedBy, UpdatedTimestamp FROM Text ORDER BY ID ASC')
         TempList = SaveCur.fetchall()
 
         SaveCur.execute('SELECT ID, english, comment, status, UpdatedBy, UpdatedTimestamp FROM History ORDER BY ID ASC, UpdatedTimestamp DESC')
@@ -1366,7 +1366,7 @@ class Scripts2(QtGui.QWidget):
         MaxId = SaveCur.fetchall()[0][0]
         if MaxId is None:
             MaxId = 0
-        self.historyWindow.setHistoryList(HistoryList, MaxId)
+        self.historyWindow.setHistoryList(HistoryList, MaxId, TempList)
 
         for i in xrange(len(TempList)):
             Globals.CursorGracesJapanese.execute("SELECT * FROM Japanese WHERE ID={0}".format(TempList[i][1]))
