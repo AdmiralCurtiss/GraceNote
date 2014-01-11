@@ -44,19 +44,19 @@ class XTextBox(QtGui.QTextEdit):
         if HUD == None:
             self.translate = QtGui.QToolButton()
             self.translate.setAutoRaise(True)
-            self.translate.setIcon(QtGui.QIcon('icons/tloff.png'))
+            self.translate.setIcon(QtGui.QIcon('icons/status/1.png'))
     
             self.tlCheck = QtGui.QToolButton()
             self.tlCheck.setAutoRaise(True)
-            self.tlCheck.setIcon(QtGui.QIcon('icons/oneoff.png'))
+            self.tlCheck.setIcon(QtGui.QIcon('icons/status/2.png'))
     
             self.rewrite = QtGui.QToolButton()
             self.rewrite.setAutoRaise(True)
-            self.rewrite.setIcon(QtGui.QIcon('icons/twooff.png'))
+            self.rewrite.setIcon(QtGui.QIcon('icons/status/3.png'))
     
             self.grammar = QtGui.QToolButton()
             self.grammar.setAutoRaise(True)
-            self.grammar.setIcon(QtGui.QIcon('icons/threeoff.png'))
+            self.grammar.setIcon(QtGui.QIcon('icons/status/4.png'))
 
             topLayout = QtGui.QHBoxLayout()
 
@@ -474,11 +474,11 @@ class XTextBox(QtGui.QTextEdit):
     def transTogglem(self):
         if not self.readOnly:
             if not self.one:
-                self.translate.setIcon(QtGui.QIcon('icons/tlon.png'))
+                self.translate.setIcon(QtGui.QIcon('icons/status/1g.png'))
                 self.one = True
                 self.manualEdit.emit(1, self, self.footer)
             else:
-                self.translate.setIcon(QtGui.QIcon('icons/tloff.png'))
+                self.translate.setIcon(QtGui.QIcon('icons/status/1.png'))
                 self.one = False
                 self.manualEdit.emit(0, self, self.footer)
 
@@ -486,11 +486,11 @@ class XTextBox(QtGui.QTextEdit):
     def checkTogglem(self):
         if not self.readOnly:
             if not self.two:
-                self.tlCheck.setIcon(QtGui.QIcon('icons/oneon.png'))
+                self.tlCheck.setIcon(QtGui.QIcon('icons/status/2g.png'))
                 self.two = True
                 self.manualEdit.emit(2, self, self.footer)
             else:
-                self.tlCheck.setIcon(QtGui.QIcon('icons/oneoff.png'))
+                self.tlCheck.setIcon(QtGui.QIcon('icons/status/2.png'))
                 self.two = False
                 self.manualEdit.emit(1, self, self.footer)
 
@@ -498,11 +498,11 @@ class XTextBox(QtGui.QTextEdit):
     def rewriteTogglem(self):
         if not self.readOnly:
             if not self.three:
-                self.rewrite.setIcon(QtGui.QIcon('icons/twoon.png'))
+                self.rewrite.setIcon(QtGui.QIcon('icons/status/3g.png'))
                 self.three = True
                 self.manualEdit.emit(3, self, self.footer)
             else:
-                self.rewrite.setIcon(QtGui.QIcon('icons/twooff.png'))
+                self.rewrite.setIcon(QtGui.QIcon('icons/status/3.png'))
                 self.three = False
                 self.manualEdit.emit(2, self, self.footer)
 
@@ -510,21 +510,21 @@ class XTextBox(QtGui.QTextEdit):
     def grammarTogglem(self):
         if not self.readOnly:
             if not self.four:
-                self.grammar.setIcon(QtGui.QIcon('icons/threeon.png'))
+                self.grammar.setIcon(QtGui.QIcon('icons/status/4g.png'))
                 self.four = True
                 self.manualEdit.emit(4, self, self.footer)
             else:
-                self.grammar.setIcon(QtGui.QIcon('icons/threeoff.png'))
+                self.grammar.setIcon(QtGui.QIcon('icons/status/4.png'))
                 self.four = False
                 self.manualEdit.emit(3, self, self.footer)
 
 
 
     def iconToggle(self, icon):
-        self.translate.setIcon(QtGui.QIcon('icons/tloff.png'))
-        self.tlCheck.setIcon(QtGui.QIcon('icons/oneoff.png'))
-        self.rewrite.setIcon(QtGui.QIcon('icons/twooff.png'))
-        self.grammar.setIcon(QtGui.QIcon('icons/threeoff.png'))
+        self.translate.setIcon(QtGui.QIcon('icons/status/1.png'))
+        self.tlCheck.setIcon(QtGui.QIcon('icons/status/2.png'))
+        self.rewrite.setIcon(QtGui.QIcon('icons/status/3.png'))
+        self.grammar.setIcon(QtGui.QIcon('icons/status/4.png'))
 
         self.one = False
         self.two = False
@@ -532,19 +532,19 @@ class XTextBox(QtGui.QTextEdit):
         self.four = False
     
         if icon >= 1:
-            self.translate.setIcon(QtGui.QIcon('icons/tlon.png'))
+            self.translate.setIcon(QtGui.QIcon('icons/status/1g.png'))
             self.one = True
             
             if icon >= 2:
-                self.tlCheck.setIcon(QtGui.QIcon('icons/oneon.png'))
+                self.tlCheck.setIcon(QtGui.QIcon('icons/status/2g.png'))
                 self.two = True
                 
                 if icon >= 3:
-                    self.rewrite.setIcon(QtGui.QIcon('icons/twoon.png'))
+                    self.rewrite.setIcon(QtGui.QIcon('icons/status/3g.png'))
                     self.three = True
                     
                     if icon == 4:
-                        self.grammar.setIcon(QtGui.QIcon('icons/threeon.png'))
+                        self.grammar.setIcon(QtGui.QIcon('icons/status/4g.png'))
                         self.four = True
 
 

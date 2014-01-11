@@ -570,19 +570,19 @@ class Scripts2(QtGui.QWidget):
         self.textDownAct = QtGui.QAction('Beneath Icon', None)
         self.textLeftAct = QtGui.QAction('Beside Icon', None)
 
-        self.tmode = QtGui.QAction(QtGui.QIcon('icons/tlon.png'), 'Translation', None)
+        self.tmode = QtGui.QAction(QtGui.QIcon('icons/status/1g.png'), 'Translation', None)
         self.tmode.setToolTip('<b>Translation Mode</b>\n\nTranslation mode encompasses the initial phase of translation.')
         self.tmode.setShortcut(QtGui.QKeySequence('Ctrl-Shift-1'))
 
-        self.tlcheckmode = QtGui.QAction(QtGui.QIcon('icons/oneon.png'), 'Translation Review', None)
+        self.tlcheckmode = QtGui.QAction(QtGui.QIcon('icons/status/2g.png'), 'Translation Review', None)
         self.tlcheckmode.setToolTip('<b>Translation Review Mode</b>\n\nTranslation review mode is used for when a second translator reviews an entry.')
         self.tlcheckmode.setShortcut(QtGui.QKeySequence('Ctrl-Shift-2'))
 
-        self.rewritemode = QtGui.QAction(QtGui.QIcon('icons/twoon.png'), 'Contextual Review', None)
+        self.rewritemode = QtGui.QAction(QtGui.QIcon('icons/status/3g.png'), 'Contextual Review', None)
         self.rewritemode.setToolTip('<b>Contextual Review Mode</b>\n\Contextual review mode is reserved for context and localization sensitive rewrites.')
         self.rewritemode.setShortcut(QtGui.QKeySequence('Ctrl-Shift-3'))
 
-        self.grammarmode = QtGui.QAction(QtGui.QIcon('icons/threeon.png'), 'Editing', None)
+        self.grammarmode = QtGui.QAction(QtGui.QIcon('icons/status/4g.png'), 'Editing', None)
         self.grammarmode.setToolTip('<b>Editing Mode</b>\n\Editing mode involves a full grammar, structure, phrasing, tone, and consistency check.')
         self.grammarmode.setShortcut(QtGui.QKeySequence('Ctrl-Shift-4'))
 
@@ -591,10 +591,10 @@ class Scripts2(QtGui.QWidget):
         self.DisabledMenuOptionSetThreshold = QtGui.QAction('Auto Mode Threshold', None)
         self.DisabledMenuOptionSetThreshold.setEnabled(False)
 
-        self.autoThreshold0Act = QtGui.QAction(QtGui.QIcon('icons/tloff.png'), 'None', None)
-        self.autoThreshold1Act = QtGui.QAction(QtGui.QIcon('icons/tlon.png'), 'Translation', None)
-        self.autoThreshold2Act = QtGui.QAction(QtGui.QIcon('icons/oneon.png'), 'Translation Review', None)
-        self.autoThreshold3Act = QtGui.QAction(QtGui.QIcon('icons/twoon.png'), 'Contextual Review', None)
+        self.autoThreshold0Act = QtGui.QAction(QtGui.QIcon('icons/status/1.png'), 'None', None)
+        self.autoThreshold1Act = QtGui.QAction(QtGui.QIcon('icons/status/1g.png'), 'Translation', None)
+        self.autoThreshold2Act = QtGui.QAction(QtGui.QIcon('icons/status/2g.png'), 'Translation Review', None)
+        self.autoThreshold3Act = QtGui.QAction(QtGui.QIcon('icons/status/3g.png'), 'Contextual Review', None)
 
 
         self.openOptionsWindowAct = QtGui.QAction('Preferences...', None)
