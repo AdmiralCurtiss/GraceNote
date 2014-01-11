@@ -25,11 +25,15 @@ class FontDisplayWindow(QtGui.QDialog):
         else:
             self.resize(500, 150)
 
+        self.IsAlwaysOnTop = False
+
     def AlwaysOnTopToggle(self, enabled):
         if enabled:
             self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowStaysOnTopHint)
+            self.IsAlwaysOnTop = True
         else:
             self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.WindowStaysOnTopHint)
+            self.IsAlwaysOnTop = False
         self.show()
                    
     def drawText(self, text, databaseDesc): # database desc is only passed for Dangan Ronpa!! can be removed in generic GN version
@@ -200,3 +204,20 @@ class FontDisplayWindow(QtGui.QDialog):
     def closeEvent(self, event):
         Globals.Settings.setValue('Geometry/FontDisplayWindow', self.saveGeometry())
     
+    def contextMenuEvent(self, event):
+        rightClickMenu = QtGui.QMenu()
+        
+        action = QtGui.QAction('Toggle Always on Top', rightClickMenu)
+        action.setChecked(self.IsAlwaysOnTop)
+        action.triggered.connect(self.contextMenuClickAlwaysOnTopToggle)
+        rightClickMenu.addAction(action)
+    
+        rightClickMenu.exec_(event.globalPos())
+
+    def contextMenuClickAlwaysOnTopToggle(self, enabled):
+        if self.IsAlwaysOnTop:
+            self.AlwaysOnTopToggle(False)
+        else:
+            self.AlwaysOnTopToggle(True)
+        return
+
