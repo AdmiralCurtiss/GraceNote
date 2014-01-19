@@ -2007,7 +2007,7 @@ class Scripts2(QtGui.QWidget):
             Globals.HaveUnsavedChanges = True
             self.SetWindowTitle()
 
-        #DatabaseEntryStruct(cleanString, databaseName, entry, role, state)
+        #UpdatedDatabaseEntry(cleanString, databaseName, entry, role, state)
         for i, d in enumerate(self.databaseWriteStorage):
             if d.entry == entryStruct.entry and d.state == entryStruct.state and d.databaseName == entryStruct.databaseName:
                 if i != 0:
@@ -2119,11 +2119,11 @@ class Scripts2(QtGui.QWidget):
         print("Writing database storage in memory to HDD...")
         
         # sort by time of entry creation so order of inserts is preserved (necessary eg. if changing both english and comment on same entry
-        sortedStorage = sorted(self.databaseWriteStorage, key=lambda DatabaseEntryStruct: DatabaseEntryStruct.timestamp)
+        sortedStorage = sorted(self.databaseWriteStorage, key=lambda UpdatedDatabaseEntry: UpdatedDatabaseEntry.timestamp)
         
         databasesWrittenTo = set()
 
-        #DatabaseEntryStruct(cleanString, databaseName, entry, role, state)
+        #UpdatedDatabaseEntry(cleanString, databaseName, entry, role, state)
         SaveCon = None
         for d in sortedStorage:
             if lastDatabase != d.databaseName: # open up new DB connection if neccesary, otherwise just reuse the old one
@@ -2137,9 +2137,9 @@ class Scripts2(QtGui.QWidget):
             
             DatabaseHandler.CopyEntryToHistory(SaveCur, d.entry)
             if d.state == 'ENG':
-                SaveCur.execute(u"UPDATE Text SET english=?, updated=1, status=?, UpdatedBy=?, UpdatedTimestamp=strftime('%s','now') WHERE ID=?", (d.cleanString, d.role, str(Globals.Author), d.entry))
+                SaveCur.execute(u"UPDATE Text SET english=?, updated=1, status=?, UpdatedBy=?, UpdatedTimestamp=strftime('%s',?) WHERE ID=?", (d.cleanString, d.role, str(Globals.Author), d.timestring, d.entry))
             elif d.state == "COM":
-                SaveCur.execute(u"UPDATE Text SET comment=?, updated=1, status=?, UpdatedBy=?, UpdatedTimestamp=strftime('%s','now') WHERE ID=?", (d.cleanString, d.role, str(Globals.Author), d.entry))
+                SaveCur.execute(u"UPDATE Text SET comment=?, updated=1, status=?, UpdatedBy=?, UpdatedTimestamp=strftime('%s',?) WHERE ID=?", (d.cleanString, d.role, str(Globals.Author), d.timestring, d.entry))
         if SaveCon is not None:
             SaveCon.commit()
         

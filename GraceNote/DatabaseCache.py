@@ -31,7 +31,10 @@ class UpdatedDatabaseEntry():
         self.role = role
         #string state; // "ENG" or "COM", defines which column in the database to update
         self.state = state
+        # used for relative time logic, to figure out the order of inserts
         self.timestamp = time.clock()
+        # used to actually insert the timestamp into the database
+        self.timestring = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
 
 class DatabaseCache(object):
     def __init__(self):
