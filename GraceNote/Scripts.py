@@ -1294,7 +1294,7 @@ class Scripts2(QtGui.QWidget):
         containsComments = False
     
         if self.fontWindow:
-            self.fontWindow.clearAndResize()
+            self.fontWindow.clearInfo()
 
         for editbox in self.regularEditingTextBoxes:
             editbox.iconToggle(0)

@@ -14,8 +14,12 @@ class FontDisplayWindow(QtGui.QDialog):
         self.setWindowModality(False)        
         
         self.setWindowTitle("Font Display")
+        self.imagelabel = QtGui.QLabel()
+        self.imagelabel.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         self.scroll = QtGui.QScrollArea()
-        self.layout = QtGui.QVBoxLayout(self.scroll)
+        self.scroll.setWidget(self.imagelabel)
+        self.layout = QtGui.QVBoxLayout()
+        self.layout.addWidget(self.scroll)
         self.layout.setMargin(0)
         self.setLayout(self.layout)
 
@@ -39,8 +43,6 @@ class FontDisplayWindow(QtGui.QDialog):
     def drawText(self, text, databaseDesc): # database desc is only passed for Dangan Ronpa!! can be removed in generic GN version
         if not Globals.configData.Fonts:
             return
-
-        self.clearInfo()
 
         text = text.replace('\f', '\n')
         text = Globals.VariableReplace(text)
@@ -98,21 +100,12 @@ class FontDisplayWindow(QtGui.QDialog):
         
         painter.end()
 
-        piclabel = QtGui.QLabel()
-        pix = QtGui.QPixmap.fromImage(img)
-        piclabel.setPixmap( pix )
-        piclabel.setToolTip( tooltip )
-        piclabel.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
-        self.layout.addWidget(piclabel)
-        self.layout.addStretch()
-        
-        # all of these resizing things seem to add a huge overhead, sadly
-        # part of the overhead might be the way I clear the window, there's probably be a better way to do that
-        # best compromise right now is probably to just resize back down on database change,
-        # then change the image so it's always in the top left no matter how big the window is
-        #self.updateGeometry()
-        #self.resize(self.sizeHint())
-        #self.resize(img.width(), img.height())
+        pix = QtGui.QPixmap.fromImage( img )
+        self.imagelabel.setPixmap( pix )
+        self.imagelabel.setFixedSize( pix.size() )
+        self.imagelabel.setToolTip( tooltip )
+        self.imagelabel.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+        self.imagelabel.update()
     
     def renderText(self, text, painter, lineHeight, defaultFont):
 
@@ -186,20 +179,8 @@ class FontDisplayWindow(QtGui.QDialog):
         return maxX, maxY
 
     def clearInfo(self):
-        if self.layout is not None:
-            old_layout = self.layout
-            for i in reversed(range(old_layout.count())):
-                if old_layout.itemAt(i).widget() is not None:
-                    old_layout.itemAt(i).widget().setParent(None)
-            import sip
-            sip.delete(old_layout)
-        self.layout = QtGui.QVBoxLayout(self.scroll)
-        self.layout.setMargin(0)
-        self.setLayout(self.layout)
-
-    def clearAndResize(self):
-        self.clearInfo()
-        self.resize(128, 32)
+        self.imagelabel.clear()
+        return
 
     def closeEvent(self, event):
         Globals.Settings.setValue('Geometry/FontDisplayWindow', self.saveGeometry())
