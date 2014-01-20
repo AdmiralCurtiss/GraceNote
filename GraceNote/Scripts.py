@@ -56,10 +56,10 @@ def SetupEnvironment():
         print "Your Qt installation does not have Phonon support.\nPhonon is required to play audio clips."
         Globals.Audio = False
 
-    splashScreen = SplashScreen()
-    splashScreen.show()
-    splashScreen.raise_()
-    splashScreen.activateWindow()
+    Globals.SplashScreen = SplashScreen()
+    Globals.SplashScreen.show()
+    Globals.SplashScreen.raise_()
+    Globals.SplashScreen.activateWindow()
 
     # load config
     try:
@@ -116,8 +116,6 @@ def SetupEnvironment():
     Globals.FooterVisibleFlag = False
 
     Globals.Cache = DatabaseCache.DatabaseCache()
-
-    splashScreen.destroyScreen()
 
     return True
 
@@ -850,6 +848,8 @@ class Scripts2(QtGui.QWidget):
 
         NetworkHandler.RetrieveModifiedFiles(self, None)
         Globals.Cache.StartBackgroundDatabaseLoadingThread()
+
+        Globals.SplashScreen.destroyScreen()
         
     def openMediumWindows(self):
         self.media = {}
