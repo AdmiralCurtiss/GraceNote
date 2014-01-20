@@ -56,6 +56,11 @@ def SetupEnvironment():
         print "Your Qt installation does not have Phonon support.\nPhonon is required to play audio clips."
         Globals.Audio = False
 
+    splashScreen = SplashScreen()
+    splashScreen.show()
+    splashScreen.raise_()
+    splashScreen.activateWindow()
+
     # load config
     try:
         projectSelectWindow = ProjectSelectWindow.ProjectSelectWindow()
@@ -112,6 +117,8 @@ def SetupEnvironment():
 
     Globals.Cache = DatabaseCache.DatabaseCache()
 
+    splashScreen.destroyScreen()
+
     return True
 
 class SearchAction(QtGui.QAction):
@@ -130,10 +137,6 @@ class Scripts2(QtGui.QWidget):
         self.parent = parent
         self.parent.setWindowIcon(QtGui.QIcon('icons/GraceNote_48px.png'))
 
-        self.splashScreen = SplashScreen()
-        self.splashScreen.show()
-        self.splashScreen.raise_()
-        self.splashScreen.activateWindow()
 
         self.LogDialog = None
         self.gLogDialog = None
@@ -264,10 +267,6 @@ class Scripts2(QtGui.QWidget):
         self.timeoutTimer = QtCore.QTimer()
         self.timeoutTimer.timeout.connect(self.WriteDatabaseStorageToHdd)
 
-
-
-        self.splashScreen.destroyScreen()
-        
         
         # List View of Files
         self.tree = QtGui.QTreeView()
@@ -849,7 +848,7 @@ class Scripts2(QtGui.QWidget):
         self.openFontWindow()
         self.openHistoryWindow()
 
-        NetworkHandler.RetrieveModifiedFiles(self, self.splashScreen)
+        NetworkHandler.RetrieveModifiedFiles(self, None)
         Globals.Cache.StartBackgroundDatabaseLoadingThread()
         
     def openMediumWindows(self):

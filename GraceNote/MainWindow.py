@@ -92,12 +92,12 @@ class SplashScreen(QtGui.QWidget):
         painter.drawText(112, 185+24, 'Modified and expanded for other games')
         painter.drawText(120, 185+36, 'by Admiral H. Curtiss')
         
-        painter.setPen(QtGui.QColor(255, 0, 0, 255))
-        if not Globals.enchanted:
-            painter.drawText(136, 185+56, 'Spell Checker not available')
-        if self.offline:
-            painter.drawText(166, 185+68, 'Offline Mode')
-        painter.setPen(QtGui.QColor(0, 0, 0, 255))
+        #painter.setPen(QtGui.QColor(255, 0, 0, 255))
+        #if not Globals.enchanted:
+        #    painter.drawText(136, 185+56, 'Spell Checker not available')
+        #if self.offline:
+        #    painter.drawText(166, 185+68, 'Offline Mode')
+        #painter.setPen(QtGui.QColor(0, 0, 0, 255))
                
                    
     def mousePressEvent(self, event):

@@ -15,6 +15,7 @@ def ConnectToFtp():
     ftp.login(Globals.configData.FTPUsername, Globals.configData.FTPPassword)
     return ftp
 
+# splash is never used
 def RetrieveModifiedFiles(scripts, splash):
     scripts.WriteDatabaseStorageToHdd()
 
