@@ -272,7 +272,7 @@ def SavetoServerWorker(scripts, networkTransferWindow, sendWindowCloseSignal):
             scripts.ftp.cwd(Globals.configData.RemoteDatabasePath)
 
             # Retrieving any files modified by others...
-            RetrieveModifiedFilesWorker(scripts, scripts.splashScreen, networkTransferWindow, False)
+            RetrieveModifiedFilesWorker(scripts, None, networkTransferWindow, False)
                 
             # Uploading Files...
             LogTable = []
