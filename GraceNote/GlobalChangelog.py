@@ -26,8 +26,11 @@ class GlobalChangelog(QtGui.QDialog):
         
         self.treewidget.setMinimumSize(450, 600)
         
-        Globals.LogCur.execute("SELECT * FROM Log ORDER BY Timestamp DESC")
-        templist = Globals.LogCur.fetchall()
+        ChangeLogConnection, ChangeLogCursor = Globals.GetNewChangeLogConnectionAndCursor()
+        ChangeLogCursor.execute("SELECT * FROM Log ORDER BY Timestamp DESC")
+        templist = ChangeLogCursor.fetchall()
+        ChangeLogConnection.close()
+
         #templist.pop(0)
         for entry in templist:
             for filename in entry[1].split(','):

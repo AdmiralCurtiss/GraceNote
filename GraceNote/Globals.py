@@ -11,8 +11,6 @@ HaveUnsavedChanges = False
 
 ConnectionGracesJapanese = None
 CursorGracesJapanese = None
-LogCon = None
-LogCur = None
 
 Settings = None
 
@@ -33,6 +31,7 @@ Cache = None
 GraceNoteIsTerminating = False
 
 import re
+import sqlite3
 
 def VariableSwap(raw):        
     matchobj = raw.group()
@@ -405,3 +404,8 @@ def CopyFile(sourcepath, targetpath):
     targetfile.write(data)
     targetfile.close()
     return
+
+def GetNewChangeLogConnectionAndCursor():
+    LogCon = sqlite3.connect(configData.LocalDatabasePath + "/ChangeLog")
+    LogCur = LogCon.cursor()
+    return (LogCon, LogCur)

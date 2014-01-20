@@ -5,6 +5,8 @@ import ftplib
 import CompletionTable
 import filecmp
 import DatabaseHandler
+import NetworkTransferWindow
+import threading
 
 
 def ConnectToFtp():
@@ -15,10 +17,18 @@ def ConnectToFtp():
 
 def RetrieveModifiedFiles(scripts, splash):
     scripts.WriteDatabaseStorageToHdd()
-        
+
+    # open up a window to tell the user what we're doing
+    networkTransferWindow = NetworkTransferWindow.NetworkTransferWindow()
+    
+    networkTransferThread = threading.Thread(target=RetrieveModifiedFilesWorker, args=(scripts, splash, networkTransferWindow))
+    networkTransferThread.start()
+    networkTransferWindow.exec_()
+
+def RetrieveModifiedFilesWorker(scripts, splash, networkTransferWindow):
+    scripts.WriteDatabaseStorageToHdd()
 
     Globals.Cache.databaseAccessRLock.acquire()
-
     # Nab the online changelog
     try:
         splash.text = 'Downloading updated files...'
@@ -50,13 +60,15 @@ def RetrieveModifiedFiles(scripts, splash):
                     
                         
             # get new changelog
+            transferWindowChangeLogIdx = networkTransferWindow.addListEntry("Downloading...", "ChangeLog")
             changes = DownloadFile(scripts, ftp, 'ChangeLog', 'NewChangeLog')
                 
             if not changes:
                 print "Couldn't download ChangeLog"
                 Globals.Cache.databaseAccessRLock.release()
                 return
-
+            
+            networkTransferWindow.modifyListEntryStatus(transferWindowChangeLogIdx, "Complete!")
 
             # Get any new entries
             LogSet = DatabaseHandler.GetChangelogData()
@@ -67,25 +79,28 @@ def RetrieveModifiedFiles(scripts, splash):
             for item in DownloaderSet:
                 itemList = item[1].split(',')
                 for subitem in itemList:
-                    if subitem in scripts.update:
-                        print '{0} was skipped because you have local save data which needs uploading.'.format(subitem)
-                        continue
                     Downloader.append(subitem)
                 
             # remove possible duplicates from list, so it doesn't download the same file multiple times
             Downloader = list(set(Downloader))
+            FilesToDownload = []
+
+            # Don't download stuff that still has unsaved changes locally
+            for item in Downloader:
+                print item
+                if item in scripts.update:
+                    networkTransferWindow.addListEntry("Not downloading, still has unsaved local changes.", item)
+                else: 
+                    transferWindowIdx = networkTransferWindow.addListEntry("Waiting...", item)
+                    FilesToDownload.append((item, transferWindowIdx))
                 
             # Download the files that have been changed
-            for item in set(Downloader):
-                Globals.CursorGracesJapanese.execute("SELECT count(1) FROM descriptions WHERE filename = ?", [item])
-                exists = Globals.CursorGracesJapanese.fetchall()[0][0]
-                if exists > 0:
-                    Globals.CursorGracesJapanese.execute("SELECT shortdesc FROM descriptions WHERE filename = ?", [item])
-                    desc = Globals.CursorGracesJapanese.fetchall()[0][0]
-                    print 'Downloading ' + desc + ' [' + item + ']...'
-                else:
-                    print 'Downloading ' + item + '...'
-                    
+            for item, transferWindowIdx in FilesToDownload:
+                #desc = Globals.GetDatabaseDescriptionString(item)
+                #print 'Downloading ' + desc + ' [' + item + ']...'
+                   
+                networkTransferWindow.modifyListEntryStatus(transferWindowIdx, "Downloading...")
+
                 DownloadFile(scripts, ftp, item, 'temp')
 
                 # Clean up downloaded file
@@ -104,12 +119,12 @@ def RetrieveModifiedFiles(scripts, splash):
                 CompletionTable.CalculateCompletionForDatabase(item)
                 Globals.Cache.LoadDatabase(item)
 
+                networkTransferWindow.modifyListEntryStatus(transferWindowIdx, "Complete!")
+
             ftp.close()
 
             
-            # Copy new change log over old and reopen
-            Globals.LogCon.commit()
-            Globals.LogCon.close()
+            # Copy new change log over old
 
             old = open(Globals.configData.LocalDatabasePath + '/ChangeLog', 'wb')
             new = open(Globals.configData.LocalDatabasePath + '/NewChangeLog', 'rb')
@@ -117,9 +132,6 @@ def RetrieveModifiedFiles(scripts, splash):
             new.close()
             old.close()
 
-            Globals.LogCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/ChangeLog")
-            Globals.LogCur = Globals.LogCon.cursor()
-                
             break
                 
         except ftplib.all_errors:
@@ -138,11 +150,12 @@ def RetrieveModifiedFiles(scripts, splash):
     print 'Downloaded updated files!'
 
     Globals.Cache.databaseAccessRLock.release()
+    networkTransferWindow.allowCloseSignal.emit()
     return
 
 def DownloadFile(scripts, ftp, source, dest):
     scripts.WriteDatabaseStorageToHdd()
-                
+
     save = open(Globals.configData.LocalDatabasePath + '/{0}'.format(dest), 'wb')
     ftp.retrbinary('RETR {0}'.format(source), save.write)
     save.close()
@@ -212,6 +225,16 @@ def UploadFile(scripts, ftp, source, dest, confirmUpload=False):
 
 
 def SavetoServer(scripts, filesUploaded=None, totalFilesToUpload=None):
+    scripts.WriteDatabaseStorageToHdd()
+
+    networkTransferWindow = NetworkTransferWindow.NetworkTransferWindow()
+    networkTransferThread = threading.Thread(target=SavetoServerWorker, args=(scripts, filesUploaded, totalFilesToUpload, networkTransferWindow))
+    networkTransferThread.start()
+    networkTransferWindow.exec_()
+                
+def SavetoServerWorker(scripts, filesUploaded, totalFilesToUpload, networkTransferWindow):
+    scripts.WriteDatabaseStorageToHdd()
+
     Globals.Cache.databaseAccessRLock.acquire()
 
     if filesUploaded is None:
@@ -255,7 +278,7 @@ def SavetoServer(scripts, filesUploaded=None, totalFilesToUpload=None):
             scripts.ftp.cwd(Globals.configData.RemoteDatabasePath)
 
             print "Retrieving any files modified by others..."
-            RetrieveModifiedFiles(scripts, scripts.splashScreen)
+            RetrieveModifiedFilesWorker(scripts, scripts.splashScreen, networkTransferWindow)
                 
             progress.setLabelText('Uploading Files...')
             LogTable = []
@@ -272,7 +295,7 @@ def SavetoServer(scripts, filesUploaded=None, totalFilesToUpload=None):
                     saveUpdate.add(filename)
                     continue
                 
-                print 'Uploading ' + Globals.GetDatabaseDescriptionString(filename) + ' [' + filename + ']...'
+                #print 'Uploading ' + Globals.GetDatabaseDescriptionString(filename) + ' [' + filename + ']...'
 
                 # Downloading the server version and double checking
                 DownloadFile(scripts, scripts.ftp, str(filename), 'temp')
@@ -321,17 +344,16 @@ def SavetoServer(scripts, filesUploaded=None, totalFilesToUpload=None):
                 Globals.Cache.LoadDatabase(filename)
 
             # Fix up the changelog and upload
-            Globals.LogCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/ChangeLog")
-            Globals.LogCur = Globals.LogCon.cursor()
-
-            Globals.LogCur.execute('select Max(ID) as Highest from Log')
-            MaxID = Globals.LogCur.fetchall()[0][0]
+            ChangeLogConnection, ChangeLogCursor = Globals.GetNewChangeLogConnectionAndCursor()
+            ChangeLogCursor.execute('SELECT Max(ID) as Highest FROM Log')
+            MaxID = ChangeLogCursor.fetchall()[0][0]
 
             fileString = ''.join(["%s," % (k) for k in LogTable])[:-1]
             print 'Uploaded: ', fileString
                 
-            Globals.LogCur.execute(u"insert into Log values({0}, '{1}', '{2}', {3})".format(MaxID + 1, fileString, Globals.Author, "strftime('%s','now')"))
-            Globals.LogCon.commit()
+            ChangeLogCursor.execute(u"insert into Log values({0}, '{1}', '{2}', {3})".format(MaxID + 1, fileString, Globals.Author, "strftime('%s','now')"))
+            ChangeLogConnection.commit()
+            ChangeLogConnection.close()
 
             print 'Uploading: ChangeLog'
             changeLogUploadSuccess = False
@@ -424,16 +446,8 @@ def RevertFromServer(scripts):
 
             print "Re-getting changed files from server..."
             for item in scripts.update:
-                Globals.CursorGracesJapanese.execute("SELECT count(1) FROM descriptions WHERE filename = ?", [item])
-                exists = Globals.CursorGracesJapanese.fetchall()[0][0]
-                if exists > 0:
-                    Globals.CursorGracesJapanese.execute("SELECT shortdesc FROM descriptions WHERE filename = ?", [item])
-                    desc = Globals.CursorGracesJapanese.fetchall()[0][0]
-                    print 'Downloading ' + desc + ' [' + item + ']...'
-                else:
-                    print 'Downloading ' + item + '...'
-                    
-                    
+                desc = Globals.GetDatabaseDescriptionString(item)
+                print 'Downloading ' + desc + ' [' + item + ']...'
                     
                 DownloadFile(scripts, scripts.ftp, item, item)
                 WipeUpdateCon = DatabaseHandler.OpenEntryDatabase(item)

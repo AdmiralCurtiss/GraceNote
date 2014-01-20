@@ -18,8 +18,10 @@ class Statistics(QtGui.QDialog):
         self.setMinimumSize(400, 600)
         self.setMaximumWidth(400)
         
-        Globals.LogCur.execute("SELECT * FROM Log")
-        LogList = Globals.LogCur.fetchall()
+        ChangeLogConnection, ChangeLogCursor = Globals.GetNewChangeLogConnectionAndCursor()
+        ChangeLogCursor.execute("SELECT * FROM Log")
+        LogList = ChangeLogCursor.fetchall()
+        ChangeLogConnection.close()
         
         # Today Stats
         TodayGroup = QtGui.QGroupBox()

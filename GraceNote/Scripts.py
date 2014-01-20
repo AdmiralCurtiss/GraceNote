@@ -103,9 +103,6 @@ def SetupEnvironment():
     Globals.ConnectionGracesJapanese = sqlite3.connect(Globals.configData.LocalDatabasePath + '/GracesJapanese')
     Globals.CursorGracesJapanese = Globals.ConnectionGracesJapanese.cursor()
 
-    Globals.LogCon = sqlite3.connect(Globals.configData.LocalDatabasePath + '/ChangeLog')
-    Globals.LogCur = Globals.LogCon.cursor()
-
     Globals.EnglishVoiceLanguageFlag = False
     Globals.UpdateLowerStatusFlag = False
     Globals.ModeFlag = 'Semi-Auto'
@@ -268,8 +265,6 @@ class Scripts2(QtGui.QWidget):
         self.timeoutTimer.timeout.connect(self.WriteDatabaseStorageToHdd)
 
 
-        # Grab the changes
-        NetworkHandler.RetrieveModifiedFiles(self, self.splashScreen)
 
         self.splashScreen.destroyScreen()
         
@@ -854,6 +849,7 @@ class Scripts2(QtGui.QWidget):
         self.openFontWindow()
         self.openHistoryWindow()
 
+        NetworkHandler.RetrieveModifiedFiles(self, self.splashScreen)
         Globals.Cache.StartBackgroundDatabaseLoadingThread()
         
     def openMediumWindows(self):

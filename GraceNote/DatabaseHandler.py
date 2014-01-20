@@ -42,16 +42,26 @@ def CopyEntryToHistory(cursor, ID):
 
 def GetChangelogData(cursor = None):
     if not cursor:
-        cursor = Globals.LogCur
+        connection, cursor = Globals.GetNewChangeLogConnectionAndCursor()
+        closeConnectionWhenDone = True
+    else:
+        closeConnectionWhenDone = False
+
     cursor.execute('SELECT ID, File FROM Log ORDER BY ID')
     results = cursor.fetchall()
     LogSet = set(results)
+
+    if closeConnectionWhenDone:
+        connection.close()
+
     return LogSet
 
 def GetNewChangelogData():
     NewLogCon = sqlite3.connect(Globals.configData.LocalDatabasePath + "/NewChangeLog")
     NewLogCur = NewLogCon.cursor()
-    return GetChangelogData(NewLogCur)            
+    data = GetChangelogData(cursor=NewLogCur)
+    NewLogCon.close()
+    return data
 
 def MergeDatabaseWithServerVersionBeforeUpload(LocalMergeCur, RemoteMergeCur):
     # Merging the Server and the local version

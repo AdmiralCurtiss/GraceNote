@@ -13,8 +13,10 @@ class LocalChangelog(QtGui.QDialog):
         self.setWindowModality(False)        
         self.listwidget = QtGui.QListWidget()
         
-        Globals.LogCur.execute("select * from Log where File='{0}'".format(file))
-        templist = Globals.LogCur.fetchall()
+        ChangeLogConnection, ChangeLogCursor = Globals.GetNewChangeLogConnectionAndCursor()
+        ChangeLogCursor.execute("SELECT * FROM Log WHERE File='{0}'".format(file))
+        templist = ChangeLogCursor.fetchall()
+        ChangeLogConnection.close()
         for entry in templist:
             self.listwidget.addItem('{0} on {1}'.format(entry[2], time.strftime('%a, %B %d at %H:%M %p', time.localtime(entry[3]))))
 
