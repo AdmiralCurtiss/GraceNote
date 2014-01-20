@@ -2,12 +2,13 @@
 
 import sys
 sys.path.append('GraceNote')
+sys.stdout = open('stdout.log', 'w')
+sys.stderr = open('stderr.log', 'w')
 from Scripts import *
 from MainWindow import *
 import Globals
 
 if __name__ == '__main__':
-
     print 'Grace Note - Original by Tempus for the Tales of Graces Translation Project'
     print '           - http://www.talesofgraces.com'
     print '           - irc.freenode.net  #Graces'

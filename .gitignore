@@ -21,3 +21,5 @@ GraceNote/*.pyc
 GraceTools/*.pyc
 used_symbols.txt
 Projects/*
+stdout.log
+stderr.log

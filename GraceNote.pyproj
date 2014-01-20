@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{6e6e6cfa-3cd6-4893-956a-d1079513f8c2}</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>GraceNote.py</StartupFile>
+    <StartupFile>GraceNote.pyw</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -26,7 +26,7 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="GraceNote.py" />
+    <Compile Include="GraceNote.pyw" />
     <Compile Include="GraceNote\CompletionTable.py" />
     <Compile Include="GraceNote\Config.py" />
     <Compile Include="GraceNote\CustomHighlighter.py" />
@@ -114,7 +114,7 @@
     <Content Include="icons\twoup.png" />
     <Content Include="icons\upload.png" />
     <Content Include="Projects\config_template.xml" />
-    <Content Include="readme.txt" />
+    <Content Include="readme.md" />
     <Content Include="Resources\CP932.txt" />
     <Content Include="Resources\JPDictionary" />
   </ItemGroup>
