@@ -46,7 +46,7 @@ def RetrieveModifiedFilesWorker(scripts, splash, networkTransferWindow, sendWind
                 ftp.cwd(Globals.configData.RemoteDatabasePath)
             except: # if FTP conn fails 3 times assume it doesn't work at all and just cancel
                 if i > 2:
-                    print 'Couldn\'t connect to FTP. Be careful: Your files may not be up-to-date!'
+                    networkTransferWindow.addListEntry("Couldn't connect to FTP Server. Databases may not be up-to-date.", "< Error >")
                     try:
                         splash.text = 'Grace Note Loaded'.format(scripts.roletext[scripts.role], Globals.ModeFlag)
                         splash.complete = True
@@ -57,7 +57,7 @@ def RetrieveModifiedFilesWorker(scripts, splash, networkTransferWindow, sendWind
                         networkTransferWindow.allowCloseSignal.emit(False)
                     Globals.Cache.databaseAccessRLock.release()
                     return
-                print 'Failed connecting to FTP, retrying...'
+                networkTransferWindow.addListEntry("Couldn't connect to FTP Server, retrying...", "< Error >")
                 continue
                     
                         
@@ -139,10 +139,9 @@ def RetrieveModifiedFilesWorker(scripts, splash, networkTransferWindow, sendWind
                 
         except ftplib.all_errors:
             if i == 19:
-                print 'Error during FTP transfer, 20 tries is enough.'
-                print 'Be careful: Your files may not be up-to-date!'
+                networkTransferWindow.addListEntry("Error during FTP transfer. Databases may not be up-to-date.", "< Error >")
                 break
-            print 'Error during FTP transfer, retrying...'
+            networkTransferWindow.addListEntry("Error during FTP transfer, retrying...", "< Error >")
             continue
                 
     try:
