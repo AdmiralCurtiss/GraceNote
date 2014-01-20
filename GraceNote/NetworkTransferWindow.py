@@ -3,7 +3,7 @@ import Globals
 
 class NetworkTransferWindow(QtGui.QDialog):
 
-    allowCloseSignal = QtCore.pyqtSignal()
+    allowCloseSignal = QtCore.pyqtSignal(bool)
 
     def __init__(self):
         super(NetworkTransferWindow, self).__init__()
@@ -70,10 +70,10 @@ class NetworkTransferWindow(QtGui.QDialog):
         Globals.Settings.setValue('Geometry/NetworkTransferWindow', self.saveGeometry())
         Globals.Settings.setValue('NetworkTransferWindowAutoClose', 'True' if self.autoCloseCheckbox.isChecked() else 'False')
 
-    def AllowClose(self):
+    def AllowClose(self, successful):
         self.closeButton.setEnabled(True)
         self.closeButton.clicked.connect(self.accept)
-        if self.autoCloseCheckbox.isChecked():
+        if successful and self.autoCloseCheckbox.isChecked():
             self.accept()
         return
 

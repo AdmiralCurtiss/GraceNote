@@ -53,6 +53,8 @@ def RetrieveModifiedFilesWorker(scripts, splash, networkTransferWindow, sendWind
                         splash.offline = True
                     except:
                         pass
+                    if sendWindowCloseSignal:
+                        networkTransferWindow.allowCloseSignal.emit(False)
                     Globals.Cache.databaseAccessRLock.release()
                     return
                 print 'Failed connecting to FTP, retrying...'
@@ -64,7 +66,9 @@ def RetrieveModifiedFilesWorker(scripts, splash, networkTransferWindow, sendWind
             changes = DownloadFile(scripts, ftp, 'ChangeLog', 'NewChangeLog')
                 
             if not changes:
-                print "Couldn't download ChangeLog"
+                networkTransferWindow.modifyListEntryStatus(transferWindowChangeLogIdx, "Failed, please retry.")
+                if sendWindowCloseSignal:
+                    networkTransferWindow.allowCloseSignal.emit(False)
                 Globals.Cache.databaseAccessRLock.release()
                 return
             
@@ -151,7 +155,7 @@ def RetrieveModifiedFilesWorker(scripts, splash, networkTransferWindow, sendWind
 
     Globals.Cache.databaseAccessRLock.release()
     if sendWindowCloseSignal:
-        networkTransferWindow.allowCloseSignal.emit()
+        networkTransferWindow.allowCloseSignal.emit(True)
     return
 
 def DownloadFile(scripts, ftp, source, dest):
@@ -244,34 +248,33 @@ def SavetoServerWorker(scripts, networkTransferWindow, sendWindowCloseSignal):
     scripts.WriteDatabaseStorageToHdd()
         
     if len(scripts.update) == 0:
-        print 'Nothing to save!'
+        networkTransferWindow.addListEntry("Nothing to save!", "-")
+        if sendWindowCloseSignal:
+            networkTransferWindow.allowCloseSignal.emit(False)
         Globals.Cache.databaseAccessRLock.release()
-        return
+        return False
 
     print 'Beginning Save...'
-        
-        
     autoRestartAfter = False
-        
     for ftperrorcount in range(1, 20):
         try:        
             try:
                 scripts.ftp = ConnectToFtp()
             except:
                 if ftperrorcount >= 20:
-                    print "Warning:\n\nYour computer is currently offline, and will not be able to recieve updates or save to the server. Your progress will instead be saved for uploading upon re-establishment of a network connection, and any text you enter will be preserved automatically until such time."
+                    networkTransferWindow.addListEntry("Couldn't connect to FTP Server, stopping upload. Please try again later.", "< Error >")
                     Globals.Settings.setValue('update', set(scripts.update))
+                    if sendWindowCloseSignal:
+                        networkTransferWindow.allowCloseSignal.emit(False)
                     Globals.Cache.databaseAccessRLock.release()
                     return False
-                print 'Error during FTP transfer, retrying...'
+                networkTransferWindow.addListEntry("Couldn't connect to FTP Server, retrying...", "< Error >")
                 continue
 
-            # Connecting to server...
-                
             scripts.ftp.cwd('/')
             scripts.ftp.cwd(Globals.configData.RemoteDatabasePath)
 
-            print "Retrieving any files modified by others..."
+            # Retrieving any files modified by others...
             RetrieveModifiedFilesWorker(scripts, scripts.splashScreen, networkTransferWindow, False)
                 
             # Uploading Files...
@@ -291,12 +294,13 @@ def SavetoServerWorker(scripts, networkTransferWindow, sendWindowCloseSignal):
                 
                 #print 'Uploading ' + Globals.GetDatabaseDescriptionString(filename) + ' [' + filename + ']...'
 
-                transferWindowIdx = networkTransferWindow.addListEntry("Uploading...", filename)
+                transferWindowIdx = networkTransferWindow.addListEntry("Downloading...", filename)
 
                 # Downloading the server version and double checking
                 DownloadFile(scripts, scripts.ftp, str(filename), 'temp')
 
                 try:
+                    networkTransferWindow.modifyListEntryStatus(transferWindowIdx, "Merging...")
                     RemoteMergeCon = DatabaseHandler.OpenEntryDatabase('temp')
                     DatabaseHandler.MergeDatabaseWithServerVersionBeforeUpload(
                         DatabaseHandler.OpenEntryDatabase(filename).cursor(),
@@ -304,12 +308,13 @@ def SavetoServerWorker(scripts, networkTransferWindow, sendWindowCloseSignal):
                     )
                     RemoteMergeCon.commit()
                         
-                    # Upload merged remote
+                    networkTransferWindow.modifyListEntryStatus(transferWindowIdx, "Uploading...")
                     for ftpSingleFileUpErrorCount in range(1, 20):
                         try:
                             if ftpSingleFileUpErrorCount >= 20:
-                                print 'Failed on single file 20 files, try again later and confirm the server file is not corrupted.'
-                                print 'File in question: ' + filename
+                                networkTransferWindow.modifyListEntryStatus(transferWindowIdx, "!! Error !! Server file may be corrupted, please manually check and fix or inform someone who can.")
+                                if sendWindowCloseSignal:
+                                    networkTransferWindow.allowCloseSignal.emit(False)
                                 Globals.Cache.databaseAccessRLock.release()
                                 return False
                             result = UploadFile(scripts, scripts.ftp, 'temp', str(filename))
@@ -317,19 +322,15 @@ def SavetoServerWorker(scripts, networkTransferWindow, sendWindowCloseSignal):
                                 continue
                             break
                         except ftplib.all_errors:
-                            print 'Error uploading ' + filename + ', retrying...'
+                            networkTransferWindow.modifyListEntryStatus(transferWindowIdx, "Error, retrying... (" + str(ftpSingleFileUpErrorCount) + ")")
                             continue
             
                     # And copy the new remote over the old local
                     Globals.CopyFile(Globals.configData.LocalDatabasePath + '/temp', Globals.configData.LocalDatabasePath + '/{0}'.format(filename))
 
                 except:
-                    
-                    print 'Server file corrupted. Fixing...'
-                        
+                    networkTransferWindow.modifyListEntryStatus(transferWindowIdx, "Server file corrupted, replacing with local file...")
                     UploadFile(scripts, scripts.ftp, filename, filename)
-                    
-                    print 'Fixed'
 
                 LogTable.append(filename)
                 
@@ -339,6 +340,8 @@ def SavetoServerWorker(scripts, networkTransferWindow, sendWindowCloseSignal):
                 Globals.Cache.LoadDatabase(filename)
 
             # Fix up the changelog and upload
+            transferWindowChangeLogIdx = networkTransferWindow.addListEntry("Modifying...", "ChangeLog")
+
             ChangeLogConnection, ChangeLogCursor = Globals.GetNewChangeLogConnectionAndCursor()
             ChangeLogCursor.execute('SELECT Max(ID) as Highest FROM Log')
             MaxID = ChangeLogCursor.fetchall()[0][0]
@@ -350,28 +353,29 @@ def SavetoServerWorker(scripts, networkTransferWindow, sendWindowCloseSignal):
             ChangeLogConnection.commit()
             ChangeLogConnection.close()
 
-            print 'Uploading: ChangeLog'
+            networkTransferWindow.modifyListEntryStatus(transferWindowChangeLogIdx, "Uploading...")
             changeLogUploadSuccess = False
             for changeup in range(1, 20):
                 try:
                     result = UploadFile(scripts, scripts.ftp, 'ChangeLog', 'ChangeLog', False)
                     if isinstance(result, str) or not result:
                         if changeup >= 20:
-                            print "ERROR:\n\nChangelog has not been uploaded, please retry immediately."
                             break
                         else:
-                            print 'Changelog upload failed, trying again! ({0}/20)'.format(changeup)
+                            networkTransferWindow.modifyListEntryStatus(transferWindowChangeLogIdx, "Error, retrying... (" + str(changeup) + ")")
                             continue
-                    #scripts.ftp.rename('NewChangeLog', 'ChangeLog')
+                    networkTransferWindow.modifyListEntryStatus(transferWindowChangeLogIdx, "Complete!")
                     changeLogUploadSuccess = True
                     break
                 except ftplib.all_errors:
                     if changeup >= 20:
-                        print 'ERROR:\n\Changelog has not been uploaded, please retry immediately.'
                         break
-                    print 'Error uploading Changelog, retrying...'
+                    networkTransferWindow.modifyListEntryStatus(transferWindowChangeLogIdx, "Error, retrying... (" + str(changeup) + ")")
                     continue
             if not changeLogUploadSuccess:
+                networkTransferWindow.modifyListEntryStatus(transferWindowChangeLogIdx, "!! Error !! Server ChangeLog may be corrupted, please fix immediately.")
+                if sendWindowCloseSignal:
+                    networkTransferWindow.allowCloseSignal.emit(False)
                 Globals.Cache.databaseAccessRLock.release()
                 return False
                 
@@ -398,18 +402,19 @@ def SavetoServerWorker(scripts, networkTransferWindow, sendWindowCloseSignal):
             scripts.SetWindowTitle()
 
             if sendWindowCloseSignal:
-                networkTransferWindow.allowCloseSignal.emit()
-
+                networkTransferWindow.allowCloseSignal.emit(True)
             Globals.Cache.databaseAccessRLock.release()
             return True
             
         except ftplib.all_errors:
             if ftperrorcount >= 20:
-                print '20 errors is enough, this is not gonna work. There is probably some fucked up file on the FTP server now, please fix manually or contact someone that knows how to.'
+                networkTransferWindow.addListEntry("Error during FTP transfer. File(s) that were in progress may be corrupted, please confirm and fix.", "< Error >")
                 break
-            print 'Error during FTP transfer, retrying...'
+            networkTransferWindow.addListEntry("Error during FTP transfer, retrying...", "< Error >")
             continue
 
+    if sendWindowCloseSignal:
+        networkTransferWindow.allowCloseSignal.emit(False)
     Globals.Cache.databaseAccessRLock.release()
     return False
 
