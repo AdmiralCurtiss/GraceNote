@@ -21,11 +21,11 @@ def RetrieveModifiedFiles(scripts, splash):
     # open up a window to tell the user what we're doing
     networkTransferWindow = NetworkTransferWindow.NetworkTransferWindow()
     
-    networkTransferThread = threading.Thread(target=RetrieveModifiedFilesWorker, args=(scripts, splash, networkTransferWindow))
+    networkTransferThread = threading.Thread(target=RetrieveModifiedFilesWorker, args=(scripts, splash, networkTransferWindow, True))
     networkTransferThread.start()
     networkTransferWindow.exec_()
 
-def RetrieveModifiedFilesWorker(scripts, splash, networkTransferWindow):
+def RetrieveModifiedFilesWorker(scripts, splash, networkTransferWindow, sendWindowCloseSignal):
     scripts.WriteDatabaseStorageToHdd()
 
     Globals.Cache.databaseAccessRLock.acquire()
@@ -150,7 +150,8 @@ def RetrieveModifiedFilesWorker(scripts, splash, networkTransferWindow):
     print 'Downloaded updated files!'
 
     Globals.Cache.databaseAccessRLock.release()
-    networkTransferWindow.allowCloseSignal.emit()
+    if sendWindowCloseSignal:
+        networkTransferWindow.allowCloseSignal.emit()
     return
 
 def DownloadFile(scripts, ftp, source, dest):
@@ -224,23 +225,21 @@ def UploadFile(scripts, ftp, source, dest, confirmUpload=False):
     return True
 
 
-def SavetoServer(scripts, filesUploaded=None, totalFilesToUpload=None):
+def SavetoServer(scripts):
     scripts.WriteDatabaseStorageToHdd()
 
+    if len(scripts.update) == 0:
+        print 'Nothing to save!'
+        return False
+
+    # TODO: properly propagate return value
     networkTransferWindow = NetworkTransferWindow.NetworkTransferWindow()
-    networkTransferThread = threading.Thread(target=SavetoServerWorker, args=(scripts, filesUploaded, totalFilesToUpload, networkTransferWindow))
+    networkTransferThread = threading.Thread(target=SavetoServerWorker, args=(scripts, networkTransferWindow, True))
     networkTransferThread.start()
     networkTransferWindow.exec_()
                 
-def SavetoServerWorker(scripts, filesUploaded, totalFilesToUpload, networkTransferWindow):
-    scripts.WriteDatabaseStorageToHdd()
-
+def SavetoServerWorker(scripts, networkTransferWindow, sendWindowCloseSignal):
     Globals.Cache.databaseAccessRLock.acquire()
-
-    if filesUploaded is None:
-        filesUploaded = 0
-    if totalFilesToUpload is None:
-        totalFilesToUpload = len(scripts.update)
 
     scripts.WriteDatabaseStorageToHdd()
         
@@ -267,20 +266,15 @@ def SavetoServerWorker(scripts, filesUploaded, totalFilesToUpload, networkTransf
                 print 'Error during FTP transfer, retrying...'
                 continue
 
-            progress = QtGui.QProgressDialog("Saving to Server...", "Abort", 0, len(scripts.update)+1)
-            progress.setWindowModality(QtCore.Qt.WindowModal)
-            
-            i = 0
-            progress.setValue(i)
-            progress.setLabelText('Connecting to server...')
+            # Connecting to server...
                 
             scripts.ftp.cwd('/')
             scripts.ftp.cwd(Globals.configData.RemoteDatabasePath)
 
             print "Retrieving any files modified by others..."
-            RetrieveModifiedFilesWorker(scripts, scripts.splashScreen, networkTransferWindow)
+            RetrieveModifiedFilesWorker(scripts, scripts.splashScreen, networkTransferWindow, False)
                 
-            progress.setLabelText('Uploading Files...')
+            # Uploading Files...
             LogTable = []
             saveUpdate = set()
                 
@@ -296,6 +290,8 @@ def SavetoServerWorker(scripts, filesUploaded, totalFilesToUpload, networkTransf
                     continue
                 
                 #print 'Uploading ' + Globals.GetDatabaseDescriptionString(filename) + ' [' + filename + ']...'
+
+                transferWindowIdx = networkTransferWindow.addListEntry("Uploading...", filename)
 
                 # Downloading the server version and double checking
                 DownloadFile(scripts, scripts.ftp, str(filename), 'temp')
@@ -335,11 +331,10 @@ def SavetoServerWorker(scripts, filesUploaded, totalFilesToUpload, networkTransf
                     
                     print 'Fixed'
 
-                i = i + 1
-                progress.setValue(i)
-
                 LogTable.append(filename)
-                    
+                
+                networkTransferWindow.modifyListEntryStatus(transferWindowIdx, "Complete!")
+
                 CompletionTable.CalculateCompletionForDatabase(filename)
                 Globals.Cache.LoadDatabase(filename)
 
@@ -378,11 +373,9 @@ def SavetoServerWorker(scripts, filesUploaded, totalFilesToUpload, networkTransf
                     continue
             if not changeLogUploadSuccess:
                 Globals.Cache.databaseAccessRLock.release()
-                return
+                return False
                 
             # Everything is done.
-            progress.setValue(len(scripts.update)+1);
-
             print 'Done!'
             scripts.ftp.close()
                 
@@ -393,7 +386,9 @@ def SavetoServerWorker(scripts, filesUploaded, totalFilesToUpload, networkTransf
             Globals.Settings.sync()
 
             if autoRestartAfter:
-                SavetoServer(scripts)
+                retval = SavetoServerWorker(scripts, networkTransferWindow, sendWindowCloseSignal)
+                Globals.Cache.databaseAccessRLock.release()
+                return retval
 
             if len(scripts.update) > 0:
                 Globals.HaveUnsavedChanges = True
@@ -401,6 +396,9 @@ def SavetoServerWorker(scripts, filesUploaded, totalFilesToUpload, networkTransf
                 Globals.HaveUnsavedChanges = False
 
             scripts.SetWindowTitle()
+
+            if sendWindowCloseSignal:
+                networkTransferWindow.allowCloseSignal.emit()
 
             Globals.Cache.databaseAccessRLock.release()
             return True
