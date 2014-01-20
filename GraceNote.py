@@ -8,7 +8,10 @@ import Globals
 
 if __name__ == '__main__':
 
-    print "Grace Note v10.0 - Coded by Tempus for the Tales of Graces Translation Project\n    - http://www.talesofgraces.com\n    - irc.freenode.net  #Graces"
+    print 'Grace Note - Original by Tempus for the Tales of Graces Translation Project'
+    print '           - http://www.talesofgraces.com'
+    print '           - irc.freenode.net  #Graces'
+    print 'Modified and expanded for other games by Admiral H. Curtiss'
 
     app = QtGui.QApplication(sys.argv)
     app.setApplicationName('Grace Note')

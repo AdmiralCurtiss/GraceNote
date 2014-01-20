@@ -262,7 +262,7 @@ class MassReplace(QtGui.QDialog):
                 treeItem.setCheckState(3, QtCore.Qt.Checked)
                 newSearchTab.addTopLevelItem(treeItem)
             except:
-                print("Mass Replace: Failed adding file [" + filename + "], entry [" + str(entryID) + "]")
+                Globals.MainWindow.displayStatusMessage("Mass Replace: Failed adding file [" + filename + "], entry [" + str(entryID) + "]")
         
         # turn case sensitiveness back off
         if matchCase:

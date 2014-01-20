@@ -217,7 +217,7 @@ class XTextBox(QtGui.QTextEdit):
                 #print 'playing audio: "' + filename + '"'
                 playerQueue.append(Phonon.MediaSource(filename))
             else:
-                print 'couldn\'t find audio: "' + filename + '"'
+                Globals.MainWindow.displayStatusMessage( 'couldn\'t find audio: "' + filename + '"' )
                 
         if playerQueue:
             self.player.enqueue(playerQueue)

@@ -118,7 +118,7 @@ class DuplicateText(QtGui.QDialog):
 
         self.treewidget.clear()
 
-        print 'Initializing container...'
+        Globals.MainWindow.displayStatusMessage( 'Duplicate Text: Initializing container...' )
         Table = []
         BlackList = []
         Globals.CursorGracesJapanese.execute('SELECT MAX(ID) FROM Japanese')
@@ -127,7 +127,7 @@ class DuplicateText(QtGui.QDialog):
             Table.append([0, set([])]) # stores number of occurances, set of english+status
             BlackList.append(0)
 
-        print 'Fetching debug information...'
+        Globals.MainWindow.displayStatusMessage( 'Duplicate Text: Fetching debug information...' )
         Globals.CursorGracesJapanese.execute('SELECT ID FROM Japanese WHERE debug=1')
         BlackListDB = Globals.CursorGracesJapanese.fetchall()
         for ID in BlackListDB:
@@ -135,7 +135,7 @@ class DuplicateText(QtGui.QDialog):
         aList = Globals.configData.FileList
 
         i = 1
-        print 'Processing databases...'
+        Globals.MainWindow.displayStatusMessage( 'Duplicate Text: Processing databases...' )
         for category in self.categories:
             if category.isChecked():
                 for filename in aList[i]:
@@ -154,7 +154,7 @@ class DuplicateText(QtGui.QDialog):
 #            self.progressbar.setValue(i * 6250)
             i += 1
         
-        print 'Displaying entries...'
+        Globals.MainWindow.displayStatusMessage( 'Duplicate Text: Displaying entries...' )
         i = 0
         for item in Table:
             if (
@@ -178,6 +178,8 @@ class DuplicateText(QtGui.QDialog):
 #           self.progressbar.setValue(self.progressbar.value() + 1)
 #       self.progressLabel.setText('Done!')
         i = 0
+
+        Globals.MainWindow.displayStatusMessage( 'Duplicate Text: Done!' )
 
 #       self.progressbar.reset
 

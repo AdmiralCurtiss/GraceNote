@@ -5,8 +5,12 @@ import Globals
 import Scripts
 
 class MainWindow(QtGui.QMainWindow):
+    displayStatusMessageSignal = QtCore.pyqtSignal(str)
+
     def __init__(self):
         super(MainWindow, self).__init__()
+
+        Globals.MainWindow = self
 
         self.Toolbar = QtGui.QToolBar()
         self.Toolbar.setObjectName('MainToolBar')
@@ -29,7 +33,15 @@ class MainWindow(QtGui.QMainWindow):
         self.scripts2 = Scripts.Scripts2(self)
         self.setCentralWidget(self.scripts2)
 
+        statusBar = QtGui.QStatusBar()
+        self.setStatusBar(statusBar)
+        self.displayStatusMessageSignal.connect(statusBar.showMessage)
+        #self.displayStatusMessage("hi!")
+
         self.restoreStateAndGeometry()
+
+    def displayStatusMessage(self, message):
+        self.displayStatusMessageSignal.emit(message)
 
     def restoreStateAndGeometry(self):
         geom = Globals.Settings.value("MainWindowGeometry")
@@ -60,8 +72,6 @@ class SplashScreen(QtGui.QWidget):
         
         self.setFixedSize(450, 350)
 
-        self.text = 'Downloading new files...'
-
         self.complete = False
         self.offline = False
         
@@ -77,24 +87,17 @@ class SplashScreen(QtGui.QWidget):
 
         painter.drawPixmap(0, 0, QtGui.QPixmap('icons/Splash.png'))
 
-        painter.drawText(350, 185, 'v10.0')
-        painter.drawText(92, 185, self.text)
+        painter.drawText( 92, 185,    'Original by Tempus')
+        painter.drawText(100, 185+12, 'for the Tales of Graces Translation Project')
+        painter.drawText(112, 185+24, 'Modified and expanded for other games')
+        painter.drawText(120, 185+36, 'by Admiral H. Curtiss')
         
-        if not Globals.enchanted and self.offline:
-            painter.setPen(QtGui.QColor(255, 0, 0, 255))
-            painter.drawText(100, 198, 'Spell Checker not available')
-            painter.drawText(112, 210, 'Offline Mode')
-            painter.setPen(QtGui.QColor(0, 0, 0, 255))
-        
-        elif not Globals.enchanted:
-            painter.setPen(QtGui.QColor(255, 0, 0, 255))
-            painter.drawText(100, 198, 'Spell Checker not available')
-            painter.setPen(QtGui.QColor(0, 0, 0, 255))
-            
-        elif self.offline:
-            painter.setPen(QtGui.QColor(255, 0, 0, 255))
-            painter.drawText(100, 198, 'Offline Mode')
-            painter.setPen(QtGui.QColor(0, 0, 0, 255))
+        painter.setPen(QtGui.QColor(255, 0, 0, 255))
+        if not Globals.enchanted:
+            painter.drawText(136, 185+56, 'Spell Checker not available')
+        if self.offline:
+            painter.drawText(166, 185+68, 'Offline Mode')
+        painter.setPen(QtGui.QColor(0, 0, 0, 255))
                
                    
     def mousePressEvent(self, event):

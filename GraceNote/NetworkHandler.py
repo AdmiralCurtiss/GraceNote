@@ -34,7 +34,6 @@ def RetrieveModifiedFilesWorker(scripts, splash, networkTransferWindow, sendWind
         splash.text = 'Downloading updated files...'
     except:
         pass
-    print 'Downloading updated files...'
             
     # loop to prevent crashes during FTP stuff
     for i in range( 0, 20 ):    # range( start, stop, step )
@@ -91,7 +90,6 @@ def RetrieveModifiedFilesWorker(scripts, splash, networkTransferWindow, sendWind
 
             # Don't download stuff that still has unsaved changes locally
             for item in Downloader:
-                print item
                 if item in scripts.update:
                     networkTransferWindow.addListEntry("Not downloading, still has unsaved local changes.", item)
                 else: 
@@ -151,7 +149,6 @@ def RetrieveModifiedFilesWorker(scripts, splash, networkTransferWindow, sendWind
         splash.complete = True
     except:
         pass
-    print 'Downloaded updated files!'
 
     Globals.Cache.databaseAccessRLock.release()
     if sendWindowCloseSignal:
@@ -233,7 +230,7 @@ def SavetoServer(scripts):
     scripts.WriteDatabaseStorageToHdd()
 
     if len(scripts.update) == 0:
-        print 'Nothing to save!'
+        Globals.MainWindow.displayStatusMessage('Nothing to save!')
         return False
 
     # TODO: properly propagate return value
@@ -254,7 +251,7 @@ def SavetoServerWorker(scripts, networkTransferWindow, sendWindowCloseSignal):
         Globals.Cache.databaseAccessRLock.release()
         return False
 
-    print 'Beginning Save...'
+    # Beginning Save...
     autoRestartAfter = False
     for ftperrorcount in range(1, 20):
         try:        
@@ -292,7 +289,7 @@ def SavetoServerWorker(scripts, networkTransferWindow, sendWindowCloseSignal):
                     saveUpdate.add(filename)
                     continue
                 
-                #print 'Uploading ' + Globals.GetDatabaseDescriptionString(filename) + ' [' + filename + ']...'
+                # 'Uploading ' + Globals.GetDatabaseDescriptionString(filename) + ' [' + filename + ']...'
 
                 transferWindowIdx = networkTransferWindow.addListEntry("Downloading...", filename)
 
@@ -347,7 +344,7 @@ def SavetoServerWorker(scripts, networkTransferWindow, sendWindowCloseSignal):
             MaxID = ChangeLogCursor.fetchall()[0][0]
 
             fileString = ''.join(["%s," % (k) for k in LogTable])[:-1]
-            print 'Uploaded: ', fileString
+            # 'Uploaded: ', fileString
                 
             ChangeLogCursor.execute(u"insert into Log values({0}, '{1}', '{2}', {3})".format(MaxID + 1, fileString, Globals.Author, "strftime('%s','now')"))
             ChangeLogConnection.commit()
@@ -380,10 +377,10 @@ def SavetoServerWorker(scripts, networkTransferWindow, sendWindowCloseSignal):
                 return False
                 
             # Everything is done.
-            print 'Done!'
             scripts.ftp.close()
-                
-            print 'Retaining the following files for later upload: ', saveUpdate
+               
+            if len(saveUpdate) > 0:
+                Globals.MainWindow.displayStatusMessage( 'Retaining the following files for later upload: ' + str(saveUpdate) )
             scripts.update.clear()
             scripts.update = set(saveUpdate)
             Globals.Settings.setValue('update', scripts.update)
@@ -423,7 +420,7 @@ def RevertFromServer(scripts):
     scripts.WriteDatabaseStorageToHdd()
         
     if len(scripts.update) == 0:
-        print 'Nothing to revert!'
+        Globals.MainWindow.displayStatusMessage( 'Nothing to revert!' )
         Globals.Cache.databaseAccessRLock.release()
         return
 

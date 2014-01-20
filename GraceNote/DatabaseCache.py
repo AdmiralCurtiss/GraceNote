@@ -62,7 +62,7 @@ class DatabaseCache(object):
 
     def LoadDatabase(self, name):
         self.databaseAccessRLock.acquire()
-        print 'Loading Database ' + name
+        Globals.MainWindow.displayStatusMessage('Loading Database: ' + name + '...')
 
         Connection = DatabaseHandler.OpenEntryDatabase(name)
         Cursor = Connection.cursor()
@@ -75,5 +75,6 @@ class DatabaseCache(object):
 
         self.Databases[name] = db
 
+        Globals.MainWindow.displayStatusMessage('Loaded Database: ' + name)
         self.databaseAccessRLock.release()
         return

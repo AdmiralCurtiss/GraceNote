@@ -27,6 +27,7 @@ ColorLowerStatus = None
 ColorCurrentStatus = None
 
 Cache = None
+MainWindow = None
 
 GraceNoteIsTerminating = False
 

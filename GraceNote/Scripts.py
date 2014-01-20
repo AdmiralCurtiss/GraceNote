@@ -176,7 +176,7 @@ class Scripts2(QtGui.QWidget):
                 self.update = a
             except:
                 self.update = set()
-        print str(len(self.update)) + ' files retained from last session: ', ''.join(["%s, " % (k) for k in self.update])[:-2]
+        Globals.MainWindow.displayStatusMessage( str(len(self.update)) + ' files retained from last session: ' + ''.join(["%s, " % (k) for k in self.update])[:-2] )
         if len(self.update) > 0:
             Globals.HaveUnsavedChanges = True
 
@@ -929,7 +929,7 @@ class Scripts2(QtGui.QWidget):
         Globals.Settings.setValue('entryTreeViewHeadersVisible', headersVisibleString)
 
         Globals.Settings.setValue('update', set(self.update))
-        print str(len(self.update)) + ' files retained for next session: ', ''.join(["%s, " % (k) for k in self.update])[:-2]
+        Globals.MainWindow.displayStatusMessage( str(len(self.update)) + ' files retained for next session: ' + ''.join(["%s, " % (k) for k in self.update])[:-2] )
 
         Globals.Settings.setValue('Geometry/Scripts2', self.saveGeometry())
         Globals.Settings.setValue('Geometry/Scripts2.mainAreaSplitLayout', self.mainAreaSplitLayout.saveGeometry())
@@ -965,7 +965,7 @@ class Scripts2(QtGui.QWidget):
     
             return
         except:
-            print 'scroll up failed'
+            pass
 
 
     def scrollDown(self, action):
@@ -983,7 +983,7 @@ class Scripts2(QtGui.QWidget):
     
             return
         except:
-            print 'scroll down failed'
+            pass
 
 
 
@@ -1139,6 +1139,7 @@ class Scripts2(QtGui.QWidget):
         self.WriteDatabaseStorageToHdd()
         
         # Applies the debug status in GracesJapanese to all databases
+        Globals.MainWindow.displayStatusMessage( 'Consolidate Debug: GracesJapanese -> Individual Databases' )
         
         Globals.Cache.databaseAccessRLock.acquire()
 
@@ -1146,10 +1147,9 @@ class Scripts2(QtGui.QWidget):
         aList = Globals.configData.FileList
             
         for item in aList[0]:
-            print item
             for filename in aList[i]:
 
-                print "Processing: {0}".format(filename)
+                Globals.MainWindow.displayStatusMessage( "Consolidate Debug: Processing: {0}".format(filename) )
             
                 UpdateCon = DatabaseHandler.OpenEntryDatabase(filename)
                 UpdateCur = UpdateCon.cursor()
@@ -1172,12 +1172,14 @@ class Scripts2(QtGui.QWidget):
                 
             i += 1
 
+        Globals.MainWindow.displayStatusMessage( 'Consolidate Debug Finished!' )
         Globals.Cache.databaseAccessRLock.release()
 
     def ReverseConsolidateDebug(self):
         self.WriteDatabaseStorageToHdd()
         
         # Applies the debug status in Databases to GracesJapanese
+        Globals.MainWindow.displayStatusMessage( 'Consolidate Debug: Individual Databases -> GracesJapanese' )
         
         Globals.Cache.databaseAccessRLock.acquire()
 
@@ -1185,10 +1187,9 @@ class Scripts2(QtGui.QWidget):
         aList = Globals.configData.FileList
             
         for item in aList[0]:
-            print item
             for filename in aList[i]:
 
-                print "Processing: {0}".format(filename)
+                Globals.MainWindow.displayStatusMessage( "Consolidate Debug: Processing: {0}".format(filename) )
             
                 UpdateCon = DatabaseHandler.OpenEntryDatabase(filename)
                 UpdateCur = UpdateCon.cursor()
@@ -1201,6 +1202,7 @@ class Scripts2(QtGui.QWidget):
                 
             i += 1
         Globals.ConnectionGracesJapanese.commit()
+        Globals.MainWindow.displayStatusMessage( 'Consolidate Debug Finished!' )
         Globals.Cache.databaseAccessRLock.release()
 
     # fills in the database list to the left
@@ -1464,7 +1466,7 @@ class Scripts2(QtGui.QWidget):
         #if self.currentOpenedEntryIndexes is not None:
         #    for i in self.currentOpenedEntryIndexes:
         #        idx = self.entrymodel.itemFromIndex(i)
-        #        print '???'
+        #        ???
 
     # fills in the textboxes in the middle
     def PopulateTextEdit(self):
@@ -2112,7 +2114,7 @@ class Scripts2(QtGui.QWidget):
 
         lastDatabase = ""
         
-        print("Writing database storage in memory to HDD...")
+        Globals.MainWindow.displayStatusMessage("Writing database storage in memory to HDD...")
         
         # sort by time of entry creation so order of inserts is preserved (necessary eg. if changing both english and comment on same entry
         sortedStorage = sorted(self.databaseWriteStorage, key=lambda UpdatedDatabaseEntry: UpdatedDatabaseEntry.timestamp)
@@ -2187,7 +2189,7 @@ class Scripts2(QtGui.QWidget):
         
         Globals.Cache.databaseAccessRLock.acquire()
         self.ClearUpdateSet()
-        print 'Searching for databases with unsaved changes...'
+        Globals.MainWindow.displayStatusMessage( 'Searching for databases with unsaved changes...' )
         i = 1
         for item in Globals.configData.FileList[0]:
             for item in Globals.configData.FileList[i]:
@@ -2197,12 +2199,12 @@ class Scripts2(QtGui.QWidget):
                 exists = RecalcDbCur.fetchall()[0][0]
                 if exists > 0:
                     self.AddDatabaseToUpdateSet(str(item))
-                    print 'Found database: ' + item
+                    Globals.MainWindow.displayStatusMessage( 'Found database with unsaved changes: ' + item )
                 RecalcDbConn.close()
             i = i + 1
         Globals.Settings.setValue('update', set(self.update))
         Globals.Settings.sync()
-        print 'Done searching for databases with unsaved changes!'
+        Globals.MainWindow.displayStatusMessage( 'Done searching for databases with unsaved changes!' )
         Globals.Cache.databaseAccessRLock.release()
         return
     
