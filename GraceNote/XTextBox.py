@@ -77,7 +77,7 @@ class XTextBox(QtGui.QTextEdit):
                 self.grammar.released.connect(self.grammarTogglem)
 
 
-        elif HUD == 'jp':
+        elif HUD == 'jp' or HUD == 'com':
             self.jpflag = QtGui.QToolButton()
             self.jpflag.setCheckable(False)
             self.jpflag.setAutoRaise(True)
@@ -87,9 +87,12 @@ class XTextBox(QtGui.QTextEdit):
             layout.addWidget(self.jpflag)
             self.setLayout(layout)
 
-            if not self.readOnly:
-                self.jpflag.released.connect(self.flagToggle)
+            #if not self.readOnly:
+            #    self.jpflag.released.connect(self.flagToggle)
             self.role = 1
+
+            if HUD == 'com':
+                self.flagToggle()
             
             
         self.highlighter = CustomHighlighter(self)

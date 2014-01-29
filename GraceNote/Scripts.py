@@ -332,13 +332,15 @@ class Scripts2(QtGui.QWidget):
         for i in range(Globals.AmountEditingWindows):
             # create text boxes, set defaults
             tb1 = XTextBox(None, self)
+            tb1.currentContentState = 'ENG'
             tb2 = XTextBox('jp', self)
+            tb2.currentContentState = 'JPN'
             tb2.hide()
             tb2.setReadOnly(True)
-            tb3 = XTextBox('jp', self)
+            tb3 = XTextBox('com', self)
+            tb3.currentContentState = 'COM'
             tb3.hide()
-            tb3.setReadOnly(True)
-            tb3.flagToggle()
+            tb3.setReadOnly(False)
             if Globals.Settings.contains('font'):
                 size = int(Globals.Settings.value('font'))
                 tb1.setFontPointSize(size)
@@ -356,6 +358,7 @@ class Scripts2(QtGui.QWidget):
             footer2.setContentsMargins(0, 0, 0, 0)
             self.twoupEditingFooters.append(footer2)
             tb2.setFooter(footer2)
+            tb3.setFooter(QtGui.QLabel()) # questionable, but fixes a bug that would require a (minor, I guess) change of the signal/slot/UpdateTextGenericFunc stuff
             
             # create layout
             tmplayout = QtGui.QGridLayout()
@@ -414,6 +417,8 @@ class Scripts2(QtGui.QWidget):
         self.entryTreeView.header().customContextMenuRequested.connect(self.SpawnEntryListColumnHideMenu)
         #self.entry.pressed.connect(self.UpdateDebug)
         for editbox in self.regularEditingTextBoxes:
+            editbox.manualEdit.connect(self.UpdateTextGenericFunc)
+        for editbox in self.threeupEditingTextBoxes:
             editbox.manualEdit.connect(self.UpdateTextGenericFunc)
         self.debug.toggled.connect(self.DebugFilter)
         self.alwaysOnTopButton.toggled.connect(self.AlwaysOnTopToggle)
@@ -1527,7 +1532,11 @@ class Scripts2(QtGui.QWidget):
                     commentTexts[i] = commentTexts[i] + 'Comment Available'
                 self.regularEditingTextBoxes[i].iconToggle(self.text[rowBoxes[i]][4])
                 self.regularEditingTextBoxes[i].currentEntry = rowBoxes[i] + 1
+                self.twoupEditingTextBoxes[i].currentEntry = rowBoxes[i] + 1
+                self.threeupEditingTextBoxes[i].currentEntry = rowBoxes[i] + 1
                 self.regularEditingTextBoxes[i].setReadOnly(False)
+                self.twoupEditingTextBoxes[i].setReadOnly(True)
+                self.threeupEditingTextBoxes[i].setReadOnly(False)
             else:
                 textEntries1.append( '' )
                 textEntries1raw.append( '' )
@@ -1537,7 +1546,11 @@ class Scripts2(QtGui.QWidget):
                 textEntries3raw.append( '' )
                 self.regularEditingTextBoxes[i].iconToggle(0)
                 self.regularEditingTextBoxes[i].currentEntry = -1
+                self.twoupEditingTextBoxes[i].currentEntry = -1
+                self.threeupEditingTextBoxes[i].currentEntry = -1
                 self.regularEditingTextBoxes[i].setReadOnly(True)
+                self.twoupEditingTextBoxes[i].setReadOnly(True)
+                self.threeupEditingTextBoxes[i].setReadOnly(True)
 
         # audio clip check
         if Globals.Audio:
@@ -2050,24 +2063,25 @@ class Scripts2(QtGui.QWidget):
         else:
             CommandOriginButton = True
         
-        updateStatusValue = self.FigureOutNewStatusValue(role, currentDatabaseStatus, self.state, CommandOriginButton, CommandOriginAutoMode)
+        updateStatusValue = self.FigureOutNewStatusValue(role, currentDatabaseStatus, textBox.currentContentState, CommandOriginButton, CommandOriginAutoMode)
 
         self.text[textBox.currentEntry - 1][4] = updateStatusValue
-        textBox.iconToggle(updateStatusValue)
+        if textBox.currentContentState == 'ENG':
+            textBox.iconToggle(updateStatusValue)
         
         databasefilename = self.treemodel.itemFromIndex(self.tree.currentIndex()).statusTip()
         
         #UpdatedDatabaseEntry(cleanString, databaseName, entry, role, state)
         # keep for later write to HDD
-        self.InsertOrUpdateEntryToWrite(DatabaseCache.UpdatedDatabaseEntry(GoodString, databasefilename, textBox.currentEntry, updateStatusValue, self.state))
-        textBox.refreshFooter(GoodString, self.state[0] + ': ')
+        self.InsertOrUpdateEntryToWrite(DatabaseCache.UpdatedDatabaseEntry(GoodString, databasefilename, textBox.currentEntry, updateStatusValue, textBox.currentContentState))
+        textBox.refreshFooter(GoodString, textBox.currentContentState + ': ')
 
         self.ReStartTimeoutTimer()
         
         # write the new string back into the main window, this is neccessary or else the new string isn't there when the displayed entry is changed!
-        if self.state == 'ENG':
+        if textBox.currentContentState == 'ENG':
             self.text[textBox.currentEntry - 1][0] = GoodString
-        elif self.state == "COM":
+        elif textBox.currentContentState == "COM":
             self.text[textBox.currentEntry - 1][2] = GoodString
         
         # should probably make this optional
@@ -2149,39 +2163,13 @@ class Scripts2(QtGui.QWidget):
         Globals.Cache.databaseAccessRLock.release()
         
     def SwapEnglish(self):
-
-        if self.state == 'ENG':
-            return
-
-        for box in self.regularEditingTextBoxes:
-            box.setReadOnly(False)
-        
-        self.state = 'ENG'
-        self.PopulateTextEdit()
-
+        return
 
     def SwapJapanese(self):
-
-        if self.state == 'JPN':
-            return
-
-        for box in self.regularEditingTextBoxes:
-            box.setReadOnly(False)
-        
-        self.state = 'JPN'
-        self.PopulateTextEdit()
-
+        return
 
     def SwapComment(self):
-
-        if self.state == 'COM':
-            return
-
-        for box in self.regularEditingTextBoxes:
-            box.setReadOnly(False)
-        
-        self.state = 'COM'
-        self.PopulateTextEdit()
+        return
 
     def RecalculateFilesToBeUploaded(self):
         self.WriteDatabaseStorageToHdd()
