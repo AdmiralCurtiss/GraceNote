@@ -229,8 +229,6 @@ class Scripts2(QtGui.QWidget):
         if Globals.AmountEditingWindows < 3 or Globals.AmountEditingWindows > 25:
             Globals.AmountEditingWindows = 5
 
-        Globals.TwoUpMode = 3
-
         if Globals.Settings.contains('TextboxVisibleFlagEnglish'):
             self.TextboxVisibleFlagEnglish = Globals.Settings.value('TextboxVisibleFlagEnglish') == 'True'
         else:
@@ -343,19 +341,21 @@ class Scripts2(QtGui.QWidget):
             # create text boxes, set defaults
             tb1 = XTextBox(None, self)
             tb1.currentContentState = 'ENG'
+            
             tb2 = XTextBox('jp', self)
             tb2.currentContentState = 'JPN'
-            tb2.hide()
             tb2.setReadOnly(True)
+
             tb3 = XTextBox('com', self)
             tb3.currentContentState = 'COM'
-            tb3.hide()
             tb3.setReadOnly(False)
+
             if Globals.Settings.contains('font'):
                 size = int(Globals.Settings.value('font'))
                 tb1.setFontPointSize(size)
                 tb2.setFontPointSize(size)
                 tb3.setFontPointSize(size)
+
             self.regularEditingTextBoxes.append(tb1)
             self.twoupEditingTextBoxes.append(tb2)
             self.threeupEditingTextBoxes.append(tb3)
@@ -560,10 +560,6 @@ class Scripts2(QtGui.QWidget):
         self.quitAct.triggered.connect(self.cleanupAndQuit)
         self.quitAct.setShortcut(QtGui.QKeySequence('Ctrl-Q'))
 
-        self.twoupAct = QtGui.QAction(QtGui.QIcon('icons/twoup.png'), 'Two-up', None)
-        self.twoupAct.triggered.connect(self.toggleTwoUpMode)
-        #self.twoupAct.setShortcut(QtGui.QKeySequence('Ctrl-U'))
-
 
         self.iconSizes = [12, 16, 18, 24, 36, 48, 64]
         self.iconSizeActs = []
@@ -665,7 +661,6 @@ class Scripts2(QtGui.QWidget):
         self.Toolbar.addAction(self.engAct)
         self.Toolbar.addAction(self.jpAct)
         self.Toolbar.addAction(self.comAct)
-        #self.Toolbar.addAction(self.twoupAct)
         self.Toolbar.addAction(self.reportAct)
         self.Toolbar.addAction(self.massAct)
         self.Toolbar.addAction(self.compAct)
@@ -734,7 +729,6 @@ class Scripts2(QtGui.QWidget):
         viewMenu.addAction(self.globalAct)
         viewMenu.addAction(self.changeAct)
         viewMenu.addSeparator()
-        #viewMenu.addAction(self.twoupAct)
         viewMenu.addAction(self.engAct)
         viewMenu.addAction(self.jpAct)
         viewMenu.addAction(self.comAct)
@@ -855,7 +849,6 @@ class Scripts2(QtGui.QWidget):
         geom = Globals.Settings.value('Geometry/Scripts2')
         if geom is not None:
             self.restoreGeometry(geom)
-        self.SetTwoUpMode(Globals.TwoUpMode)
 
         if not self.TextboxVisibleFlagEnglish:
             for box in self.regularEditingTextBoxes:
@@ -1120,43 +1113,6 @@ class Scripts2(QtGui.QWidget):
             self.Toolbar.setToolButtonStyle(2)
             Globals.Settings.setValue('toolstyle', 2)
         
-    def toggleTwoUpMode(self):
-        mode = Globals.TwoUpMode + 1
-        if mode > 3:
-            mode = 1
-        self.SetTwoUpMode(mode)
-
-    def SetTwoUpMode(self, mode):
-        Globals.TwoUpMode = mode
-
-        if mode == 1:
-            self.twoupAct.setIcon(QtGui.QIcon('icons/twoup.png'))
-            self.twoupAct.setText('Two up')
-            for box in self.twoupEditingTextBoxes:
-                box.hide()
-            for box in self.threeupEditingTextBoxes:
-                box.hide()
-        
-        elif mode == 2:
-            self.twoupAct.setIcon(QtGui.QIcon('icons/threeup.png'))
-            self.twoupAct.setText('Three up')
-            for box in self.twoupEditingTextBoxes:
-                box.show()
-            for box in self.threeupEditingTextBoxes:
-                box.hide()
-            self.PopulateTextEdit()
-
-        elif mode == 3:
-            self.twoupAct.setIcon(QtGui.QIcon('icons/oneup.png'))
-            self.twoupAct.setText('One up')
-            for box in self.twoupEditingTextBoxes:
-                box.show()
-            for box in self.threeupEditingTextBoxes:
-                box.show()
-            self.PopulateTextEdit()
-
-        return
-
     def ConsolidateDebug(self):
         self.WriteDatabaseStorageToHdd()
         
@@ -1618,10 +1574,8 @@ class Scripts2(QtGui.QWidget):
         twoupTypeHelper.append('C')
         for i in range(len(self.textEditingBoxes)):
             self.regularEditingTextBoxes[i].setText(textEntries1[i])
-            if Globals.TwoUpMode >= 2:
-                self.twoupEditingTextBoxes[i].setText(textEntries2[i])
-            if Globals.TwoUpMode >= 3:
-                self.threeupEditingTextBoxes[i].setText(textEntries3[i])
+            self.twoupEditingTextBoxes[i].setText(textEntries2[i])
+            self.threeupEditingTextBoxes[i].setText(textEntries3[i])
                 
             if self.regularEditingTextBoxes[i].currentEntry >= 0:
                 self.textEditingTitles[i].setText('Entry {0}: {1}'.format(rowBoxes[i]+1, commentTexts[i]))
