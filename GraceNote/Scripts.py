@@ -229,10 +229,7 @@ class Scripts2(QtGui.QWidget):
         if Globals.AmountEditingWindows < 3 or Globals.AmountEditingWindows > 25:
             Globals.AmountEditingWindows = 5
 
-        if Globals.Settings.contains('TwoUpMode'):
-            Globals.TwoUpMode = int(Globals.Settings.value('TwoUpMode'))
-        else:
-            Globals.TwoUpMode = 1
+        Globals.TwoUpMode = 3
 
         if Globals.Settings.contains('ColorCurrentStatus'):
             Globals.ColorCurrentStatus = QtGui.QColor( int(Globals.Settings.value('ColorCurrentStatus')) )
@@ -552,7 +549,7 @@ class Scripts2(QtGui.QWidget):
 
         self.twoupAct = QtGui.QAction(QtGui.QIcon('icons/twoup.png'), 'Two-up', None)
         self.twoupAct.triggered.connect(self.toggleTwoUpMode)
-        self.twoupAct.setShortcut(QtGui.QKeySequence('Ctrl-U'))
+        #self.twoupAct.setShortcut(QtGui.QKeySequence('Ctrl-U'))
 
 
         self.iconSizes = [12, 16, 18, 24, 36, 48, 64]
@@ -655,7 +652,7 @@ class Scripts2(QtGui.QWidget):
         self.Toolbar.addAction(self.engAct)
         self.Toolbar.addAction(self.jpAct)
         self.Toolbar.addAction(self.comAct)
-        self.Toolbar.addAction(self.twoupAct)
+        #self.Toolbar.addAction(self.twoupAct)
         self.Toolbar.addAction(self.reportAct)
         self.Toolbar.addAction(self.massAct)
         self.Toolbar.addAction(self.compAct)
@@ -724,7 +721,7 @@ class Scripts2(QtGui.QWidget):
         viewMenu.addAction(self.globalAct)
         viewMenu.addAction(self.changeAct)
         viewMenu.addSeparator()
-        viewMenu.addAction(self.twoupAct)
+        #viewMenu.addAction(self.twoupAct)
         viewMenu.addAction(self.engAct)
         viewMenu.addAction(self.jpAct)
         viewMenu.addAction(self.comAct)
@@ -1134,8 +1131,6 @@ class Scripts2(QtGui.QWidget):
             for box in self.threeupEditingTextBoxes:
                 box.show()
             self.PopulateTextEdit()
-
-        Globals.Settings.setValue('TwoUpMode', str(mode))
 
         return
 

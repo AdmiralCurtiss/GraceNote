@@ -21,7 +21,7 @@ AmountEditingWindows = 5
 WriteDatabaseStorageToHddOnEntryChange = False
 FooterVisibleFlag = False
 Author = 'NONE'
-TwoUpMode = 1
+TwoUpMode = 3
 
 ColorLowerStatus = None
 ColorCurrentStatus = None
