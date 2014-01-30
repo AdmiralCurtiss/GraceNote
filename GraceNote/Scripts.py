@@ -231,6 +231,19 @@ class Scripts2(QtGui.QWidget):
 
         Globals.TwoUpMode = 3
 
+        if Globals.Settings.contains('TextboxVisibleFlagEnglish'):
+            self.TextboxVisibleFlagEnglish = Globals.Settings.value('TextboxVisibleFlagEnglish') == 'True'
+        else:
+            self.TextboxVisibleFlagEnglish = True
+        if Globals.Settings.contains('TextboxVisibleFlagJapanese'):
+            self.TextboxVisibleFlagJapanese = Globals.Settings.value('TextboxVisibleFlagJapanese') == 'True'
+        else:
+            self.TextboxVisibleFlagJapanese = True
+        if Globals.Settings.contains('TextboxVisibleFlagComment'):
+            self.TextboxVisibleFlagComment = Globals.Settings.value('TextboxVisibleFlagComment') == 'True'
+        else:
+            self.TextboxVisibleFlagComment = True
+
         if Globals.Settings.contains('ColorCurrentStatus'):
             Globals.ColorCurrentStatus = QtGui.QColor( int(Globals.Settings.value('ColorCurrentStatus')) )
         else:
@@ -843,6 +856,16 @@ class Scripts2(QtGui.QWidget):
         if geom is not None:
             self.restoreGeometry(geom)
         self.SetTwoUpMode(Globals.TwoUpMode)
+
+        if not self.TextboxVisibleFlagEnglish:
+            for box in self.regularEditingTextBoxes:
+                box.hide()
+        if not self.TextboxVisibleFlagJapanese:
+            for box in self.twoupEditingTextBoxes:
+                box.hide()
+        if not self.TextboxVisibleFlagComment:
+            for box in self.threeupEditingTextBoxes:
+                box.hide()
 
         self.openMediumWindows()
         self.openFontWindow()
@@ -2158,12 +2181,39 @@ class Scripts2(QtGui.QWidget):
         Globals.Cache.databaseAccessRLock.release()
         
     def SwapEnglish(self):
+        self.TextboxVisibleFlagEnglish = not self.TextboxVisibleFlagEnglish
+        if self.TextboxVisibleFlagEnglish:
+            for box in self.regularEditingTextBoxes:
+                box.show()
+        else:
+            for box in self.regularEditingTextBoxes:
+                box.hide()
+        Globals.Settings.setValue('TextboxVisibleFlagEnglish', 'True' if self.TextboxVisibleFlagEnglish else 'False')
+        Globals.Settings.sync()
         return
 
     def SwapJapanese(self):
+        self.TextboxVisibleFlagJapanese = not self.TextboxVisibleFlagJapanese
+        if self.TextboxVisibleFlagJapanese:
+            for box in self.twoupEditingTextBoxes:
+                box.show()
+        else:
+            for box in self.twoupEditingTextBoxes:
+                box.hide()
+        Globals.Settings.setValue('TextboxVisibleFlagJapanese', 'True' if self.TextboxVisibleFlagJapanese else 'False')
+        Globals.Settings.sync()
         return
 
     def SwapComment(self):
+        self.TextboxVisibleFlagComment = not self.TextboxVisibleFlagComment
+        if self.TextboxVisibleFlagComment:
+            for box in self.threeupEditingTextBoxes:
+                box.show()
+        else:
+            for box in self.threeupEditingTextBoxes:
+                box.hide()
+        Globals.Settings.setValue('TextboxVisibleFlagComment', 'True' if self.TextboxVisibleFlagComment else 'False')
+        Globals.Settings.sync()
         return
 
     def RecalculateFilesToBeUploaded(self):
