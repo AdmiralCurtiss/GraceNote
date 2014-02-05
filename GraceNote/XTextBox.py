@@ -58,6 +58,17 @@ class XTextBox(QtGui.QTextEdit):
             self.grammar.setAutoRaise(True)
             self.grammar.setIcon(QtGui.QIcon('icons/status/4.png'))
 
+            self.button = QtGui.QToolButton()
+            self.button.setIcon(self.style().standardIcon(QtGui.QStyle.SP_MediaPlay))
+            self.button.setAutoRaise(True)
+            self.button.released.connect(self.playAudioNormal)
+            self.button.hide()
+            self.buttonAlt = QtGui.QToolButton()
+            self.buttonAlt.setIcon(self.style().standardIcon(QtGui.QStyle.SP_MediaPlay))
+            self.buttonAlt.setAutoRaise(True)
+            self.buttonAlt.released.connect(self.playAudioAlt)
+            self.buttonAlt.hide()
+
             topLayout = QtGui.QHBoxLayout()
 
             layout = HUDLayout()
@@ -65,6 +76,8 @@ class XTextBox(QtGui.QTextEdit):
             layout.addWidget(self.rewrite)
             layout.addWidget(self.tlCheck)
             layout.addWidget(self.translate)
+            layout.addWidget(self.buttonAlt)
+            layout.addWidget(self.button)
             
             topLayout.setMargin(0)
             topLayout.addLayout(layout)
@@ -128,52 +141,16 @@ class XTextBox(QtGui.QTextEdit):
         self.footer.setText(prepend + 'Textboxes: ' + str(feedCount+1) + ' / Highest Box: ' + str(highestBoxNewlines) + ' lines / Longest Line: ' + str(longestLineChars) + ' chars')
     
     def makePlaybackButtons(self, clipList):
-    
         self.audioClips = clipList
-
-        topLayout = self.layout()
-        thing = topLayout.itemAt(0)
-        topLayout.removeItem(thing)
-
-
-        layout = HUDLayout()
-        layout.addWidget(self.grammar)
-        layout.addWidget(self.rewrite)
-        layout.addWidget(self.tlCheck)
-        layout.addWidget(self.translate)
-
-        self.button = QtGui.QToolButton()
-        self.button.setIcon(self.style().standardIcon(QtGui.QStyle.SP_MediaPlay))
-        self.button.setAutoRaise(True)
-        self.button.released.connect(self.playAudioNormal)
-        self.buttonAlt = QtGui.QToolButton()
-        self.buttonAlt.setIcon(self.style().standardIcon(QtGui.QStyle.SP_MediaPlay))
-        self.buttonAlt.setAutoRaise(True)
-        self.buttonAlt.released.connect(self.playAudioAlt)
-
+        self.button.show()
         # only display the second button if there are actually two different voice clips
         if not ( Globals.configData.VoicePathEnPrefix == Globals.configData.VoicePathJpPrefix and Globals.configData.VoicePathEnPostfix == Globals.configData.VoicePathJpPostfix ):
-            layout.addWidget(self.buttonAlt)
-        layout.addWidget(self.button)
-        topLayout.addLayout(layout)        
-       
+            self.buttonAlt.show()
                 
     def clearPlaybackButtons(self):
-    
         self.audioClips = []
-        
-        topLayout = self.layout()
-        thing = topLayout.itemAt(0)
-        topLayout.removeItem(thing)
-    
-        self.button = None
-
-        layout = HUDLayout()
-        layout.addWidget(self.grammar)
-        layout.addWidget(self.rewrite)
-        layout.addWidget(self.tlCheck)
-        layout.addWidget(self.translate)
-        topLayout.addLayout(layout)        
+        self.button.hide()
+        self.buttonAlt.hide()
 
                         
     def lookupAudioHash(self, name, forceAlternateLanguage):
