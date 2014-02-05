@@ -1602,35 +1602,31 @@ class Scripts2(QtGui.QWidget):
 
 
         
-    def GetFullText(self, replaceVariables):
+    def GetFullText(self, replaceVariables, dumpEnglish=True, dumpJapanese=False, dumpComments=False):
         string = ''
         i = 1
-        if self.state == 'ENG':
-            idx = 0
-        elif self.state == 'JPN':
-            idx = 1
-        elif self.state == 'COM':
-            idx = 2
-        else:
-            return 'NO VALID STATE'
-            
         for entry in self.text:
             if entry[3] == 0 or self.debug.isChecked():
                 string = string + 'Entry {0}'.format(i)
                 if entry[5]:
                     string = string + ': ' + entry[5]
                 string = string + '\n'
-                if replaceVariables:
-                    string = string + Globals.VariableReplace(entry[idx])
-                else:
-                    string = string + entry[idx]
-                string = string + "\n\n\n"
+
+                currentEntryString = ''
+                if dumpEnglish:
+                    currentEntryString = currentEntryString + (entry[0] if not replaceVariables else Globals.VariableReplace(entry[0])) + '\n'
+                if dumpJapanese:
+                    currentEntryString = currentEntryString + (entry[1] if not replaceVariables else Globals.VariableReplace(entry[1])) + '\n'
+                if dumpComments:
+                    currentEntryString = currentEntryString + (entry[2] if not replaceVariables else Globals.VariableReplace(entry[2])) + '\n'
+
+                string = string + currentEntryString + "\n\n\n"
             
             i += 1
         return string
 
     def FullTextCopy(self):
-        string = self.GetFullText(True)
+        string = self.GetFullText(True, self.TextboxVisibleFlagEnglish, self.TextboxVisibleFlagJapanese, self.TextboxVisibleFlagComment)
         clipboard = QtGui.QApplication.clipboard()
         clipboard.setText(string)
         return
