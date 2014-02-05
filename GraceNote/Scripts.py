@@ -146,7 +146,6 @@ class Scripts2(QtGui.QWidget):
 
 
         # Current Variables
-        self.state = 'ENG'
         self.text = []
 
         # True Entries Translated Count
@@ -1457,12 +1456,7 @@ class Scripts2(QtGui.QWidget):
         if index == None or row == -1:
             return
         
-        if self.state == 'ENG':
-            t = 0
-        elif self.state == 'JPN':
-            t = 1
-        elif self.state == 'COM':
-            t = 2
+        t = 0
         
         commentTexts = []
         for i in range(len(self.textEditingBoxes)):
@@ -1579,7 +1573,7 @@ class Scripts2(QtGui.QWidget):
                 
             if self.regularEditingTextBoxes[i].currentEntry >= 0:
                 self.textEditingTitles[i].setText('Entry {0}: {1}'.format(rowBoxes[i]+1, commentTexts[i]))
-                self.regularEditingTextBoxes[i].refreshFooter(textEntries1raw[i], self.state[0] + ': ')
+                self.regularEditingTextBoxes[i].refreshFooter(textEntries1raw[i], 'ENG: ')
                 self.twoupEditingTextBoxes[i].refreshFooter(textEntries2raw[i], twoupTypeHelper[self.twoupEditingTextBoxes[i].role] + ': ')
                 if self.termTooltips[i] != '':
                     self.textEditingTermIcons[i].setToolTip( 'Terminology in this Entry:\n' + self.termTooltips[i] )
@@ -2049,9 +2043,9 @@ class Scripts2(QtGui.QWidget):
         #UpdatedDatabaseEntry(cleanString, databaseName, entry, role, state)
         # keep for later write to HDD
         if textBox.currentContentState == 'ENG':
-            self.InsertOrUpdateEntryToWrite(DatabaseCache.UpdatedDatabaseEntry(GoodString, None, databasefilename, textBox.currentEntry, updateStatusValue, textBox.currentContentState))
+            self.InsertOrUpdateEntryToWrite(DatabaseCache.UpdatedDatabaseEntry(GoodString, None, databasefilename, textBox.currentEntry, updateStatusValue))
         elif textBox.currentContentState == "COM":
-            self.InsertOrUpdateEntryToWrite(DatabaseCache.UpdatedDatabaseEntry(None, GoodString, databasefilename, textBox.currentEntry, updateStatusValue, textBox.currentContentState))
+            self.InsertOrUpdateEntryToWrite(DatabaseCache.UpdatedDatabaseEntry(None, GoodString, databasefilename, textBox.currentEntry, updateStatusValue))
         else:
             Globals.MainWindow.displayStatusMessage("ERROR: Couldn't update entry, ContentState is neither English nor Comment!")
             return

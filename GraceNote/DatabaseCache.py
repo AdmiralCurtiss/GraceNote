@@ -20,7 +20,7 @@ class EntryStruct():
         #self.UpdatedTimestamp
 
 class UpdatedDatabaseEntry():
-    def __init__(self, cleanString, commentString, databaseName, entry, role, state):
+    def __init__(self, cleanString, commentString, databaseName, entry, role):
         #string cleanString; // this is the actual entry text, None if not updating english
         self.cleanString = cleanString
         #string commentString; // this is the comment of the entry, None if not updating comment
@@ -31,8 +31,6 @@ class UpdatedDatabaseEntry():
         self.entry = entry
         #int role;
         self.role = role
-        #string state; // "ENG" or "COM", defines which column in the database to update
-        self.state = state
         # used for relative time logic, to figure out the order of inserts
         self.timestamp = time.clock()
         # used to actually insert the timestamp into the database
