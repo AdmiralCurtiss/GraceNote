@@ -1985,15 +1985,22 @@ class Scripts2(QtGui.QWidget):
             Globals.HaveUnsavedChanges = True
             self.SetWindowTitle()
 
-        #UpdatedDatabaseEntry(cleanString, databaseName, entry, role, state)
+        #UpdatedDatabaseEntry(cleanString, commentString, databaseName, entry, role, state)
         for i, d in enumerate(self.databaseWriteStorage):
-            if d.entry == entryStruct.entry and d.state == entryStruct.state and d.databaseName == entryStruct.databaseName:
+            if d.entry == entryStruct.entry and d.databaseName == entryStruct.databaseName:
                 if i != 0:
                 #    print("found existing, rotating & removing old")
                     self.databaseWriteStorage.rotate(-i)
                 #else:
                 #    print("found existing, removing old")
-                self.databaseWriteStorage.popleft()
+                oldEntry = self.databaseWriteStorage.popleft()
+
+                # copy over the just popped entry's english or comment, whatever is not being updated
+                # so we're not losing important content from the popped entry
+                if entryStruct.cleanString is None:
+                    entryStruct.cleanString = oldEntry.cleanString
+                if entryStruct.commentString is None:
+                    entryStruct.commentString = oldEntry.commentString
                 break
         self.databaseWriteStorage.appendleft(entryStruct) # doesn't exist in list yet, just add new
         #print("added new: " + entryStruct.databaseName + "/" + str(entryStruct.entry) + ": " + entryStruct.cleanString)
@@ -2041,7 +2048,13 @@ class Scripts2(QtGui.QWidget):
         
         #UpdatedDatabaseEntry(cleanString, databaseName, entry, role, state)
         # keep for later write to HDD
-        self.InsertOrUpdateEntryToWrite(DatabaseCache.UpdatedDatabaseEntry(GoodString, databasefilename, textBox.currentEntry, updateStatusValue, textBox.currentContentState))
+        if textBox.currentContentState == 'ENG':
+            self.InsertOrUpdateEntryToWrite(DatabaseCache.UpdatedDatabaseEntry(GoodString, None, databasefilename, textBox.currentEntry, updateStatusValue, textBox.currentContentState))
+        elif textBox.currentContentState == "COM":
+            self.InsertOrUpdateEntryToWrite(DatabaseCache.UpdatedDatabaseEntry(None, GoodString, databasefilename, textBox.currentEntry, updateStatusValue, textBox.currentContentState))
+        else:
+            Globals.MainWindow.displayStatusMessage("ERROR: Couldn't update entry, ContentState is neither English nor Comment!")
+            return
         textBox.refreshFooter(GoodString, textBox.currentContentState + ': ')
 
         self.ReStartTimeoutTimer()
@@ -2102,7 +2115,7 @@ class Scripts2(QtGui.QWidget):
         
         databasesWrittenTo = set()
 
-        #UpdatedDatabaseEntry(cleanString, databaseName, entry, role, state)
+        #UpdatedDatabaseEntry(cleanString, commentString, databaseName, entry, role, state)
         SaveCon = None
         for d in sortedStorage:
             if lastDatabase != d.databaseName: # open up new DB connection if neccesary, otherwise just reuse the old one
@@ -2115,10 +2128,20 @@ class Scripts2(QtGui.QWidget):
                 databasesWrittenTo.add(d.databaseName)
             
             DatabaseHandler.CopyEntryToHistory(SaveCur, d.entry)
-            if d.state == 'ENG':
-                SaveCur.execute(u"UPDATE Text SET english=?, updated=1, status=?, UpdatedBy=?, UpdatedTimestamp=strftime('%s',?) WHERE ID=?", (d.cleanString, d.role, str(Globals.Author), d.timestring, d.entry))
-            elif d.state == "COM":
-                SaveCur.execute(u"UPDATE Text SET comment=?, updated=1, status=?, UpdatedBy=?, UpdatedTimestamp=strftime('%s',?) WHERE ID=?", (d.cleanString, d.role, str(Globals.Author), d.timestring, d.entry))
+            
+            # only update those columns that actually contain new/changed text
+            sqlStatement = u"UPDATE Text SET "
+            values = ()
+            if d.cleanString is not None:
+                sqlStatement = sqlStatement + "english=?, "
+                values = values + (d.cleanString,)
+            if d.commentString is not None:
+                sqlStatement = sqlStatement + "comment=?, "
+                values = values + (d.commentString,)
+            sqlStatement = sqlStatement + "updated=1, status=?, UpdatedBy=?, UpdatedTimestamp=strftime('%s',?) WHERE ID=?"
+            values = values + (d.role, str(Globals.Author), d.timestring, d.entry)
+            SaveCur.execute(sqlStatement, values)
+
         if SaveCon is not None:
             SaveCon.commit()
         

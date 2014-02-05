@@ -308,7 +308,7 @@ class MassReplace(QtGui.QDialog):
                     string = unicode(self.replacement.toPlainText())
                     string = Globals.VariableRemove(string)
                                 
-                self.parent.InsertOrUpdateEntryToWrite(DatabaseCache.UpdatedDatabaseEntry(unicode(string), unicode(databaseName), entryID, updateStatusValue, 'ENG'))
+                self.parent.InsertOrUpdateEntryToWrite(DatabaseCache.UpdatedDatabaseEntry(unicode(string), None, unicode(databaseName), entryID, updateStatusValue, 'ENG'))
                 self.parent.AddDatabaseToUpdateSet(unicode(databaseName))
 
             Iterator += 1 

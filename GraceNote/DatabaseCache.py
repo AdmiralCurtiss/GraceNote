@@ -20,12 +20,14 @@ class EntryStruct():
         #self.UpdatedTimestamp
 
 class UpdatedDatabaseEntry():
-    def __init__(self, cleanString, databaseName, entry, role, state):
-        #string cleanString; // this is the actual entry text
+    def __init__(self, cleanString, commentString, databaseName, entry, role, state):
+        #string cleanString; // this is the actual entry text, None if not updating english
         self.cleanString = cleanString
+        #string commentString; // this is the comment of the entry, None if not updating comment
+        self.commentString = commentString
         #string database;
         self.databaseName = databaseName
-        #int entry;
+        #int entryId;
         self.entry = entry
         #int role;
         self.role = role
