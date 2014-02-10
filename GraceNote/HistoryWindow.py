@@ -6,7 +6,7 @@ import XTextBox
 class HistoryWindow(QtGui.QDialog):
 
     def __init__(self, parent):
-        super(HistoryWindow, self).__init__()
+        super(HistoryWindow, self).__init__(None, QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowCloseButtonHint | QtCore.Qt.WindowMinMaxButtonsHint)
         self.setWindowIcon(QtGui.QIcon('icons/image-loading-2.png'))
         self.parent = parent
         self.setWindowModality(False)        

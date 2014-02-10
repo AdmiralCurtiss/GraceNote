@@ -1,4 +1,4 @@
-from PyQt4 import QtCore, QtGui
+from PyQt4 import QtCore, QtGui, Qt
 import Globals
 
 class NetworkTransferWindow(QtGui.QDialog):
@@ -6,7 +6,7 @@ class NetworkTransferWindow(QtGui.QDialog):
     allowCloseSignal = QtCore.pyqtSignal(bool)
 
     def __init__(self):
-        super(NetworkTransferWindow, self).__init__()
+        super(NetworkTransferWindow, self).__init__(None, QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowMinMaxButtonsHint)
         self.setWindowIcon(QtGui.QIcon('icons/openfromserver.png'))
         self.setWindowModality(False)        
         self.setWindowTitle("FTP Transfers")
@@ -64,7 +64,7 @@ class NetworkTransferWindow(QtGui.QDialog):
         return
 
     def closeEvent(self, event):
-        self.StoreSettings()
+        event.ignore()
 
     def StoreSettings(self):
         Globals.Settings.setValue('Geometry/NetworkTransferWindow', self.saveGeometry())
@@ -74,7 +74,7 @@ class NetworkTransferWindow(QtGui.QDialog):
         self.closeButton.setEnabled(True)
         self.closeButton.clicked.connect(self.accept)
         if successful and self.autoCloseCheckbox.isChecked():
+            self.StoreSettings()
             self.accept()
         return
-
 

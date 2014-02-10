@@ -23,3 +23,5 @@ used_symbols.txt
 Projects/*
 stdout.log
 stderr.log
+_create-build*
+_build-*

@@ -8,7 +8,7 @@ from Config import GlyphStruct
 class FontDisplayWindow(QtGui.QDialog):
 
     def __init__(self, parent):
-        super(FontDisplayWindow, self).__init__(None, QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowCloseButtonHint | QtCore.Qt.WindowMinimizeButtonHint)
+        super(FontDisplayWindow, self).__init__(None, QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowCloseButtonHint | QtCore.Qt.WindowMinMaxButtonsHint)
         self.setWindowIcon(QtGui.QIcon('icons/font.png'))
         self.parent = parent
         self.setWindowModality(False)        

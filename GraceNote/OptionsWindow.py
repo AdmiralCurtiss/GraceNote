@@ -3,7 +3,7 @@ import Globals
 
 class OptionsWindow(QtGui.QDialog):
     def __init__(self, parent):
-        super(OptionsWindow, self).__init__()
+        super(OptionsWindow, self).__init__(None)
 
         self.parent = parent
 
@@ -68,7 +68,9 @@ class OptionsWindow(QtGui.QDialog):
         layout.addLayout(checkLayout)
         layout.addLayout(buttonLayout)
         self.setLayout(layout)
-        #self.setMinimumSize(800, 600)
+        
+        self.layout().setSizeConstraint( QtGui.QLayout.SetFixedSize )
+
 
     def LoadSettings(self):
         try:

@@ -10,7 +10,7 @@ import DatabaseCache
 class MassReplace(QtGui.QDialog):
 
     def __init__(self, parent):
-        super(MassReplace, self).__init__()
+        super(MassReplace, self).__init__(None, QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowCloseButtonHint | QtCore.Qt.WindowMinMaxButtonsHint)
         self.setWindowIcon(QtGui.QIcon('icons/massreplace.png'))
 
         self.parent = parent

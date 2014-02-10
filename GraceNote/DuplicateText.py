@@ -8,7 +8,7 @@ import DatabaseCache
 class DuplicateText(QtGui.QDialog):
 
     def __init__(self, parent):
-        super(DuplicateText, self).__init__()
+        super(DuplicateText, self).__init__(None, QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowCloseButtonHint | QtCore.Qt.WindowMinMaxButtonsHint)
         self.setWindowIcon(QtGui.QIcon('icons/ruta.png'))
 
         self.setWindowModality(False)        

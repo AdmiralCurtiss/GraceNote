@@ -7,7 +7,7 @@ import time
 class GlobalChangelog(QtGui.QDialog):
 
     def __init__(self, parent):
-        super(GlobalChangelog, self).__init__()
+        super(GlobalChangelog, self).__init__(None, QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowCloseButtonHint | QtCore.Qt.WindowMinMaxButtonsHint)
         self.setWindowIcon(QtGui.QIcon('icons/global.png'))
 
         self.parent = parent

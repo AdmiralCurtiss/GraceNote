@@ -5,7 +5,7 @@ import Config
 
 class ProjectSelectWindow(QtGui.QDialog):
     def __init__(self):
-        super(ProjectSelectWindow, self).__init__()
+        super(ProjectSelectWindow, self).__init__(None, QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowCloseButtonHint | QtCore.Qt.WindowMinMaxButtonsHint)
         self.configFileSelected = False
 
         self.configfile = 'Projects/config.xml'

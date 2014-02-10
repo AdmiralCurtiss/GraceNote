@@ -7,7 +7,7 @@ import time
 class Statistics(QtGui.QDialog):
 
     def __init__(self):
-        super(Statistics, self).__init__()
+        super(Statistics, self).__init__(None, QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowCloseButtonHint | QtCore.Qt.WindowMinMaxButtonsHint)
         self.setWindowIcon(QtGui.QIcon('icons/report.png'))
         self.setWindowTitle('Reports')
 

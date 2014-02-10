@@ -9,7 +9,7 @@ import DatabaseHandler
 class CompletionTable(QtGui.QDialog):
 
     def __init__(self, parent):
-        super(CompletionTable, self).__init__()
+        super(CompletionTable, self).__init__(None, QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowCloseButtonHint | QtCore.Qt.WindowMinMaxButtonsHint)
         self.setWindowIcon(QtGui.QIcon('icons/completion.png'))
 
         self.parent = parent
