@@ -1138,10 +1138,10 @@ class Scripts2(QtGui.QWidget):
             
                     try:
                         if Globals.CursorGracesJapanese.fetchall()[0][0] == 1:
-                            UpdateCur.execute("update Text set status=-1 where ID=? AND status != -1", (entry[0],))
+                            UpdateCur.execute("UPDATE Text SET status=-1 WHERE ID=? AND status != -1", (entry[0],))
                         else:
                             if entry[2] == -1:
-                                UpdateCur.execute("update Text set status = 0 where ID=? AND status != 0", (entry[0],))
+                                UpdateCur.execute("UPDATE Text SET status = 0 WHERE ID=? AND status != 0", (entry[0],))
                     except:
                         pass
                         
@@ -1344,7 +1344,7 @@ class Scripts2(QtGui.QWidget):
         self.historyWindow.setHistoryList(HistoryList, MaxId, TempList)
 
         for i in xrange(len(TempList)):
-            Globals.CursorGracesJapanese.execute("SELECT * FROM Japanese WHERE ID={0}".format(TempList[i][1]))
+            Globals.CursorGracesJapanese.execute("SELECT ID, string, debug FROM Japanese WHERE ID={0}".format(TempList[i][1]))
             TempString = Globals.CursorGracesJapanese.fetchall() 
             TempJPN = TempString[0][1]
             TempDebug = TempString[0][2]
@@ -1418,7 +1418,8 @@ class Scripts2(QtGui.QWidget):
                 self.entryStandardItemModel.appendRow([additemEntryEnglishID, additemEntryStatus, additemEntryCommentExists, additemEntryIdentifyString, additemEntryText, additemEntryCommentText, additemEntryUpdatedBy, additemEntryTimestamp, additemEntryIsDebug])
             
             if TempStatus != -1 and TempDebug == 1:
-                SaveCur.execute("update Text set status=-1 where ID=?", (TempString[0][0],))
+                Globals.MainWindow.displayStatusMessage("Setting status of " + databasefilename + ", Entry " + str(TempID) + " to Debug (StringID: " + str(TempList[i][1]) + ")")
+                SaveCur.execute("UPDATE Text SET status=-1 WHERE ID=?", (TempID,))
                 SaveCon.commit()
                 
             self.text.append([TempENG, TempJPN, TempCOM, TempDebug, TempStatus, TempIdentifyString])
@@ -1940,10 +1941,12 @@ class Scripts2(QtGui.QWidget):
         SaveCur.execute("select StringID from Text where ID={0}".format(selectedEntryId+1))
         NextID = SaveCur.fetchall()[0][0]
         if DebugState:
+            Globals.MainWindow.displayStatusMessage('Setting Entry ' + str(selectedEntryId+1) + ' to Debug')
             Globals.CursorGracesJapanese.execute("UPDATE Japanese SET debug = 1 WHERE ID = {0} AND debug != 1".format(NextID))
             SaveCur.execute("UPDATE Text SET status = -1, updated = 1 WHERE ID = {0} AND status != -1".format(selectedEntryId+1))
             additemEntryIsDebug.DebugStatus = True
         else:
+            Globals.MainWindow.displayStatusMessage('Setting Entry ' + str(selectedEntryId+1) + ' to Not Debug')
             Globals.CursorGracesJapanese.execute("UPDATE Japanese SET debug = 0 WHERE ID = {0} AND debug != 0".format(NextID))
             SaveCur.execute("UPDATE Text SET status =  0, updated = 1 WHERE ID = {0} AND status  = -1".format(selectedEntryId+1))
             additemEntryIsDebug.DebugStatus = False
