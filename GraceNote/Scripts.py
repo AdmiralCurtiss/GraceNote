@@ -1131,10 +1131,10 @@ class Scripts2(QtGui.QWidget):
                 UpdateCon = DatabaseHandler.OpenEntryDatabase(filename)
                 UpdateCur = UpdateCon.cursor()
                         
-                UpdateCur.execute("select ID, StringID, status from Text")
+                UpdateCur.execute("SELECT ID, StringID, status FROM Text")
                 
                 for entry in UpdateCur.fetchall():                        
-                    Globals.CursorGracesJapanese.execute("select debug from Japanese where ID=?", (entry[1],))
+                    Globals.CursorGracesJapanese.execute("SELECT debug FROM Japanese where ID=?", (entry[1],))
             
                     try:
                         if Globals.CursorGracesJapanese.fetchall()[0][0] == 1:
@@ -1938,7 +1938,7 @@ class Scripts2(QtGui.QWidget):
         databasefilename = self.treemodel.itemFromIndex(self.tree.currentIndex()).statusTip()
         SaveCon = DatabaseHandler.OpenEntryDatabase(databasefilename)
         SaveCur = SaveCon.cursor()
-        SaveCur.execute("select StringID from Text where ID={0}".format(selectedEntryId+1))
+        SaveCur.execute("SELECT StringID FROM Text WHERE ID={0}".format(selectedEntryId+1))
         NextID = SaveCur.fetchall()[0][0]
         if DebugState:
             Globals.MainWindow.displayStatusMessage('Setting Entry ' + str(selectedEntryId+1) + ' to Debug')
@@ -1955,7 +1955,7 @@ class Scripts2(QtGui.QWidget):
         Globals.ConnectionGracesJapanese.commit()
         
         # color
-        SaveCur.execute("select status from Text where ID={0}".format(selectedEntryId+1))
+        SaveCur.execute("SELECT status FROM Text WHERE ID={0}".format(selectedEntryId+1))
         status = SaveCur.fetchall()[0][0]
         for i in xrange( len(self.entryTreeViewHeaderLabels) ):
             self.FormatEntryListItemColor( self.entryStandardItemModel.item(index.row(), i), status )

@@ -67,7 +67,7 @@ def MergeDatabaseWithServerVersionBeforeUpload(LocalMergeCur, RemoteMergeCur):
     # Merging the Server and the local version
 
     # First clean up remote version
-    RemoteMergeCur.execute(u"update Text set updated=0")
+    RemoteMergeCur.execute(u"UPDATE Text SET updated=0")
                                 
     # Then take new stuff from local
     LocalMergeCur.execute(u'SELECT id, english, comment, status, UpdatedBy, UpdatedTimestamp FROM Text WHERE updated=1')

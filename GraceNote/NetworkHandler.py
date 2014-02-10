@@ -346,7 +346,7 @@ def SavetoServerWorker(scripts, networkTransferWindow, sendWindowCloseSignal):
             fileString = ''.join(["%s," % (k) for k in LogTable])[:-1]
             # 'Uploaded: ', fileString
                 
-            ChangeLogCursor.execute(u"insert into Log values({0}, '{1}', '{2}', {3})".format(MaxID + 1, fileString, Globals.Author, "strftime('%s','now')"))
+            ChangeLogCursor.execute(u"INSERT INTO Log VALUES({0}, '{1}', '{2}', {3})".format(MaxID + 1, fileString, Globals.Author, "strftime('%s','now')"))
             ChangeLogConnection.commit()
             ChangeLogConnection.close()
 
@@ -453,7 +453,7 @@ def RevertFromServer(scripts):
                 WipeUpdateCon = DatabaseHandler.OpenEntryDatabase(item)
                 WipeUpdateCur = WipeUpdateCon.cursor()
             
-                WipeUpdateCur.execute(u"update Text set updated=0")
+                WipeUpdateCur.execute(u"UPDATE Text SET updated=0")
                 WipeUpdateCon.commit()
                     
                 CompletionTable.CalculateCompletionForDatabase(item)
