@@ -55,7 +55,7 @@ class MainWindow(QtGui.QMainWindow):
         Globals.Settings.setValue("MainWindowGeometry", self.saveGeometry())
         Globals.Settings.setValue("MainWindowWindowState", self.saveState())
 
-        if not self.scripts2.cleanupAndQuit():
+        if not self.scripts2.CleanUpAndQuit():
             event.ignore()
 
         return

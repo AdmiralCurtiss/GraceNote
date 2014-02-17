@@ -4,19 +4,6 @@
 import sip
 sip.setapi('QVariant', 2)
 
-
-################################################
-# Things to do:
-#
-#   - Toolbar Customization
-#   - Status Bar (last edited, shows mode?, shows role?)
-#   - Fix enemy parsing, item parsing
-#   
-#   - Auto-check the database folder for integrity
-#   - Duplicate checking feature
-#
-################################################
-
 import Globals
 from PyQt4 import QtCore, QtGui
 import sqlite3
@@ -134,8 +121,6 @@ class Scripts2(QtGui.QWidget):
         super(Scripts2, self).__init__(parent)
         self.parent = parent
         self.parent.setWindowIcon(QtGui.QIcon('icons/GraceNote_48px.png'))
-
-
         self.LogDialog = None
         self.gLogDialog = None
         self.statDialog = None
@@ -143,15 +128,12 @@ class Scripts2(QtGui.QWidget):
         self.comDialog = None
         self.dupeDialog = None
         self.optionsWindow = None
-
-
-        # Current Variables
         self.text = []
+        self.databaseWriteStorage = deque()
+        self.currentTreeIndex = None
+        self.currentOpenedEntryIndexes = None
 
-        # True Entries Translated Count
-#        TrueCount()
-             
-        # Settings
+        # --- Load User Settings ---
         Globals.Settings = QtCore.QSettings("GraceNote", Globals.configData.ID)
         if not Globals.Settings.contains('author'):
             text, ok = QtGui.QInputDialog.getText(self, "Enter your Name", "Author name:", QtGui.QLineEdit.Normal)
@@ -160,9 +142,6 @@ class Scripts2(QtGui.QWidget):
 
         Globals.Author = Globals.Settings.value('author')
         self.update = Globals.Settings.value('update')
-        self.databaseWriteStorage = deque()
-        self.currentTreeIndex = None
-        self.currentOpenedEntryIndexes = None
        
         if self.update == None:
             self.update = set()
@@ -273,29 +252,20 @@ class Scripts2(QtGui.QWidget):
         self.timeoutTimer.timeout.connect(self.WriteDatabaseStorageToHdd)
 
         
-        # List View of Files
-        self.tree = QtGui.QTreeView()
-        self.treemodel = QtGui.QStandardItemModel()
-
-        self.tree.setAnimated(True)
-        self.tree.setIndentation(10)
-        self.tree.setSortingEnabled(False)
-        #self.tree.setFixedWidth(190)
-        self.tree.sortByColumn(1, 0)
-        self.tree.setHeaderHidden(True)
-        self.tree.setContentsMargins(0, 0, 0, 0)
-        
-        self.PopulateModel(Globals.configData.FileList)
-
-#        self.treemodel = QtGui.QSortFilterProxyModel()
-#        self.treemodel.setSortCaseSensitivity(QtCore.Qt.CaseSensitive)
+        # --- List View of Files/Databases ---
+        self.databaseTreeView = QtGui.QTreeView()
+        self.databaseTreeModel = QtGui.QStandardItemModel()
+        self.databaseTreeView.setAnimated(True)
+        self.databaseTreeView.setIndentation(10)
+        self.databaseTreeView.setSortingEnabled(False)
+        self.databaseTreeView.sortByColumn(1, 0)
+        self.databaseTreeView.setHeaderHidden(True)
+        self.databaseTreeView.setContentsMargins(0, 0, 0, 0)
+        self.PopulateDatabaseView(Globals.configData.FileList)
+        self.databaseTreeView.setModel(self.databaseTreeModel)
 
 
-#        self.treemodel.setSourceModel(self.treemodel)
-        self.tree.setModel(self.treemodel)
-
-
-        # List View of Entries
+        # --- List View of Entries ---
         self.entryTreeView = QtGui.QTreeView()
         self.entryStandardItemModel = QtGui.QStandardItemModel()
         self.entrySortFilterProxyModel = QtGui.QSortFilterProxyModel()
@@ -308,6 +278,7 @@ class Scripts2(QtGui.QWidget):
         self.entryTreeViewHasBeenFilledOnce = False
         self.entryTreeViewHeaderWidthsDefaults = [30, 10, 10, 50, 200, 100, 90, 110, 20]
 
+        # figure out which entry columns are visible
         visibleCount = 0
         try:
             tmpVisibleList = Globals.Settings.value('entryTreeViewHeadersVisible')
@@ -327,15 +298,15 @@ class Scripts2(QtGui.QWidget):
         self.termInEntryIcon = QtGui.QPixmap( 'icons/pictogram-din-m000-general.png' )
         self.termInEntryIcon = self.termInEntryIcon.scaled(13, 13, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation);
 
-        # Text Edits
-        self.regularEditingTextBoxes = []
-        self.twoupEditingTextBoxes = []
-        self.threeupEditingTextBoxes = []
+        # --- Textboxes in the middle ---
+        self.xTextBoxesENG = []
+        self.xTextBoxesJPN = []
+        self.xTextBoxesCOM = []
         self.textEditingBoxes = []
         self.textEditingTitles = []
         self.textEditingTermIcons = []
-        self.textEditingFooters = []
-        self.twoupEditingFooters = []
+        self.textEditingFootersENG = []
+        self.textEditingFootersJPN = []
         for i in range(Globals.AmountEditingWindows):
             # create text boxes, set defaults
             tb1 = XTextBox(None, self)
@@ -355,21 +326,21 @@ class Scripts2(QtGui.QWidget):
                 tb2.setFontPointSize(size)
                 tb3.setFontPointSize(size)
 
-            self.regularEditingTextBoxes.append(tb1)
-            self.twoupEditingTextBoxes.append(tb2)
-            self.threeupEditingTextBoxes.append(tb3)
+            self.xTextBoxesENG.append(tb1)
+            self.xTextBoxesJPN.append(tb2)
+            self.xTextBoxesCOM.append(tb3)
             
             footer = QtGui.QLabel('')
             footer.setContentsMargins(0, 0, 0, 0)
-            self.textEditingFooters.append(footer)
+            self.textEditingFootersENG.append(footer)
             tb1.setFooter(footer)
             footer2 = QtGui.QLabel('')
             footer2.setContentsMargins(0, 0, 0, 0)
-            self.twoupEditingFooters.append(footer2)
+            self.textEditingFootersJPN.append(footer2)
             tb2.setFooter(footer2)
             tb3.setFooter(QtGui.QLabel()) # questionable, but fixes a bug that would require a (minor, I guess) change of the signal/slot/UpdateTextGenericFunc stuff
             
-            # create layout
+            # Create layout for text boxes
             tmplayout = QtGui.QGridLayout()
             title = QtGui.QLabel('')
             termicon = QtGui.QLabel('')
@@ -403,57 +374,51 @@ class Scripts2(QtGui.QWidget):
             
         # ------------------------------------------------------ #
 
-        # Filter Input
-        self.filter = QtGui.QLineEdit()
-        self.filter.setFixedWidth(200)
-        self.jumptobox = QtGui.QLineEdit()
-        self.jumptobox.setFixedWidth(120)
+        self.liveSearchTextbox = QtGui.QLineEdit()
+        self.liveSearchTextbox.setFixedWidth(200)
+        self.jumpToTextbox = QtGui.QLineEdit()
+        self.jumpToTextbox.setFixedWidth(120)
         
-        self.debug = QtGui.QAction(QtGui.QIcon('icons/debugoff.png'), 'Display Debug', None)
-        self.debug.setCheckable(True)
-        self.debug.setChecked(0)
+        self.debugOnOffButton = QtGui.QAction(QtGui.QIcon('icons/debugoff.png'), 'Display Debug', None)
+        self.debugOnOffButton.setCheckable(True)
+        self.debugOnOffButton.setChecked(0)
 
         self.alwaysOnTopButton = QtGui.QAction('Always on Top', None)
         self.alwaysOnTopButton.setCheckable(True)
         self.alwaysOnTopButton.setChecked(0)
         
-        # Connections
-        self.tree.selectionModel().selectionChanged.connect(self.PopulateEntryList)
+        self.databaseTreeView.selectionModel().selectionChanged.connect(self.PopulateEntryList)
         self.entryTreeView.selectionModel().selectionChanged.connect(self.PopulateTextEdit)
         self.entryStandardItemModel.itemChanged.connect(self.UpdateDebug)
         self.entryTreeView.header().setClickable(True)
         self.entryTreeView.header().setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.entryTreeView.header().customContextMenuRequested.connect(self.SpawnEntryListColumnHideMenu)
-        #self.entry.pressed.connect(self.UpdateDebug)
-        for editbox in self.regularEditingTextBoxes:
+        for editbox in self.xTextBoxesENG:
             editbox.manualEdit.connect(self.UpdateTextGenericFunc)
-        for editbox in self.threeupEditingTextBoxes:
+        for editbox in self.xTextBoxesCOM:
             editbox.manualEdit.connect(self.UpdateTextGenericFunc)
-        self.debug.toggled.connect(self.DebugFilter)
+        self.debugOnOffButton.toggled.connect(self.DebugFilter)
         self.alwaysOnTopButton.toggled.connect(self.AlwaysOnTopToggle)
-        self.filter.returnPressed.connect(self.LiveSearch)
-        self.jumptobox.returnPressed.connect(self.JumpToDatabase)
+        self.liveSearchTextbox.returnPressed.connect(self.LiveSearch)
+        self.jumpToTextbox.returnPressed.connect(self.JumpToDatabase)
 
-        # Toolbar
+        # --- Toolbar & Menu Options ---
         FlexibleSpace = QtGui.QLabel('')
         FlexibleSpace.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         
-        
-        self.engAct = QtGui.QAction(QtGui.QIcon('icons/globe.png'), 'English', None)
-        self.engAct.triggered.connect(self.SwapEnglish)
-        self.engAct.setShortcut(QtGui.QKeySequence('Ctrl+1'))
-        
-        self.jpAct = QtGui.QAction(QtGui.QIcon('icons/japan.png'), 'Japanese', None)
-        self.jpAct.triggered.connect(self.SwapJapanese)
-        self.jpAct.setShortcut(QtGui.QKeySequence('Ctrl+2'))
+        self.switchEngOnOffAction = QtGui.QAction(QtGui.QIcon('icons/globe.png'), 'English', None)
+        self.switchEngOnOffAction.triggered.connect(self.SwitchVisibleEng)
+        self.switchEngOnOffAction.setShortcut(QtGui.QKeySequence('Ctrl+1'))
+        self.switchJpnOnOffAction = QtGui.QAction(QtGui.QIcon('icons/japan.png'), 'Japanese', None)
+        self.switchJpnOnOffAction.triggered.connect(self.SwitchVisibleJpn)
+        self.switchJpnOnOffAction.setShortcut(QtGui.QKeySequence('Ctrl+2'))
+        self.switchComOnOffAction = QtGui.QAction(QtGui.QIcon('icons/comment.png'), 'Comments', None)
+        self.switchComOnOffAction.triggered.connect(self.SwitchVisibleCom)
+        self.switchComOnOffAction.setShortcut(QtGui.QKeySequence('Ctrl+3'))
 
-        self.comAct = QtGui.QAction(QtGui.QIcon('icons/comment.png'), 'Comments', None)
-        self.comAct.triggered.connect(self.SwapComment)
-        self.comAct.setShortcut(QtGui.QKeySequence('Ctrl+3'))
-
-        self.playCentralAudio = QtGui.QAction('Play Audio (Center Panel)', None)
-        self.playCentralAudio.triggered.connect(self.PlayCentralAudio)
-        self.playCentralAudio.setShortcut(QtGui.QKeySequence('Ctrl+-'))
+        self.playCentralAudioAction = QtGui.QAction('Play Audio (2nd Textbox)', None)
+        self.playCentralAudioAction.triggered.connect(self.PlayCentralAudio)
+        self.playCentralAudioAction.setShortcut(QtGui.QKeySequence('Ctrl+-'))
 
         # I'm sure this works better some other way (this thing where you can pass functions as variables and have functions in that function that are returned)
         # but I can't think of how it's called or how it works right now and I need this quick, so
@@ -473,231 +438,231 @@ class Scripts2(QtGui.QWidget):
         self.setCentralAs4Act.triggered.connect(self.SetCentralAs4)
         self.setCentralAs4Act.setShortcut(QtGui.QKeySequence('Alt+4'))
 
-        self.reportAct = QtGui.QAction(QtGui.QIcon('icons/report.png'), 'Reports', None)
-        self.reportAct.triggered.connect(self.ShowStats)
-        self.reportAct.setShortcut(QtGui.QKeySequence('Ctrl+R'))
+        self.openStatisticsAction = QtGui.QAction(QtGui.QIcon('icons/report.png'), 'Reports', None)
+        self.openStatisticsAction.triggered.connect(self.ShowStats)
+        self.openStatisticsAction.setShortcut(QtGui.QKeySequence('Ctrl+R'))
 
-        self.massAct = QtGui.QAction(QtGui.QIcon('icons/massreplace.png'), 'Mass &Replace', None)
-        self.massAct.triggered.connect(self.ShowMassReplace)
-        self.massAct.setShortcut(QtGui.QKeySequence('Ctrl+M'))
+        self.openMassReplaceAction = QtGui.QAction(QtGui.QIcon('icons/massreplace.png'), 'Mass &Replace', None)
+        self.openMassReplaceAction.triggered.connect(self.ShowMassReplace)
+        self.openMassReplaceAction.setShortcut(QtGui.QKeySequence('Ctrl+M'))
 
-        self.compAct = QtGui.QAction(QtGui.QIcon('icons/completion.png'), 'Completion', None)
-        self.compAct.triggered.connect(self.ShowCompletionTable)
-        self.compAct.setShortcut(QtGui.QKeySequence('Ctrl+%'))
+        self.openCompletionAction = QtGui.QAction(QtGui.QIcon('icons/completion.png'), 'Completion', None)
+        self.openCompletionAction.triggered.connect(self.ShowCompletionTable)
+        self.openCompletionAction.setShortcut(QtGui.QKeySequence('Ctrl+%'))
 
-        self.conDebugAct = QtGui.QAction('Propagate Debug (GracesJapanese -> Databases)', None)
-        self.conDebugAct.triggered.connect(self.ConsolidateDebug)
-        self.reverseConDebugAct = QtGui.QAction('Propagate Debug (Databases -> GracesJapanese)', None)
-        self.reverseConDebugAct.triggered.connect(self.ReverseConsolidateDebug)
+        self.runPropagateDebugG2DAction = QtGui.QAction('Propagate Debug (GracesJapanese -> Databases)', None)
+        self.runPropagateDebugG2DAction.triggered.connect(self.PropagateDebugGJ2Databases)
+        self.runPropagateDebugD2GAction = QtGui.QAction('Propagate Debug (Databases -> GracesJapanese)', None)
+        self.runPropagateDebugD2GAction.triggered.connect(self.PropagateDebugDatabases2GJ)
 
-        self.fullcopyAct = QtGui.QAction('Full-Text Copy', None)
-        self.fullcopyAct.triggered.connect(self.FullTextCopy)
-        self.fullcopyAct.setShortcut(QtGui.QKeySequence('Ctrl+T'))
+        self.runFullTextCopyAction = QtGui.QAction('Full-Text Copy', None)
+        self.runFullTextCopyAction.triggered.connect(self.FullTextCopy)
+        self.runFullTextCopyAction.setShortcut(QtGui.QKeySequence('Ctrl+T'))
 
-        self.saveAsPngAct = QtGui.QAction('Save Text as Image', None)
-        self.saveAsPngAct.triggered.connect(self.SaveAsPng)
-        self.saveAsPngAndOpenAct = QtGui.QAction('Save Text as Image and open', None)
-        self.saveAsPngAndOpenAct.triggered.connect(self.SaveAsPngAndOpen)
-        self.saveAsPngAndOpenAct.setShortcut(QtGui.QKeySequence('Ctrl+I'))
-        self.saveAsMultiplePngAct = QtGui.QAction('Save Text as multiple Images', None)
-        self.saveAsMultiplePngAct.triggered.connect(self.SaveAsMultiplePng)
+        self.runSaveAsPngAction = QtGui.QAction('Save Text as Image', None)
+        self.runSaveAsPngAction.triggered.connect(self.SaveAsPng)
+        self.runSaveAsPngAndOpenAction = QtGui.QAction('Save Text as Image and open', None)
+        self.runSaveAsPngAndOpenAction.triggered.connect(self.SaveAsPngAndOpen)
+        self.runSaveAsPngAndOpenAction.setShortcut(QtGui.QKeySequence('Ctrl+I'))
+        self.runSaveAsMultiPngAction = QtGui.QAction('Save Text as multiple Images', None)
+        self.runSaveAsMultiPngAction.triggered.connect(self.SaveAsMultiplePng)
         
         
-        self.saveAct = QtGui.QAction(QtGui.QIcon('icons/upload.png'), 'Save', None)
-        self.saveAct.triggered.connect(self.CallSavetoServer)
-        self.saveAct.setShortcut(QtGui.QKeySequence('Ctrl+S'))
+        self.runSaveToServerAction = QtGui.QAction(QtGui.QIcon('icons/upload.png'), 'Save', None)
+        self.runSaveToServerAction.triggered.connect(self.CallSavetoServer)
+        self.runSaveToServerAction.setShortcut(QtGui.QKeySequence('Ctrl+S'))
 
-        self.revertAct = QtGui.QAction(QtGui.QIcon('icons/save.png'), 'Revert', None)
-        self.revertAct.triggered.connect(self.CallRevertFromServer)
+        self.runRevertFromServerAction = QtGui.QAction(QtGui.QIcon('icons/save.png'), 'Revert', None)
+        self.runRevertFromServerAction.triggered.connect(self.CallRevertFromServer)
         
-        self.updateAct = QtGui.QAction(QtGui.QIcon('icons/save.png'), 'Update', None)
-        self.updateAct.triggered.connect(self.CallRetrieveModifiedFiles)
-        self.updateAct.setShortcut(QtGui.QKeySequence('Ctrl+U'))
+        self.runRetrieveModifiedFilesAction = QtGui.QAction(QtGui.QIcon('icons/save.png'), 'Update', None)
+        self.runRetrieveModifiedFilesAction.triggered.connect(self.CallRetrieveModifiedFiles)
+        self.runRetrieveModifiedFilesAction.setShortcut(QtGui.QKeySequence('Ctrl+U'))
 
-        self.refreshCompleteAct = QtGui.QAction('Refresh Completion Database', None)
-        self.refreshCompleteAct.triggered.connect(self.RefreshCompletion)
+        self.runRefreshCompletionDatabaseAction = QtGui.QAction('Refresh Completion Database', None)
+        self.runRefreshCompletionDatabaseAction.triggered.connect(self.RefreshCompletionDatabase)
 
-        self.findUsedSymbolsAct = QtGui.QAction('Find Used Symbols', None)
-        self.findUsedSymbolsAct.triggered.connect(self.FindAllUsedSymbols)
+        self.runFindUsedSymbolsAction = QtGui.QAction('Find Used Symbols', None)
+        self.runFindUsedSymbolsAction.triggered.connect(self.FindAllUsedSymbols)
         
-        self.recalcFilesToBeUploadedAct = QtGui.QAction(QtGui.QIcon('icons/refresh.png'), 'Find Unsaved Databases', None)
-        self.recalcFilesToBeUploadedAct.triggered.connect(self.RecalculateFilesToBeUploaded)
+        self.runFindUnsavedDatabasesAction = QtGui.QAction(QtGui.QIcon('icons/refresh.png'), 'Find Unsaved Databases', None)
+        self.runFindUnsavedDatabasesAction.triggered.connect(self.FindUnsavedDatabases)
 
-        self.patchAct = QtGui.QAction(QtGui.QIcon('icons/patch.png'), 'Patch Live', None)
-        self.patchAct.triggered.connect(self.CallSavetoPatch)
-        self.patchAct.setShortcut(QtGui.QKeySequence('Ctrl+P'))
+        self.runSaveToPatchAction = QtGui.QAction(QtGui.QIcon('icons/patch.png'), 'Patch Live', None)
+        self.runSaveToPatchAction.triggered.connect(self.CallSavetoPatch)
+        self.runSaveToPatchAction.setShortcut(QtGui.QKeySequence('Ctrl+P'))
 
-        self.patchdolAct = QtGui.QAction(QtGui.QIcon('icons/patchdol.png'), 'Patch Embedded Strings', None)
-        self.patchdolAct.triggered.connect(self.CallPatchDol)
-        self.patchdolAct.setShortcut(QtGui.QKeySequence('Ctrl+Alt+P'))
+        self.runPatchDolAction = QtGui.QAction(QtGui.QIcon('icons/patchdol.png'), 'Patch Embedded Strings', None)
+        self.runPatchDolAction.triggered.connect(self.CallPatchDol)
+        self.runPatchDolAction.setShortcut(QtGui.QKeySequence('Ctrl+Alt+P'))
 
-        self.patchzeroAct = QtGui.QAction(QtGui.QIcon('icons/patchv0.png'), 'Patch XML', None)
-        self.patchzeroAct.triggered.connect(self.CallSavetoXML)
-        self.patchzeroAct.setShortcut(QtGui.QKeySequence('Ctrl+Shift+P'))
+        self.runPatchXmlVersion0Action = QtGui.QAction(QtGui.QIcon('icons/patchv0.png'), 'Patch XML', None)
+        self.runPatchXmlVersion0Action.triggered.connect(self.CallSavetoXML)
+        self.runPatchXmlVersion0Action.setShortcut(QtGui.QKeySequence('Ctrl+Shift+P'))
 
-        self.patchtwoAct = QtGui.QAction(QtGui.QIcon('icons/patchv2.png'), 'Patch Bugfix XML', None)
-        self.patchtwoAct.triggered.connect(self.CallSavetoBugfixXML)
-        self.patchtwoAct.setShortcut(QtGui.QKeySequence('Ctrl+Shift+Alt+P'))
+        self.runPatchXmlVersion2Action = QtGui.QAction(QtGui.QIcon('icons/patchv2.png'), 'Patch Bugfix XML', None)
+        self.runPatchXmlVersion2Action.triggered.connect(self.CallSavetoBugfixXML)
+        self.runPatchXmlVersion2Action.setShortcut(QtGui.QKeySequence('Ctrl+Shift+Alt+P'))
 
-        self.patchfDemoAct = QtGui.QAction(QtGui.QIcon('icons/patchv0.png'), 'Patch Graces f Demo XML', None)
-        self.patchfDemoAct.triggered.connect(self.CallSavetoGracesfDemoXML)
-        self.patchfDemoAct.setShortcut(QtGui.QKeySequence('Ctrl+Alt+F'))
+        self.runPatchGracesFDemoAction = QtGui.QAction(QtGui.QIcon('icons/patchv0.png'), 'Patch Graces f Demo XML', None)
+        self.runPatchGracesFDemoAction.triggered.connect(self.CallSavetoGracesfDemoXML)
+        self.runPatchGracesFDemoAction.setShortcut(QtGui.QKeySequence('Ctrl+Alt+F'))
 
-        self.globalAct = QtGui.QAction(QtGui.QIcon('icons/global.png'), 'Global Changelog', None)
-        self.globalAct.triggered.connect(self.ShowGlobalChangelog)
-        self.globalAct.setShortcut(QtGui.QKeySequence('Ctrl+G'))
+        self.openGlobalChangelogAction = QtGui.QAction(QtGui.QIcon('icons/global.png'), 'Global Changelog', None)
+        self.openGlobalChangelogAction.triggered.connect(self.ShowGlobalChangelog)
+        self.openGlobalChangelogAction.setShortcut(QtGui.QKeySequence('Ctrl+G'))
 
-        self.changeAct = QtGui.QAction(QtGui.QIcon('icons/changelog.png'), 'Changelog', None)
-        self.changeAct.triggered.connect(self.ShowChangelog)
-        self.changeAct.setShortcut(QtGui.QKeySequence('Ctrl+Shift+G'))
+        self.openLocalChangelogAction = QtGui.QAction(QtGui.QIcon('icons/changelog.png'), 'Changelog', None)
+        self.openLocalChangelogAction.triggered.connect(self.ShowChangelog)
+        self.openLocalChangelogAction.setShortcut(QtGui.QKeySequence('Ctrl+Shift+G'))
 
-        self.dupeAct = QtGui.QAction(QtGui.QIcon('icons/ruta.png'), 'Duplicate Text', None)
-        self.dupeAct.triggered.connect(self.ShowDuplicateText)
-        self.dupeAct.setShortcut(QtGui.QKeySequence('Ctrl+D'))
+        self.openDuplicateTextAction = QtGui.QAction(QtGui.QIcon('icons/ruta.png'), 'Duplicate Text', None)
+        self.openDuplicateTextAction.triggered.connect(self.ShowDuplicateText)
+        self.openDuplicateTextAction.setShortcut(QtGui.QKeySequence('Ctrl+D'))
 
-        self.quitAct = QtGui.QAction('Quit', None)
-        self.quitAct.triggered.connect(self.cleanupAndQuit)
-        self.quitAct.setShortcut(QtGui.QKeySequence('Ctrl-Q'))
-
-
-        self.iconSizes = [12, 16, 18, 24, 36, 48, 64]
-        self.iconSizeActs = []
-        i = 0
-        for size in self.iconSizes:
-            self.iconSizeActs.append(QtGui.QAction('{0} x {0}'.format(size), None))
-            i += 1
-
-        self.noIconAct = QtGui.QAction('Only Text', None)
-        self.noTextAct = QtGui.QAction('Only Icon', None)
-        self.textDownAct = QtGui.QAction('Beneath Icon', None)
-        self.textLeftAct = QtGui.QAction('Beside Icon', None)
-
-        self.tmode = QtGui.QAction(QtGui.QIcon('icons/status/1g.png'), 'Translation', None)
-        self.tmode.setToolTip('<b>Translation Mode</b>\n\nTranslation mode encompasses the initial phase of translation.')
-        self.tmode.setShortcut(QtGui.QKeySequence('Ctrl-Shift-1'))
-
-        self.tlcheckmode = QtGui.QAction(QtGui.QIcon('icons/status/2g.png'), 'Translation Review', None)
-        self.tlcheckmode.setToolTip('<b>Translation Review Mode</b>\n\nTranslation review mode is used for when a second translator reviews an entry.')
-        self.tlcheckmode.setShortcut(QtGui.QKeySequence('Ctrl-Shift-2'))
-
-        self.rewritemode = QtGui.QAction(QtGui.QIcon('icons/status/3g.png'), 'Contextual Review', None)
-        self.rewritemode.setToolTip('<b>Contextual Review Mode</b>\n\Contextual review mode is reserved for context and localization sensitive rewrites.')
-        self.rewritemode.setShortcut(QtGui.QKeySequence('Ctrl-Shift-3'))
-
-        self.grammarmode = QtGui.QAction(QtGui.QIcon('icons/status/4g.png'), 'Editing', None)
-        self.grammarmode.setToolTip('<b>Editing Mode</b>\n\Editing mode involves a full grammar, structure, phrasing, tone, and consistency check.')
-        self.grammarmode.setShortcut(QtGui.QKeySequence('Ctrl-Shift-4'))
-
-        self.DisabledMenuOptionSetRole = QtGui.QAction('Role', None)
-        self.DisabledMenuOptionSetRole.setEnabled(False)
-        self.DisabledMenuOptionSetThreshold = QtGui.QAction('Auto Mode Threshold', None)
-        self.DisabledMenuOptionSetThreshold.setEnabled(False)
-
-        self.autoThreshold0Act = QtGui.QAction(QtGui.QIcon('icons/status/1.png'), 'None', None)
-        self.autoThreshold1Act = QtGui.QAction(QtGui.QIcon('icons/status/1g.png'), 'Translation', None)
-        self.autoThreshold2Act = QtGui.QAction(QtGui.QIcon('icons/status/2g.png'), 'Translation Review', None)
-        self.autoThreshold3Act = QtGui.QAction(QtGui.QIcon('icons/status/3g.png'), 'Contextual Review', None)
+        self.runQuitAction = QtGui.QAction('Quit', None)
+        self.runQuitAction.triggered.connect(self.CleanUpAndQuit)
+        self.runQuitAction.setShortcut(QtGui.QKeySequence('Ctrl-Q'))
 
 
-        self.openOptionsWindowAct = QtGui.QAction('Preferences...', None)
-        self.openOptionsWindowAct.triggered.connect(self.OpenOptionsWindow)
+        self.toolbarIconSizes = [12, 16, 18, 24, 36, 48, 64]
+        self.changeToolbarIconSizeActions = []
+        for size in self.toolbarIconSizes:
+            self.changeToolbarIconSizeActions.append(QtGui.QAction('{0} x {0}'.format(size), None))
 
-        self.reloadConfigAct = QtGui.QAction('Reload Config', None)
-        self.reloadConfigAct.triggered.connect(self.ReloadConfiguration)
-        self.reloadConfigAct.setShortcut(QtGui.QKeySequence('Ctrl-Shift-Alt-R'))
+        self.changeToolbarToOnlyTextAction = QtGui.QAction('Only Text', None)
+        self.changeToolbarToOnlyIconAction = QtGui.QAction('Only Icon', None)
+        self.changeToolbarToBelowIconAction = QtGui.QAction('Beneath Icon', None)
+        self.changeToolbarToLeftOfIconAction = QtGui.QAction('Beside Icon', None)
+
+        self.setTranslationRole1Action = QtGui.QAction(QtGui.QIcon('icons/status/1g.png'), 'Translation', None)
+        self.setTranslationRole1Action.setToolTip('<b>Translation Mode</b>\n\nTranslation mode encompasses the initial phase of translation.')
+        self.setTranslationRole1Action.setShortcut(QtGui.QKeySequence('Ctrl-Shift-1'))
+
+        self.setTranslationRole2Action = QtGui.QAction(QtGui.QIcon('icons/status/2g.png'), 'Translation Review', None)
+        self.setTranslationRole2Action.setToolTip('<b>Translation Review Mode</b>\n\nTranslation review mode is used for when a second translator reviews an entry.')
+        self.setTranslationRole2Action.setShortcut(QtGui.QKeySequence('Ctrl-Shift-2'))
+
+        self.setTranslationRole3Action = QtGui.QAction(QtGui.QIcon('icons/status/3g.png'), 'Contextual Review', None)
+        self.setTranslationRole3Action.setToolTip('<b>Contextual Review Mode</b>\n\Contextual review mode is reserved for context and localization sensitive rewrites.')
+        self.setTranslationRole3Action.setShortcut(QtGui.QKeySequence('Ctrl-Shift-3'))
+
+        self.setTranslationRole4Action = QtGui.QAction(QtGui.QIcon('icons/status/4g.png'), 'Editing', None)
+        self.setTranslationRole4Action.setToolTip('<b>Editing Mode</b>\n\Editing mode involves a full grammar, structure, phrasing, tone, and consistency check.')
+        self.setTranslationRole4Action.setShortcut(QtGui.QKeySequence('Ctrl-Shift-4'))
+
+        self.setAutoThreshold0Action = QtGui.QAction(QtGui.QIcon('icons/status/1.png'), 'None', None)
+        self.setAutoThreshold1Action = QtGui.QAction(QtGui.QIcon('icons/status/1g.png'), 'Translation', None)
+        self.setAutoThreshold2Action = QtGui.QAction(QtGui.QIcon('icons/status/2g.png'), 'Translation Review', None)
+        self.setAutoThreshold3Action = QtGui.QAction(QtGui.QIcon('icons/status/3g.png'), 'Contextual Review', None)
+
+
+        self.openOptionsWindowAction = QtGui.QAction('Preferences...', None)
+        self.openOptionsWindowAction.triggered.connect(self.OpenOptionsWindow)
+
+        self.runReloadConfigAction = QtGui.QAction('Reload Config', None)
+        self.runReloadConfigAction.triggered.connect(self.ReloadConfiguration)
+        self.runReloadConfigAction.setShortcut(QtGui.QKeySequence('Ctrl-Shift-Alt-R'))
         
         
-        self.autoAct = QtGui.QAction('Auto', None)
-        self.semiAct = QtGui.QAction('Semi-Auto', None)
-        self.manuAct = QtGui.QAction('Manual', None)
+        self.setTranslationModeAutoAction = QtGui.QAction('Auto', None)
+        self.setTranslationModeSemiautoAction = QtGui.QAction('Semi-Auto', None)
+        self.setTranslationModeManualAction = QtGui.QAction('Manual', None)
         
 
-        self.scrollUpAct = QtGui.QAction('Scroll Up', None)
-        self.scrollUpAct.triggered.connect(self.scrollUp)
-        self.scrollUpAct.setShortcut(QtGui.QKeySequence('Ctrl+Up'))
+        self.runScrollUpAction = QtGui.QAction('Scroll Up', None)
+        self.runScrollUpAction.triggered.connect(self.ScrollUp)
+        self.runScrollUpAction.setShortcut(QtGui.QKeySequence('Ctrl+Up'))
+        self.runScrollUpAction2 = QtGui.QAction('Scroll Up', None)
+        self.runScrollUpAction2.triggered.connect(self.ScrollUp)
+        self.runScrollUpAction2.setShortcut(QtGui.QKeySequence('Alt+Up'))
 
-        self.scrollUpAct2 = QtGui.QAction('Scroll Up', None)
-        self.scrollUpAct2.triggered.connect(self.scrollUp)
-        self.scrollUpAct2.setShortcut(QtGui.QKeySequence('Alt+Up'))
-
-        self.scrollDownAct = QtGui.QAction('Scroll Down', None)
-        self.scrollDownAct.triggered.connect(self.scrollDown)
-        self.scrollDownAct.setShortcut(QtGui.QKeySequence('Ctrl+Down'))
+        self.runScrollDownAction = QtGui.QAction('Scroll Down', None)
+        self.runScrollDownAction.triggered.connect(self.ScrollDown)
+        self.runScrollDownAction.setShortcut(QtGui.QKeySequence('Ctrl+Down'))
+        self.runScrollDownAction2 = QtGui.QAction('Scroll Down', None)
+        self.runScrollDownAction2.triggered.connect(self.ScrollDown)
+        self.runScrollDownAction2.setShortcut(QtGui.QKeySequence('Alt+Down'))
         
-        self.scrollDownAct2 = QtGui.QAction('Scroll Down', None)
-        self.scrollDownAct2.triggered.connect(self.scrollDown)
-        self.scrollDownAct2.setShortcut(QtGui.QKeySequence('Alt+Down'))
-        
-        self.reopenMediaWinAct = QtGui.QAction('Reopen Media Windows', None)
-        self.reopenMediaWinAct.triggered.connect(self.openMediumWindows)
+        self.openMediaWindowsAction = QtGui.QAction('Reopen Media Windows', None)
+        self.openMediaWindowsAction.triggered.connect(self.OpenMediumWindows)
 
-        self.reopenFontWinAct = QtGui.QAction('Reopen Font Window', None)
-        self.reopenFontWinAct.triggered.connect(self.openFontWindow)
+        self.openFontWindownAction = QtGui.QAction('Reopen Font Window', None)
+        self.openFontWindownAction.triggered.connect(self.OpenFontWindow)
 
-        self.reopenHistoryWinAct = QtGui.QAction('Reopen History Window', None)
-        self.reopenHistoryWinAct.triggered.connect(self.openHistoryWindow)
+        self.openHistoryWindowAction = QtGui.QAction('Reopen History Window', None)
+        self.openHistoryWindowAction.triggered.connect(self.OpenHistoryWindow)
+
+
+        # --- Menus ---
 
         roleMenu = QtGui.QMenu('Role', self)
 
-        roleMenu.addAction(self.DisabledMenuOptionSetRole)
-        roleMenu.addAction(self.tmode)
-        roleMenu.addAction(self.tlcheckmode)
-        roleMenu.addAction(self.rewritemode)
-        roleMenu.addAction(self.grammarmode)
+        disabledMenuOptionSetRole = QtGui.QAction('Role', None)
+        disabledMenuOptionSetRole.setEnabled(False)
+        disabledMenuOptionSetThreshold = QtGui.QAction('Auto Mode Threshold', None)
+        disabledMenuOptionSetThreshold.setEnabled(False)
+        
+        roleMenu.addAction(disabledMenuOptionSetRole)
+        roleMenu.addAction(self.setTranslationRole1Action)
+        roleMenu.addAction(self.setTranslationRole2Action)
+        roleMenu.addAction(self.setTranslationRole3Action)
+        roleMenu.addAction(self.setTranslationRole4Action)
         roleMenu.addSeparator()
-        roleMenu.addAction(self.DisabledMenuOptionSetThreshold)
-        roleMenu.addAction(self.autoThreshold0Act)
-        roleMenu.addAction(self.autoThreshold1Act)
-        roleMenu.addAction(self.autoThreshold2Act)
-        roleMenu.addAction(self.autoThreshold3Act)
+        roleMenu.addAction(disabledMenuOptionSetThreshold)
+        roleMenu.addAction(self.setAutoThreshold0Action)
+        roleMenu.addAction(self.setAutoThreshold1Action)
+        roleMenu.addAction(self.setAutoThreshold2Action)
+        roleMenu.addAction(self.setAutoThreshold3Action)
 
-        roleMenu.triggered.connect(self.setRole)
+        roleMenu.triggered.connect(self.SetTranslationRole)
 
 
         self.Toolbar = parent.Toolbar
         self.Toolbar.clear()
         
-        self.Toolbar.addAction(self.engAct)
-        self.Toolbar.addAction(self.jpAct)
-        self.Toolbar.addAction(self.comAct)
-        self.Toolbar.addAction(self.reportAct)
-        self.Toolbar.addAction(self.massAct)
-        self.Toolbar.addAction(self.compAct)
-        self.Toolbar.addAction(self.dupeAct)
+        self.Toolbar.addAction(self.switchEngOnOffAction)
+        self.Toolbar.addAction(self.switchJpnOnOffAction)
+        self.Toolbar.addAction(self.switchComOnOffAction)
+        self.Toolbar.addAction(self.openStatisticsAction)
+        self.Toolbar.addAction(self.openMassReplaceAction)
+        self.Toolbar.addAction(self.openCompletionAction)
+        self.Toolbar.addAction(self.openDuplicateTextAction)
         self.Toolbar.addWidget(FlexibleSpace)
         self.Toolbar.addSeparator()
         
-        tmp1 = QtGui.QVBoxLayout()
-        tmp2 = QtGui.QVBoxLayout()
-        tmp1.addWidget( QtGui.QLabel('Jump To') )
-        tmp1.addWidget( QtGui.QLabel('Search') )
-        tmp2.addWidget( self.jumptobox )
-        tmp2.addWidget( self.filter )
-        tmp1b = QtGui.QGroupBox()
-        tmp1b.setLayout(tmp1)
-        tmp2b = QtGui.QGroupBox()
-        tmp2b.setLayout(tmp2)
-        self.Toolbar.addWidget(tmp1b)
-        self.Toolbar.addWidget(tmp2b)
+        jumpToAndSearchLabelsVBoxLayout = QtGui.QVBoxLayout()
+        jumpToAndSearchLabelsVBoxLayout.addWidget( QtGui.QLabel('Jump To') )
+        jumpToAndSearchLabelsVBoxLayout.addWidget( QtGui.QLabel('Search') )
+        jumpToAndSearchLabelsQGroupBox = QtGui.QGroupBox()
+        jumpToAndSearchLabelsQGroupBox.setLayout(jumpToAndSearchLabelsVBoxLayout)
+        jumpToAndSearchTextboxesVBoxLayout = QtGui.QVBoxLayout()
+        jumpToAndSearchTextboxesVBoxLayout.addWidget( self.jumpToTextbox )
+        jumpToAndSearchTextboxesVBoxLayout.addWidget( self.liveSearchTextbox )
+        jumpToAndSearchTextboxesxQGroupBox = QtGui.QGroupBox()
+        jumpToAndSearchTextboxesxQGroupBox.setLayout(jumpToAndSearchTextboxesVBoxLayout)
+        self.Toolbar.addWidget(jumpToAndSearchLabelsQGroupBox)
+        self.Toolbar.addWidget(jumpToAndSearchTextboxesxQGroupBox)
         
-        
-        self.Toolbar.addAction(self.debug)
+        self.Toolbar.addAction(self.debugOnOffButton)
         self.Toolbar.addAction(self.alwaysOnTopButton)
-        self.Toolbar.setToolButtonStyle(3)
-        
         
         if Globals.Settings.contains('toolicon'):
             self.Toolbar.setIconSize(QtCore.QSize(Globals.Settings.value('toolicon'), Globals.Settings.value('toolicon')))
+
         if Globals.Settings.contains('toolstyle'):
             self.Toolbar.setToolButtonStyle(Globals.Settings.value('toolstyle'))
+        else:
+            self.Toolbar.setToolButtonStyle(3)
+
         
         parent.menuBar().clear()
         
         parent.editMenu.addSeparator()
-        parent.editMenu.addAction(self.fullcopyAct)
-        parent.editMenu.addAction(self.saveAsPngAndOpenAct)
-        parent.editMenu.addAction(self.saveAsPngAct)
-        parent.editMenu.addAction(self.saveAsMultiplePngAct)
+        parent.editMenu.addAction(self.runFullTextCopyAction)
+        parent.editMenu.addAction(self.runSaveAsPngAndOpenAction)
+        parent.editMenu.addAction(self.runSaveAsPngAction)
+        parent.editMenu.addAction(self.runSaveAsMultiPngAction)
 
         parent.editMenu.addSeparator()
         parent.editMenu.addAction(self.setCentralAs0Act)
@@ -708,49 +673,49 @@ class Scripts2(QtGui.QWidget):
         
         fileMenu = QtGui.QMenu("File", self)
         
-        fileMenu.addAction(self.saveAct)
-        fileMenu.addAction(self.updateAct)
-        fileMenu.addAction(self.recalcFilesToBeUploadedAct)
+        fileMenu.addAction(self.runSaveToServerAction)
+        fileMenu.addAction(self.runRetrieveModifiedFilesAction)
+        fileMenu.addAction(self.runFindUnsavedDatabasesAction)
         fileMenu.addSeparator()
-        fileMenu.addAction(self.patchAct)
-        fileMenu.addAction(self.patchdolAct)
-        fileMenu.addAction(self.patchzeroAct)
-        fileMenu.addAction(self.patchtwoAct)
-        fileMenu.addAction(self.patchfDemoAct)
+        fileMenu.addAction(self.runSaveToPatchAction)
+        fileMenu.addAction(self.runPatchDolAction)
+        fileMenu.addAction(self.runPatchXmlVersion0Action)
+        fileMenu.addAction(self.runPatchXmlVersion2Action)
+        fileMenu.addAction(self.runPatchGracesFDemoAction)
         fileMenu.addSeparator()
-        fileMenu.addAction(self.revertAct)
+        fileMenu.addAction(self.runRevertFromServerAction)
         fileMenu.addSeparator()
-        fileMenu.addAction(self.quitAct)
+        fileMenu.addAction(self.runQuitAction)
         
         
         viewMenu = QtGui.QMenu("View", self)
         
-        viewMenu.addAction(self.globalAct)
-        viewMenu.addAction(self.changeAct)
+        viewMenu.addAction(self.openGlobalChangelogAction)
+        viewMenu.addAction(self.openLocalChangelogAction)
         viewMenu.addSeparator()
-        viewMenu.addAction(self.engAct)
-        viewMenu.addAction(self.jpAct)
-        viewMenu.addAction(self.comAct)
+        viewMenu.addAction(self.switchEngOnOffAction)
+        viewMenu.addAction(self.switchJpnOnOffAction)
+        viewMenu.addAction(self.switchComOnOffAction)
         viewMenu.addSeparator()
-        viewMenu.addAction(self.playCentralAudio)
+        viewMenu.addAction(self.playCentralAudioAction)
         viewMenu.addSeparator()
-        viewMenu.addAction(self.scrollUpAct)
-        viewMenu.addAction(self.scrollDownAct)
-        viewMenu.addAction(self.scrollUpAct2)
-        viewMenu.addAction(self.scrollDownAct2)
+        viewMenu.addAction(self.runScrollUpAction)
+        viewMenu.addAction(self.runScrollDownAction)
+        viewMenu.addAction(self.runScrollUpAction2)
+        viewMenu.addAction(self.runScrollDownAction2)
         viewMenu.addSeparator()
-        viewMenu.addAction(self.reopenFontWinAct)
-        viewMenu.addAction(self.reopenMediaWinAct)
-        viewMenu.addAction(self.reopenHistoryWinAct)
+        viewMenu.addAction(self.openFontWindownAction)
+        viewMenu.addAction(self.openMediaWindowsAction)
+        viewMenu.addAction(self.openHistoryWindowAction)
         viewMenu.addSeparator()
         iconSizeMenu = QtGui.QMenu("Toolbar Icon Size", self)
-        for action in self.iconSizeActs:
+        for action in self.changeToolbarIconSizeActions:
             iconSizeMenu.addAction(action)
         textMenu = QtGui.QMenu("Toolbar Style", self)
-        textMenu.addAction(self.noTextAct)
-        textMenu.addAction(self.noIconAct)
-        textMenu.addAction(self.textDownAct)
-        textMenu.addAction(self.textLeftAct)
+        textMenu.addAction(self.changeToolbarToOnlyIconAction)
+        textMenu.addAction(self.changeToolbarToOnlyTextAction)
+        textMenu.addAction(self.changeToolbarToBelowIconAction)
+        textMenu.addAction(self.changeToolbarToLeftOfIconAction)
         viewMenu.addMenu(textMenu)
         viewMenu.addMenu(iconSizeMenu)
 
@@ -765,36 +730,30 @@ class Scripts2(QtGui.QWidget):
         fontSizeMenu.addAction('36')
         viewMenu.addMenu(fontSizeMenu)
         
-        fontSizeMenu.triggered.connect(self.fontChange)
-        iconSizeMenu.triggered.connect(self.setToolbariconsize)
-        textMenu.triggered.connect(self.setToolbartext)
+        fontSizeMenu.triggered.connect(self.ChangeFontSize)
+        iconSizeMenu.triggered.connect(self.SetToolbarIconSize)
+        textMenu.triggered.connect(self.SetToolbarStyle)
         
         
         toolsMenu = QtGui.QMenu("Tools", self)
-        
-        toolsMenu.addAction(self.massAct)
-        toolsMenu.addAction(self.reportAct)
-        toolsMenu.addAction(self.compAct)
-        toolsMenu.addAction(self.dupeAct)
+        toolsMenu.addAction(self.openMassReplaceAction)
+        toolsMenu.addAction(self.openStatisticsAction)
+        toolsMenu.addAction(self.openCompletionAction)
+        toolsMenu.addAction(self.openDuplicateTextAction)
         toolsMenu.addSeparator()
-        toolsMenu.addAction(self.conDebugAct)
-        toolsMenu.addAction(self.reverseConDebugAct)
-        toolsMenu.addAction(self.refreshCompleteAct)
-        toolsMenu.addAction(self.findUsedSymbolsAct)
-        
+        toolsMenu.addAction(self.runPropagateDebugG2DAction)
+        toolsMenu.addAction(self.runPropagateDebugD2GAction)
+        toolsMenu.addAction(self.runRefreshCompletionDatabaseAction)
+        toolsMenu.addAction(self.runFindUsedSymbolsAction)
         
         modeMenu = QtGui.QMenu("Mode", self)
+        modeMenu.addAction(self.setTranslationModeAutoAction)
+        modeMenu.addAction(self.setTranslationModeSemiautoAction)
+        modeMenu.addAction(self.setTranslationModeManualAction)
+        modeMenu.triggered.connect(self.SetTranslationMode)
         
-        modeMenu.addAction(self.autoAct)
-        modeMenu.addAction(self.semiAct)
-        modeMenu.addAction(self.manuAct)
-        modeMenu.triggered.connect(self.setMode)
-        
-
         optionsMenu = QtGui.QMenu("Options", self)
-        #optionsMenu.addAction(self.reloadConfigAct)
-        #optionsMenu.addSeparator()
-        optionsMenu.addAction(self.openOptionsWindowAct)
+        optionsMenu.addAction(self.openOptionsWindowAction)
 
         parent.menuBar().addMenu(fileMenu)
         parent.menuBar().addMenu(parent.editMenu)
@@ -805,12 +764,12 @@ class Scripts2(QtGui.QWidget):
         parent.menuBar().addMenu(optionsMenu)
 
 
-        # Layout
+        # --- Layout ---
         Globals.commentsAvailableLabel = QtGui.QLabel("-")
         
         FileListSubLayout = QtGui.QVBoxLayout()
         FileListSubLayout.addWidget(Globals.commentsAvailableLabel)
-        FileListSubLayout.addWidget(self.tree)
+        FileListSubLayout.addWidget(self.databaseTreeView)
         
         EditingWindowSubLayoutSplitter = QtGui.QSplitter()
         EditingWindowSubLayoutSplitter.setOrientation(QtCore.Qt.Vertical)
@@ -821,11 +780,8 @@ class Scripts2(QtGui.QWidget):
         FileListSubLayoutWidget = QtGui.QWidget()
         FileListSubLayoutWidget.setLayout(FileListSubLayout)
         self.mainAreaSplitLayout.addWidget(FileListSubLayoutWidget)
-        #EditingWindowSubLayoutWidget = QtGui.QWidget()
-        #EditingWindowSubLayoutWidget.setLayout(EditingWindowSubLayout)
         self.mainAreaSplitLayout.addWidget(EditingWindowSubLayoutSplitter)
         self.mainAreaSplitLayout.addWidget(self.entryTreeView)
-        #self.mainAreaSplitLayout.setColumnStretch(1,1)
         
         self.mainAreaSplitLayout.setSizes( [200, 400, 200] )
 
@@ -850,51 +806,51 @@ class Scripts2(QtGui.QWidget):
             self.restoreGeometry(geom)
 
         if not self.TextboxVisibleFlagEnglish:
-            for box in self.regularEditingTextBoxes:
+            for box in self.xTextBoxesENG:
                 box.hide()
         if not self.TextboxVisibleFlagJapanese:
-            for box in self.twoupEditingTextBoxes:
+            for box in self.xTextBoxesJPN:
                 box.hide()
         if not self.TextboxVisibleFlagComment:
-            for box in self.threeupEditingTextBoxes:
+            for box in self.xTextBoxesCOM:
                 box.hide()
 
-        self.openMediumWindows()
-        self.openFontWindow()
-        self.openHistoryWindow()
+        self.OpenMediumWindows()
+        self.OpenFontWindow()
+        self.OpenHistoryWindow()
 
         NetworkHandler.RetrieveModifiedFiles(self, None)
         Globals.Cache.StartBackgroundDatabaseLoadingThread()
 
         Globals.SplashScreen.destroyScreen()
         
-    def openMediumWindows(self):
+    def OpenMediumWindows(self):
         self.media = {}
-        self.openImageWindows()
+        self.OpenImageWindows()
             
-    def openImageWindows(self):
+    def OpenImageWindows(self):
         for img in Globals.configData.Images:
-            self.openImageWindow(img)
+            self.OpenImageWindow(img)
     
-    def openImageWindow(self, img):
+    def OpenImageWindow(self, img):
         self.media[img.name] = ImageViewerWindow.ImageViewerWindow(self, img)
         self.media[img.name].show()
         self.media[img.name].raise_()
         self.media[img.name].activateWindow()
 
-    def openFontWindow(self):
+    def OpenFontWindow(self):
         self.fontWindow = FontDisplayWindow.FontDisplayWindow(self)
         self.fontWindow.show()
         self.fontWindow.raise_()
         self.fontWindow.activateWindow()
 
-    def openHistoryWindow(self):
+    def OpenHistoryWindow(self):
         self.historyWindow = HistoryWindow.HistoryWindow(self)
         self.historyWindow.show()
         self.historyWindow.raise_()
         self.historyWindow.activateWindow()
 
-    def cleanupAndQuit(self):
+    def CleanUpAndQuit(self):
         self.WriteDatabaseStorageToHdd()
 
         # display warning to user if there are unsaved changes
@@ -966,7 +922,7 @@ class Scripts2(QtGui.QWidget):
         return True
         
 
-    def scrollUp(self, action):
+    def ScrollUp(self, action):
         try:
             index = self.entryTreeView.currentIndex()
             row = index.row()
@@ -984,7 +940,7 @@ class Scripts2(QtGui.QWidget):
             pass
 
 
-    def scrollDown(self, action):
+    def ScrollDown(self, action):
         try:
             index = self.entryTreeView.currentIndex()
             row = index.row()
@@ -1003,37 +959,37 @@ class Scripts2(QtGui.QWidget):
 
 
 
-    def fontChange(self, action):
+    def ChangeFontSize(self, action):
         size = int(action.iconText())
 
-        for box in self.regularEditingTextBoxes:
+        for box in self.xTextBoxesENG:
             box.setFontPointSize(size)
-        for box in self.twoupEditingTextBoxes:
+        for box in self.xTextBoxesJPN:
             box.setFontPointSize(size)
-        for box in self.threeupEditingTextBoxes:
+        for box in self.xTextBoxesCOM:
             box.setFontPointSize(size)
 
         self.PopulateTextEdit()
         Globals.Settings.setValue('font', size)
 
 
-    def setRole(self, action):
-        if action == self.tmode:
+    def SetTranslationRole(self, action):
+        if action == self.setTranslationRole1Action:
             self.role = 1
-        if action == self.tlcheckmode:
+        if action == self.setTranslationRole2Action:
             self.role = 2
-        if action == self.rewritemode:
+        if action == self.setTranslationRole3Action:
             self.role = 3
-        if action == self.grammarmode:
+        if action == self.setTranslationRole4Action:
             self.role = 4
 
-        if action == self.autoThreshold0Act:
+        if action == self.setAutoThreshold0Action:
             self.autoThreshold = 0
-        if action == self.autoThreshold1Act:
+        if action == self.setAutoThreshold1Action:
             self.autoThreshold = 1
-        if action == self.autoThreshold2Act:
+        if action == self.setAutoThreshold2Action:
             self.autoThreshold = 2
-        if action == self.autoThreshold3Act:
+        if action == self.setAutoThreshold3Action:
             self.autoThreshold = 3
 
         try:
@@ -1061,12 +1017,12 @@ class Scripts2(QtGui.QWidget):
         t = t + Globals.configfile
         self.parent.setWindowTitle(t)
 
-    def setMode(self, action):
-        if action == self.autoAct:
+    def SetTranslationMode(self, action):
+        if action == self.setTranslationModeAutoAction:
             mode = 'Auto'
-        if action == self.semiAct:
+        if action == self.setTranslationModeSemiautoAction:
             mode = 'Semi-Auto'
-        if action == self.manuAct:
+        if action == self.setTranslationModeManualAction:
             mode = 'Manual'
             
         Globals.Settings.setValue('mode', mode)
@@ -1080,13 +1036,13 @@ class Scripts2(QtGui.QWidget):
         
         Globals.configData = Configuration(Globals.configfile)
         Globals.configData.DelayedLoad()
-        self.PopulateModel(Globals.configData.FileList)
+        self.PopulateDatabaseView(Globals.configData.FileList)
         
        
-    def setToolbariconsize(self, action):
+    def SetToolbarIconSize(self, action):
         i = 0
-        for size in self.iconSizes:
-            if action == self.iconSizeActs[i]:
+        for size in self.toolbarIconSizes:
+            if action == self.changeToolbarIconSizeActions[i]:
                 self.Toolbar.setIconSize(QtCore.QSize(size, size))
                 Globals.Settings.setValue('toolicon', size)
                 if self.Toolbar.toolButtonStyle() == 1:
@@ -1094,25 +1050,25 @@ class Scripts2(QtGui.QWidget):
             i += 1
             
             
-    def setToolbartext(self, action):
+    def SetToolbarStyle(self, action):
 
-        if action == self.noIconAct:
+        if action == self.changeToolbarToOnlyTextAction:
             self.Toolbar.setToolButtonStyle(1)
             Globals.Settings.setValue('toolstyle', 1)
 
-        if action == self.noTextAct:
+        if action == self.changeToolbarToOnlyIconAction:
             self.Toolbar.setToolButtonStyle(0)
             Globals.Settings.setValue('toolstyle', 0)
         
-        if action == self.textDownAct:
+        if action == self.changeToolbarToBelowIconAction:
             self.Toolbar.setToolButtonStyle(3)
             Globals.Settings.setValue('toolstyle', 3)
         
-        if action == self.textLeftAct:
+        if action == self.changeToolbarToLeftOfIconAction:
             self.Toolbar.setToolButtonStyle(2)
             Globals.Settings.setValue('toolstyle', 2)
         
-    def ConsolidateDebug(self):
+    def PropagateDebugGJ2Databases(self):
         self.WriteDatabaseStorageToHdd()
         
         # Applies the debug status in GracesJapanese to all databases
@@ -1152,7 +1108,7 @@ class Scripts2(QtGui.QWidget):
         Globals.MainWindow.displayStatusMessage( 'Consolidate Debug Finished!' )
         Globals.Cache.databaseAccessRLock.release()
 
-    def ReverseConsolidateDebug(self):
+    def PropagateDebugDatabases2GJ(self):
         self.WriteDatabaseStorageToHdd()
         
         # Applies the debug status in Databases to GracesJapanese
@@ -1183,10 +1139,10 @@ class Scripts2(QtGui.QWidget):
         Globals.Cache.databaseAccessRLock.release()
 
     # fills in the database list to the left
-    def PopulateModel(self, FileList):
+    def PopulateDatabaseView(self, FileList):
         self.WriteDatabaseStorageToHdd()
         
-        self.treemodel.clear()
+        self.databaseTreeModel.clear()
         
         PercentageConnection = sqlite3.connect(Globals.configData.LocalDatabasePath + "/CompletionPercentage")
         PercentageCursor = PercentageConnection.cursor()
@@ -1195,7 +1151,7 @@ class Scripts2(QtGui.QWidget):
         for item in FileList[0]:
             cat = QtGui.QStandardItem(item)
             cat.setEditable(False)
-            self.treemodel.appendRow(cat)
+            self.databaseTreeModel.appendRow(cat)
             for item in FileList[i]:
                 newrow = QtGui.QStandardItem()
                 newrow.setStatusTip(item)
@@ -1271,7 +1227,7 @@ class Scripts2(QtGui.QWidget):
         if self.fontWindow:
             self.fontWindow.clearInfo()
 
-        for editbox in self.regularEditingTextBoxes:
+        for editbox in self.xTextBoxesENG:
             editbox.iconToggle(0)
 
         if self.entryTreeViewHeaderWidths is None:
@@ -1296,31 +1252,31 @@ class Scripts2(QtGui.QWidget):
         
         self.text = []
 
-        for editbox in self.regularEditingTextBoxes:
+        for editbox in self.xTextBoxesENG:
             editbox.setText('')
         for txtttle in self.textEditingTitles:
             txtttle.setText('')
-        for footer in self.textEditingFooters:
+        for footer in self.textEditingFootersENG:
             footer.setText('')
-        for footer in self.twoupEditingFooters:
+        for footer in self.textEditingFootersJPN:
             footer.setText('')
 
         # refresh the string & color in the list to the left of the entry we just changed from
         if self.currentTreeIndex is not None:
-            treeItem = self.treemodel.itemFromIndex(self.currentTreeIndex)
+            treeItem = self.databaseTreeModel.itemFromIndex(self.currentTreeIndex)
             self.FormatDatabaseListItem(self.currentlyOpenDatabase, treeItem)
 
-        index = self.tree.currentIndex()
+        index = self.databaseTreeView.currentIndex()
         if index is None:
             return
 
-        itemFromIndex = self.treemodel.itemFromIndex(index)
+        itemFromIndex = self.databaseTreeModel.itemFromIndex(index)
         if itemFromIndex is None:
             return
 
         databasefilename = itemFromIndex.statusTip()
-        parent = self.treemodel.data(index.parent())
-        if self.treemodel.hasChildren(index):
+        parent = self.databaseTreeModel.data(index.parent())
+        if self.databaseTreeModel.hasChildren(index):
             self.currentTreeIndex = None
             return
 
@@ -1407,9 +1363,9 @@ class Scripts2(QtGui.QWidget):
             self.FormatEntryListItemColor(additemEntryEnglishID, TempStatus)        
             self.FormatEntryListItemColor(additemEntryCommentText, TempStatus)        
     
-            if (TempDebug == 1) and (not self.debug.isChecked()):
+            if (TempDebug == 1) and (not self.debugOnOffButton.isChecked()):
                 pass
-            elif (TempDebug == 1) and (self.debug.isChecked()):
+            elif (TempDebug == 1) and (self.debugOnOffButton.isChecked()):
                 additemEntryIsDebug.setCheckState(QtCore.Qt.Checked)
                 additemEntryIsDebug.DebugStatus = True
                 self.entryStandardItemModel.appendRow([additemEntryEnglishID, additemEntryStatus, additemEntryCommentExists, additemEntryIdentifyString, additemEntryText, additemEntryCommentText, additemEntryUpdatedBy, additemEntryTimestamp, additemEntryIsDebug])
@@ -1492,20 +1448,20 @@ class Scripts2(QtGui.QWidget):
             if rowBoxes[i] >= 0:
                 textEntries1.append( Globals.VariableReplace(self.text[rowBoxes[i]][t]) )
                 textEntries1raw.append( self.text[rowBoxes[i]][t] )
-                textEntries2.append( Globals.VariableReplace(self.text[rowBoxes[i]][self.twoupEditingTextBoxes[i].role]) )
-                textEntries2raw.append( self.text[rowBoxes[i]][self.twoupEditingTextBoxes[i].role] )
-                textEntries3.append( Globals.VariableReplace(self.text[rowBoxes[i]][self.threeupEditingTextBoxes[i].role]) )
-                textEntries3raw.append( self.text[rowBoxes[i]][self.threeupEditingTextBoxes[i].role] )
+                textEntries2.append( Globals.VariableReplace(self.text[rowBoxes[i]][self.xTextBoxesJPN[i].role]) )
+                textEntries2raw.append( self.text[rowBoxes[i]][self.xTextBoxesJPN[i].role] )
+                textEntries3.append( Globals.VariableReplace(self.text[rowBoxes[i]][self.xTextBoxesCOM[i].role]) )
+                textEntries3raw.append( self.text[rowBoxes[i]][self.xTextBoxesCOM[i].role] )
                 commentTexts[i] = self.text[rowBoxes[i]][5] + '     '
                 if self.text[rowBoxes[i]][2] != '':
                     commentTexts[i] = commentTexts[i] + 'Comment Available'
-                self.regularEditingTextBoxes[i].iconToggle(self.text[rowBoxes[i]][4])
-                self.regularEditingTextBoxes[i].currentEntry = rowBoxes[i] + 1
-                self.twoupEditingTextBoxes[i].currentEntry = rowBoxes[i] + 1
-                self.threeupEditingTextBoxes[i].currentEntry = rowBoxes[i] + 1
-                self.regularEditingTextBoxes[i].setReadOnly(False)
-                self.twoupEditingTextBoxes[i].setReadOnly(True)
-                self.threeupEditingTextBoxes[i].setReadOnly(False)
+                self.xTextBoxesENG[i].iconToggle(self.text[rowBoxes[i]][4])
+                self.xTextBoxesENG[i].currentEntry = rowBoxes[i] + 1
+                self.xTextBoxesJPN[i].currentEntry = rowBoxes[i] + 1
+                self.xTextBoxesCOM[i].currentEntry = rowBoxes[i] + 1
+                self.xTextBoxesENG[i].setReadOnly(False)
+                self.xTextBoxesJPN[i].setReadOnly(True)
+                self.xTextBoxesCOM[i].setReadOnly(False)
             else:
                 textEntries1.append( '' )
                 textEntries1raw.append( '' )
@@ -1513,27 +1469,27 @@ class Scripts2(QtGui.QWidget):
                 textEntries2raw.append( '' )
                 textEntries3.append( '' )
                 textEntries3raw.append( '' )
-                self.regularEditingTextBoxes[i].iconToggle(0)
-                self.regularEditingTextBoxes[i].currentEntry = -1
-                self.twoupEditingTextBoxes[i].currentEntry = -1
-                self.threeupEditingTextBoxes[i].currentEntry = -1
-                self.regularEditingTextBoxes[i].setReadOnly(True)
-                self.twoupEditingTextBoxes[i].setReadOnly(True)
-                self.threeupEditingTextBoxes[i].setReadOnly(True)
+                self.xTextBoxesENG[i].iconToggle(0)
+                self.xTextBoxesENG[i].currentEntry = -1
+                self.xTextBoxesJPN[i].currentEntry = -1
+                self.xTextBoxesCOM[i].currentEntry = -1
+                self.xTextBoxesENG[i].setReadOnly(True)
+                self.xTextBoxesJPN[i].setReadOnly(True)
+                self.xTextBoxesCOM[i].setReadOnly(True)
 
         # audio clip check
         if Globals.Audio:
             lengthEditingBoxes = len(self.textEditingBoxes)
             for i in range(lengthEditingBoxes):
-                if self.regularEditingTextBoxes[i].currentEntry == -1:
+                if self.xTextBoxesENG[i].currentEntry == -1:
                     continue
                 AudioSearchText = Globals.VariableReplace(self.text[rowBoxes[i] + Globals.configData.VoiceEntryOffset][t])
                 AudioClips = re.findall('<Audio: (.*?)>', AudioSearchText, re.DOTALL)
                 AudioClips = AudioClips + re.findall('<Voice: (.*?)>', AudioSearchText, re.DOTALL)
                 if AudioClips == []:
-                    self.regularEditingTextBoxes[i].clearPlaybackButtons()
+                    self.xTextBoxesENG[i].clearPlaybackButtons()
                 else:
-                    self.regularEditingTextBoxes[i].makePlaybackButtons(AudioClips)
+                    self.xTextBoxesENG[i].makePlaybackButtons(AudioClips)
 
         # check for terms
         lengthEditingBoxes = len(self.textEditingBoxes)
@@ -1556,11 +1512,11 @@ class Scripts2(QtGui.QWidget):
             medium.refreshInfo( Globals.VariableReplace(self.text[rowBoxes[centerPanel] + medium.medium.offs][t]) )
 
         # inform font box
-        databasefilename = self.treemodel.itemFromIndex(self.tree.currentIndex()).statusTip()
+        databasefilename = self.databaseTreeModel.itemFromIndex(self.databaseTreeView.currentIndex()).statusTip()
         self.fontWindow.drawText( self.text[rowBoxes[centerPanel]][t], Globals.GetDatabaseDescriptionString(str(databasefilename)) )
 
         # inform history window
-        self.historyWindow.displayHistoryOfEntry(self.regularEditingTextBoxes[centerPanel].currentEntry)
+        self.historyWindow.displayHistoryOfEntry(self.xTextBoxesENG[centerPanel].currentEntry)
                     
         # put text into textboxes, display entry number
         twoupTypeHelper = []
@@ -1568,14 +1524,14 @@ class Scripts2(QtGui.QWidget):
         twoupTypeHelper.append('J')
         twoupTypeHelper.append('C')
         for i in range(len(self.textEditingBoxes)):
-            self.regularEditingTextBoxes[i].setText(textEntries1[i])
-            self.twoupEditingTextBoxes[i].setText(textEntries2[i])
-            self.threeupEditingTextBoxes[i].setText(textEntries3[i])
+            self.xTextBoxesENG[i].setText(textEntries1[i])
+            self.xTextBoxesJPN[i].setText(textEntries2[i])
+            self.xTextBoxesCOM[i].setText(textEntries3[i])
                 
-            if self.regularEditingTextBoxes[i].currentEntry >= 0:
+            if self.xTextBoxesENG[i].currentEntry >= 0:
                 self.textEditingTitles[i].setText('Entry {0}: {1}'.format(rowBoxes[i]+1, commentTexts[i]))
-                self.regularEditingTextBoxes[i].refreshFooter(textEntries1raw[i], 'ENG: ')
-                self.twoupEditingTextBoxes[i].refreshFooter(textEntries2raw[i], twoupTypeHelper[self.twoupEditingTextBoxes[i].role] + ': ')
+                self.xTextBoxesENG[i].refreshFooter(textEntries1raw[i], 'ENG: ')
+                self.xTextBoxesJPN[i].refreshFooter(textEntries2raw[i], twoupTypeHelper[self.xTextBoxesJPN[i].role] + ': ')
                 if self.termTooltips[i] != '':
                     self.textEditingTermIcons[i].setToolTip( 'Terminology in this Entry:\n' + self.termTooltips[i] )
                     self.textEditingTermIcons[i].show()
@@ -1584,8 +1540,8 @@ class Scripts2(QtGui.QWidget):
                     self.textEditingTermIcons[i].hide()
             else:
                 self.textEditingTitles[i].setText('')
-                self.textEditingFooters[i].setText('')
-                self.twoupEditingFooters[i].setText('')
+                self.textEditingFootersENG[i].setText('')
+                self.textEditingFootersJPN[i].setText('')
                 self.textEditingTermIcons[i].setToolTip('')
                 self.textEditingTermIcons[i].hide()
             
@@ -1593,7 +1549,7 @@ class Scripts2(QtGui.QWidget):
         # auto-update in Auto mode
         if Globals.ModeFlag == 'Auto':
             for i in range(len(self.textEditingBoxes)):
-                self.regularEditingTextBoxes[i].manualEdit.emit(-2, self.regularEditingTextBoxes[i], self.textEditingFooters[i])
+                self.xTextBoxesENG[i].manualEdit.emit(-2, self.xTextBoxesENG[i], self.textEditingFootersENG[i])
 
 
         
@@ -1601,7 +1557,7 @@ class Scripts2(QtGui.QWidget):
         string = ''
         i = 1
         for entry in self.text:
-            if entry[3] == 0 or self.debug.isChecked():
+            if entry[3] == 0 or self.debugOnOffButton.isChecked():
                 string = string + 'Entry {0}'.format(i)
                 if entry[5]:
                     string = string + ': ' + entry[5]
@@ -1639,7 +1595,7 @@ class Scripts2(QtGui.QWidget):
 
     def SaveAsMultiplePng(self):
         try:
-            databasefilename = self.treemodel.itemFromIndex(self.tree.currentIndex()).statusTip()
+            databasefilename = self.databaseTreeModel.itemFromIndex(self.databaseTreeView.currentIndex()).statusTip()
         except:
             return
             
@@ -1663,13 +1619,13 @@ class Scripts2(QtGui.QWidget):
         return
 
     def JumpToDatabase(self):
-        jumpto = self.jumptobox.text()
+        jumpto = self.jumpToTextbox.text()
         self.JumpToEntry(jumpto, 0)
     
     def LiveSearch(self):
         self.WriteDatabaseStorageToHdd()
         
-        matchString = self.filter.text()
+        matchString = self.liveSearchTextbox.text()
 
         # Check to make sure people aren't idiots
         if matchString.count(unicode('<', 'UTF-8')) != matchString.count(unicode('>', 'UTF-8')):
@@ -1706,7 +1662,7 @@ class Scripts2(QtGui.QWidget):
         for j in range(1, len(aList)):
             for File in aList[j]:
                 data = Globals.Cache.GetDatabase(File)
-                if self.debug.isChecked():
+                if self.debugOnOffButton.isChecked():
                     for i in xrange(len(data)):
                         if data[i].stringId in JPmatches or data[i].english.find(matchString) > -1:
                             MatchedEntries.append((File, i+1, data[i].english))
@@ -1748,7 +1704,7 @@ class Scripts2(QtGui.QWidget):
         if TotalResultCount > ResultLen:
             popup_menu.addAction('------Limited to {0} Results------'.format(ResultLen))
         
-        popup_menu.exec_(self.filter.mapToGlobal(QtCore.QPoint(0,self.filter.height())))
+        popup_menu.exec_(self.liveSearchTextbox.mapToGlobal(QtCore.QPoint(0,self.liveSearchTextbox.height())))
 
 
     def JumpToEntry(self, databaseName, entry):
@@ -1757,19 +1713,19 @@ class Scripts2(QtGui.QWidget):
 
         if databaseName == '':
             databaseName = self.currentlyOpenDatabase
-        self.tree.collapseAll()
-        for i in xrange(self.treemodel.rowCount()):
-            category = self.treemodel.item(i)
+        self.databaseTreeView.collapseAll()
+        for i in xrange(self.databaseTreeModel.rowCount()):
+            category = self.databaseTreeModel.item(i)
 
             for p in xrange(category.rowCount()):
             
                 if str(category.child(p).statusTip()) == databaseName:
-                    treeExpand = self.treemodel.indexFromItem(category)
-                    self.tree.expand(treeExpand)
-                    treeIndex = self.treemodel.indexFromItem(category.child(p))
+                    treeExpand = self.databaseTreeModel.indexFromItem(category)
+                    self.databaseTreeView.expand(treeExpand)
+                    treeIndex = self.databaseTreeModel.indexFromItem(category.child(p))
                             
-                    self.tree.setCurrentIndex(treeIndex)
-                    self.tree.selectionModel().select(treeIndex, QtGui.QItemSelectionModel.SelectionFlags(3))
+                    self.databaseTreeView.setCurrentIndex(treeIndex)
+                    self.databaseTreeView.selectionModel().select(treeIndex, QtGui.QItemSelectionModel.SelectionFlags(3))
 
                     try:
                         for i in xrange(self.entryStandardItemModel.rowCount()):
@@ -1789,9 +1745,9 @@ class Scripts2(QtGui.QWidget):
     def DebugFilter(self, bool):
         self.PopulateEntryList()
         if bool:
-            self.debug.setIcon(QtGui.QIcon('icons/debugon.png'))
+            self.debugOnOffButton.setIcon(QtGui.QIcon('icons/debugon.png'))
         else:
-            self.debug.setIcon(QtGui.QIcon('icons/debugoff.png'))
+            self.debugOnOffButton.setIcon(QtGui.QIcon('icons/debugoff.png'))
         
     def AlwaysOnTopToggle(self, enabled):
         if enabled:
@@ -1801,7 +1757,7 @@ class Scripts2(QtGui.QWidget):
         self.parent.show()
     
     def ShowChangelog(self):
-        item = self.treemodel.itemFromIndex(self.tree.currentIndex())
+        item = self.databaseTreeModel.itemFromIndex(self.databaseTreeView.currentIndex())
         if item == None or item.statusTip() == '':
             return
         self.LogDialog = LocalChangelog(item.statusTip())
@@ -1855,13 +1811,13 @@ class Scripts2(QtGui.QWidget):
         self.comDialog.raise_()
         self.comDialog.activateWindow()
 
-    def RefreshCompletion(self):
+    def RefreshCompletionDatabase(self):
         self.WriteDatabaseStorageToHdd()
         
         CompletionTable.CalculateAllCompletionPercentagesForDatabase()
 
     def PlayCentralAudio(self):
-        self.regularEditingTextBoxes[1].playAudio()
+        self.xTextBoxesENG[1].playAudio()
 
     def SetCentralAs0(self):
         self.SetCentralAs(0)
@@ -1875,7 +1831,7 @@ class Scripts2(QtGui.QWidget):
         self.SetCentralAs(4)
 
     def SetCentralAs(self, status):
-        self.regularEditingTextBoxes[1].manualEdit.emit(status, self.regularEditingTextBoxes[1], self.textEditingFooters[1])
+        self.xTextBoxesENG[1].manualEdit.emit(status, self.xTextBoxesENG[1], self.textEditingFootersENG[1])
         
     def ShowDuplicateText(self):
         self.WriteDatabaseStorageToHdd()
@@ -1935,7 +1891,7 @@ class Scripts2(QtGui.QWidget):
         Globals.Cache.databaseAccessRLock.acquire()
 
         selectedEntryId = self.entryStandardItemModel.item(index.row(), 0).GraceNoteEntryId - 1
-        databasefilename = self.treemodel.itemFromIndex(self.tree.currentIndex()).statusTip()
+        databasefilename = self.databaseTreeModel.itemFromIndex(self.databaseTreeView.currentIndex()).statusTip()
         SaveCon = DatabaseHandler.OpenEntryDatabase(databasefilename)
         SaveCur = SaveCon.cursor()
         SaveCur.execute("SELECT StringID FROM Text WHERE ID={0}".format(selectedEntryId+1))
@@ -2008,8 +1964,8 @@ class Scripts2(QtGui.QWidget):
         if textBox.currentEntry < 0:
             return
             
-        treeindex = self.tree.currentIndex()
-        if self.treemodel.hasChildren(treeindex):
+        treeindex = self.databaseTreeView.currentIndex()
+        if self.databaseTreeModel.hasChildren(treeindex):
             return
         
         CommandOriginAutoMode = ( role == -2 )
@@ -2041,7 +1997,7 @@ class Scripts2(QtGui.QWidget):
         if textBox.currentContentState == 'ENG':
             textBox.iconToggle(updateStatusValue)
         
-        databasefilename = self.treemodel.itemFromIndex(self.tree.currentIndex()).statusTip()
+        databasefilename = self.databaseTreeModel.itemFromIndex(self.databaseTreeView.currentIndex()).statusTip()
         
         #UpdatedDatabaseEntry(cleanString, databaseName, entry, role, state)
         # keep for later write to HDD
@@ -2150,43 +2106,43 @@ class Scripts2(QtGui.QWidget):
 
         Globals.Cache.databaseAccessRLock.release()
         
-    def SwapEnglish(self):
+    def SwitchVisibleEng(self):
         self.TextboxVisibleFlagEnglish = not self.TextboxVisibleFlagEnglish
         if self.TextboxVisibleFlagEnglish:
-            for box in self.regularEditingTextBoxes:
+            for box in self.xTextBoxesENG:
                 box.show()
         else:
-            for box in self.regularEditingTextBoxes:
+            for box in self.xTextBoxesENG:
                 box.hide()
         Globals.Settings.setValue('TextboxVisibleFlagEnglish', 'True' if self.TextboxVisibleFlagEnglish else 'False')
         Globals.Settings.sync()
         return
 
-    def SwapJapanese(self):
+    def SwitchVisibleJpn(self):
         self.TextboxVisibleFlagJapanese = not self.TextboxVisibleFlagJapanese
         if self.TextboxVisibleFlagJapanese:
-            for box in self.twoupEditingTextBoxes:
+            for box in self.xTextBoxesJPN:
                 box.show()
         else:
-            for box in self.twoupEditingTextBoxes:
+            for box in self.xTextBoxesJPN:
                 box.hide()
         Globals.Settings.setValue('TextboxVisibleFlagJapanese', 'True' if self.TextboxVisibleFlagJapanese else 'False')
         Globals.Settings.sync()
         return
 
-    def SwapComment(self):
+    def SwitchVisibleCom(self):
         self.TextboxVisibleFlagComment = not self.TextboxVisibleFlagComment
         if self.TextboxVisibleFlagComment:
-            for box in self.threeupEditingTextBoxes:
+            for box in self.xTextBoxesCOM:
                 box.show()
         else:
-            for box in self.threeupEditingTextBoxes:
+            for box in self.xTextBoxesCOM:
                 box.hide()
         Globals.Settings.setValue('TextboxVisibleFlagComment', 'True' if self.TextboxVisibleFlagComment else 'False')
         Globals.Settings.sync()
         return
 
-    def RecalculateFilesToBeUploaded(self):
+    def FindUnsavedDatabases(self):
         self.WriteDatabaseStorageToHdd()
         
         Globals.Cache.databaseAccessRLock.acquire()
@@ -2263,29 +2219,3 @@ class Scripts2(QtGui.QWidget):
     def CallSavetoGracesfDemoXML(self):
         GracesCreation.SavetoGracesfDemoXML(self)
         return
-
-
-def TrueCount():
-
-    Globals.Cache.databaseAccessRLock.acquire()
-
-    i = 1
-    aList = Globals.configData.FileList[0]
-
-    for item in aList:
-        typeset = set([])
-    
-        for name in aList[i]:
-            tempCon = DatabaseHandler.OpenEntryDatabase(name)
-            tempCur = tempCon.cursor()
-            
-            tempCur.execute("SELECT StringID from Text")
-            for thing in tempCur.fetchall():
-                Globals.CursorGracesJapanese.execute("SELECT COUNT(ID) from Japanese where debug == 0 and ID == ?", (thing[0],))
-                if Globals.CursorGracesJapanese.fetchall()[0][0] > 0:
-                    typeset.add(thing[0])
-                    
-        print '{0}: {1} entries'.format(item, len(typeset))
-        i += 1
-
-    Globals.Cache.databaseAccessRLock.release()
