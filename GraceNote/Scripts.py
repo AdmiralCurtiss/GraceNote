@@ -1328,6 +1328,18 @@ class Scripts2(QtGui.QWidget):
                 containsComments = True
                 commentString = 'C'
 
+            # change database entry status if it mismatches the GracesJapanese Debug status
+            if TempStatus != -1 and TempDebug == 1: # GracesJapanese says Debug, change DB to match
+                Globals.MainWindow.displayStatusMessage("Setting status of " + databasefilename + ", Entry " + str(TempID) + " to Debug (StringID: " + str(TempList[i][1]) + ")")
+                SaveCur.execute("UPDATE Text SET status=-1 WHERE ID=?", (TempID,))
+                SaveCon.commit()
+                TempStatus = -1
+            elif TempStatus == -1 and TempDebug == 0: # Graces Japanese says not Debug, change DB to match
+                Globals.MainWindow.displayStatusMessage("Setting status of " + databasefilename + ", Entry " + str(TempID) + " to Not Debug (StringID: " + str(TempList[i][1]) + ")")
+                SaveCur.execute("UPDATE Text SET status=0 WHERE ID=?", (TempID,))
+                SaveCon.commit()
+                TempStatus = 0
+
             entryDisplayString = Globals.VariableReplace( TempENG.replace('\f', ' ').replace('\n', ' ') )
             commentDisplayString = Globals.VariableReplace( TempCOM.replace('\f', ' ').replace('\n', ' ') )
                         
@@ -1372,11 +1384,6 @@ class Scripts2(QtGui.QWidget):
             else:
                 additemEntryIsDebug.DebugStatus = False
                 self.entryStandardItemModel.appendRow([additemEntryEnglishID, additemEntryStatus, additemEntryCommentExists, additemEntryIdentifyString, additemEntryText, additemEntryCommentText, additemEntryUpdatedBy, additemEntryTimestamp, additemEntryIsDebug])
-            
-            if TempStatus != -1 and TempDebug == 1:
-                Globals.MainWindow.displayStatusMessage("Setting status of " + databasefilename + ", Entry " + str(TempID) + " to Debug (StringID: " + str(TempList[i][1]) + ")")
-                SaveCur.execute("UPDATE Text SET status=-1 WHERE ID=?", (TempID,))
-                SaveCon.commit()
                 
             self.text.append([TempENG, TempJPN, TempCOM, TempDebug, TempStatus, TempIdentifyString])
             
