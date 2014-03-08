@@ -419,6 +419,13 @@ class Scripts2(QtGui.QWidget):
         self.playCentralAudioAction = QtGui.QAction('Play Audio (2nd Textbox)', None)
         self.playCentralAudioAction.triggered.connect(self.PlayCentralAudio)
         self.playCentralAudioAction.setShortcut(QtGui.QKeySequence('Ctrl+-'))
+        self.formatCentralTextMode1Action = QtGui.QAction('Format Text (Mode 1)', None)
+        self.formatCentralTextMode1Action.triggered.connect(self.FormatCentralTextMatchJapaneseWidth)
+        self.formatCentralTextMode2Action = QtGui.QAction('Format Text (Mode 2)', None)
+        self.formatCentralTextMode2Action.triggered.connect(self.FormatCentralTextAllowExceedWidth)
+        self.formatCentralTextMode3Action = QtGui.QAction('Format Text (Mode 3)', None)
+        self.formatCentralTextMode3Action.triggered.connect(self.FormatCentralTextMatchJapaneseLinecountAsBlock)
+        
 
         self.setCentralAsActs = []
         for i in range( Globals.configData.TranslationStagesCount + 1 ):
@@ -615,6 +622,9 @@ class Scripts2(QtGui.QWidget):
         self.Toolbar.addAction(self.openCompletionAction)
         self.Toolbar.addAction(self.openDuplicateTextAction)
         self.Toolbar.addWidget(FlexibleSpace)
+        self.Toolbar.addAction(self.formatCentralTextMode1Action)
+        self.Toolbar.addAction(self.formatCentralTextMode2Action)
+        self.Toolbar.addAction(self.formatCentralTextMode3Action)
         self.Toolbar.addSeparator()
         
         jumpToAndSearchLabelsVBoxLayout = QtGui.QVBoxLayout()
@@ -723,6 +733,10 @@ class Scripts2(QtGui.QWidget):
         toolsMenu.addAction(self.openStatisticsAction)
         toolsMenu.addAction(self.openCompletionAction)
         toolsMenu.addAction(self.openDuplicateTextAction)
+        toolsMenu.addSeparator()
+        toolsMenu.addAction(self.formatCentralTextMode1Action)
+        toolsMenu.addAction(self.formatCentralTextMode2Action)
+        toolsMenu.addAction(self.formatCentralTextMode3Action)
         toolsMenu.addSeparator()
         toolsMenu.addAction(self.runPropagateDebugG2DAction)
         toolsMenu.addAction(self.runPropagateDebugD2GAction)
@@ -1530,20 +1544,20 @@ class Scripts2(QtGui.QWidget):
         i = 1
         for entry in self.text:
             if entry[3] == 0 or self.debugOnOffButton.isChecked():
-                string = string + 'Entry {0}'.format(i)
-                if entry[5]:
-                    string = string + ': ' + entry[5]
-                string = string + '\n'
+                string = string + '{0}'.format(i)
+                string = string + ';' + entry[5]
+                string = string + ';' + str(entry[4])
+                string = string + ';'
 
                 currentEntryString = ''
-                if dumpEnglish:
-                    currentEntryString = currentEntryString + (entry[0] if not replaceVariables else Globals.VariableReplace(entry[0])) + '\n'
                 if dumpJapanese:
-                    currentEntryString = currentEntryString + (entry[1] if not replaceVariables else Globals.VariableReplace(entry[1])) + '\n'
+                    currentEntryString = currentEntryString + (entry[1] if not replaceVariables else Globals.VariableReplace(entry[1])) + ';'
+                if dumpEnglish:
+                    currentEntryString = currentEntryString + (entry[0] if not replaceVariables else Globals.VariableReplace(entry[0])) + ';'
                 if dumpComments:
-                    currentEntryString = currentEntryString + (entry[2] if not replaceVariables else Globals.VariableReplace(entry[2])) + '\n'
+                    currentEntryString = currentEntryString + (entry[2] if not replaceVariables else Globals.VariableReplace(entry[2])) + ';'
 
-                string = string + currentEntryString + "\n\n\n"
+                string = string + currentEntryString.replace('\n','').replace('\r', '') + "\n"
             
             i += 1
         return string
@@ -1790,6 +1804,25 @@ class Scripts2(QtGui.QWidget):
 
     def PlayCentralAudio(self):
         self.xTextBoxesENG[1].playAudio()
+
+    def FormatCentralTextMatchJapaneseWidth(self):
+        self.FormatCentralText(FontDisplayWindow.FontFormattingModes.MaximumWidth_AnyLinecount)
+    def FormatCentralTextAllowExceedWidth(self):
+        self.FormatCentralText(FontDisplayWindow.FontFormattingModes.AllowExceedWidth_MaximumLinecount)
+    def FormatCentralTextMatchJapaneseLinecountAsBlock(self):
+        self.FormatCentralText(FontDisplayWindow.FontFormattingModes.AutoWidth_ExactLinecount)
+
+    def FormatCentralText(self, mode):
+        font = Globals.configData.Fonts['default']
+        unformattedText = Globals.VariableRemove(self.xTextBoxesENG[1].toPlainText())
+        jpnText = Globals.VariableRemove(self.xTextBoxesJPN[1].toPlainText())
+
+        width = FontDisplayWindow.renderText(jpnText, None, 1, font)[0]
+        linecount = jpnText.count('\n')
+
+        formattedText = FontDisplayWindow.formatText(unformattedText, font, width, linecount, mode)
+        self.xTextBoxesENG[1].setText( Globals.VariableReplace(formattedText) )
+        self.xTextBoxesENG[1].manualEdit.emit(-1, self.xTextBoxesENG[1], self.textEditingFootersENG[1])
 
     def SetCentralAsClosure(self, status):
         def callFunc():

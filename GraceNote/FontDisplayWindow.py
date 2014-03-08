@@ -5,6 +5,142 @@ import Globals
 import re
 from Config import GlyphStruct
 
+class FontFormattingModes:
+    # forces the output to be formatted to be <=, but as close as possible to, the preferred width
+    MaximumWidth_AnyLinecount = 0
+    # tries to format <= width, but will exceed it if more lines than the preferred linecount would be necessary for that
+    AllowExceedWidth_MaximumLinecount = 1
+    # tries to format in such a way that the resulting text is a more-or-less nice "block" and all lines are more-or-less the same length
+    AutoWidth_ExactLinecount = 2
+
+def formatText(text, font, preferredWidth, preferredLinecount, fontFormattingMode):
+    treatWidthAsMaximum = True
+    unformattedText = re.sub('[ \r\n]+', ' ', text).strip()
+
+    if fontFormattingMode == FontFormattingModes.AutoWidth_ExactLinecount:
+        # in this mode, figure out the rough target width by getting the width of the entire text on a single line divided by linecount
+        preferredWidth = renderText(unformattedText, None, 1, font)[0]
+        preferredWidth /= preferredLinecount
+        treatWidthAsMaximum = False
+
+    unformattedtextAsCharList = []
+    for char in unformattedText:
+        unformattedtextAsCharList.append(char)
+        
+    formattedtextAsCharList, currentWidth, currentLinecount = formatText_PlaceNewlines(unformattedtextAsCharList, font, preferredWidth, treatWidthAsMaximum)
+
+    if fontFormattingMode == FontFormattingModes.AllowExceedWidth_MaximumLinecount and currentLinecount > preferredLinecount:
+        # not the most efficient way to handle this but should work
+        while currentLinecount > preferredLinecount:
+            preferredWidth += 1
+            formattedtextAsCharList, currentWidth, currentLinecount = formatText_PlaceNewlines(unformattedtextAsCharList, font, preferredWidth, treatWidthAsMaximum)
+        
+    return ''.join(formattedtextAsCharList)
+
+def formatText_PlaceNewlines(unformattedtextAsCharList, font, preferredWidth, treatWidthAsMaximum):
+    currentWidth = 0
+    currentLinecount = 1
+    lastSpaceAt = -1
+    s = unformattedtextAsCharList[:] # copy the input list
+
+    # Algorithm for this:
+    # Step through newline-free string one-by-one, keep track of location of last space as well as the current width of the line
+    # When current width exceeds max line length, go back to last space, replace it with newline, reset width to 0, and continue
+
+    i = 0
+    while i < len(s):
+        char = s[i]
+        if char == ' ':
+            lastSpaceAt = i
+        currentWidth += font[char].width
+
+        if currentWidth > preferredWidth:
+            if treatWidthAsMaximum or char == ' ':
+                s[lastSpaceAt] = '\n'
+                currentWidth = 0
+                i = lastSpaceAt
+                currentLinecount += 1
+
+        i += 1
+
+    return (s, currentWidth, currentLinecount)
+
+
+def renderText(text, painter, lineHeight, defaultFont):
+
+    currentFont = defaultFont
+    currentColor = QtGui.QColor('white')
+    currentScale = 1.0
+    currentX = 0
+    currentY = 0
+    maxX = 0
+    maxY = 0
+    stopDrawing = False
+    stopDrawList = []
+    linecount = 1
+
+    for char in text:
+        try:
+            if char == '\n':
+                currentY += lineHeight
+                maxX = max(maxX, currentX)
+                currentX = 0
+                linecount += 1
+                continue
+
+            if char == '>':
+                stopDrawing = False
+                stopDrawText = ''.join(stopDrawList)
+
+                if Globals.configData.FontFormatting.has_key(stopDrawText):
+                    fmt = Globals.configData.FontFormatting[stopDrawText]
+                    currentFont = Globals.configData.Fonts[fmt.Font]
+
+                    # DANGAN RONPA SPECIFIC
+                    if stopDrawText == 'CLT':
+                        currentFont = defaultFont
+                    # END DANGAN RONPA SPECIFIC
+
+                    currentColor = fmt.Color
+                    currentScale = fmt.Scale
+        
+                stopDrawList = []
+                continue
+                
+            if stopDrawing:
+                stopDrawList.append(char)
+                continue
+
+            if char == '<':
+                stopDrawing = True
+                continue
+                
+            if not stopDrawing:
+                glyph = currentFont[char]
+
+                if currentScale != 1.0:
+                    newGlyph = GlyphStruct()
+                    newGlyph.img = glyph.img.copy(glyph.x, glyph.y, glyph.width, glyph.height).scaled(glyph.width * currentScale, glyph.height * currentScale, Qt.Qt.IgnoreAspectRatio, Qt.Qt.SmoothTransformation)
+                    newGlyph.x = 0
+                    newGlyph.y = 0
+                    newGlyph.width = newGlyph.img.width()
+                    newGlyph.height = newGlyph.img.height()
+                    glyph = newGlyph
+
+                if painter is not None: # actually render
+                    painter.drawImage(currentX, currentY + ( lineHeight - glyph.height ), glyph.img, glyph.x, glyph.y, glyph.width, glyph.height)
+                    painter.fillRect( currentX, currentY + ( lineHeight - glyph.height ), glyph.width, glyph.height, currentColor )
+                    currentX += glyph.width
+                else: # just calculate the image size
+                    currentX += glyph.width
+                    maxY = max(glyph.height, maxY)
+        except:
+            pass
+    maxX = max(maxX, currentX)
+    return maxX, maxY
+
+
+
 class FontDisplayWindow(QtGui.QDialog):
 
     def __init__(self, parent):
@@ -59,7 +195,7 @@ class FontDisplayWindow(QtGui.QDialog):
         # END DANGAN RONPA SPECIFIC
 
         # calculate image size
-        maxX, maxY = self.renderText(text, None, 0, currentFont)
+        maxX, maxY = renderText(text, None, 0, currentFont)
 
         for line in Globals.configData.FontLines:
             maxX = max(maxX, line.x + 1)
@@ -75,7 +211,7 @@ class FontDisplayWindow(QtGui.QDialog):
         painter.setCompositionMode( QtGui.QPainter.CompositionMode_Multiply )
 
         # draw chars into the image
-        self.renderText(text, painter, maxY, currentFont)
+        renderText(text, painter, maxY, currentFont)
 
         # draw lines into the image
         tooltip = ''
@@ -106,78 +242,7 @@ class FontDisplayWindow(QtGui.QDialog):
         self.imagelabel.setToolTip( tooltip )
         self.imagelabel.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
         self.imagelabel.update()
-    
-    def renderText(self, text, painter, lineHeight, defaultFont):
-
-        currentFont = defaultFont
-        currentColor = QtGui.QColor('white')
-        currentScale = 1.0
-        currentX = 0
-        currentY = 0
-        maxX = 0
-        maxY = 0
-        stopDrawing = False
-        stopDrawList = []
-
-        for char in text:
-            try:
-                if char == '\n':
-                    currentY += lineHeight
-                    maxX = max(maxX, currentX)
-                    currentX = 0
-                    continue
-
-                if char == '>':
-                    stopDrawing = False
-                    stopDrawText = ''.join(stopDrawList)
-
-                    if Globals.configData.FontFormatting.has_key(stopDrawText):
-                        fmt = Globals.configData.FontFormatting[stopDrawText]
-                        currentFont = Globals.configData.Fonts[fmt.Font]
-
-                        # DANGAN RONPA SPECIFIC
-                        if stopDrawText == 'CLT':
-                            currentFont = defaultFont
-                        # END DANGAN RONPA SPECIFIC
-
-                        currentColor = fmt.Color
-                        currentScale = fmt.Scale
-        
-                    stopDrawList = []
-                    continue
-                
-                if stopDrawing:
-                    stopDrawList.append(char)
-                    continue
-
-                if char == '<':
-                    stopDrawing = True
-                    continue
-                
-                if not stopDrawing:
-                    glyph = currentFont[char]
-
-                    if currentScale != 1.0:
-                        newGlyph = GlyphStruct()
-                        newGlyph.img = glyph.img.copy(glyph.x, glyph.y, glyph.width, glyph.height).scaled(glyph.width * currentScale, glyph.height * currentScale, Qt.Qt.IgnoreAspectRatio, Qt.Qt.SmoothTransformation)
-                        newGlyph.x = 0
-                        newGlyph.y = 0
-                        newGlyph.width = newGlyph.img.width()
-                        newGlyph.height = newGlyph.img.height()
-                        glyph = newGlyph
-
-                    if painter is not None: # actually render
-                        painter.drawImage(currentX, currentY + ( lineHeight - glyph.height ), glyph.img, glyph.x, glyph.y, glyph.width, glyph.height)
-                        painter.fillRect( currentX, currentY + ( lineHeight - glyph.height ), glyph.width, glyph.height, currentColor )
-                        currentX += glyph.width
-                    else: # just calculate the image size
-                        currentX += glyph.width
-                        maxY = max(glyph.height, maxY)
-            except:
-                pass
-        maxX = max(maxX, currentX)
-        return maxX, maxY
-
+   
     def clearInfo(self):
         self.imagelabel.clear()
         return
