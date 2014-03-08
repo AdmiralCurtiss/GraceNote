@@ -420,23 +420,12 @@ class Scripts2(QtGui.QWidget):
         self.playCentralAudioAction.triggered.connect(self.PlayCentralAudio)
         self.playCentralAudioAction.setShortcut(QtGui.QKeySequence('Ctrl+-'))
 
-        # I'm sure this works better some other way (this thing where you can pass functions as variables and have functions in that function that are returned)
-        # but I can't think of how it's called or how it works right now and I need this quick, so
-        self.setCentralAs0Act = QtGui.QAction('Set Status to 0 (Center Panel)', None)
-        self.setCentralAs0Act.triggered.connect(self.SetCentralAs0)
-        self.setCentralAs0Act.setShortcut(QtGui.QKeySequence('Alt+0'))
-        self.setCentralAs1Act = QtGui.QAction('Set Status to 1 (Center Panel)', None)
-        self.setCentralAs1Act.triggered.connect(self.SetCentralAs1)
-        self.setCentralAs1Act.setShortcut(QtGui.QKeySequence('Alt+1'))
-        self.setCentralAs2Act = QtGui.QAction('Set Status to 2 (Center Panel)', None)
-        self.setCentralAs2Act.triggered.connect(self.SetCentralAs2)
-        self.setCentralAs2Act.setShortcut(QtGui.QKeySequence('Alt+2'))
-        self.setCentralAs3Act = QtGui.QAction('Set Status to 3 (Center Panel)', None)
-        self.setCentralAs3Act.triggered.connect(self.SetCentralAs3)
-        self.setCentralAs3Act.setShortcut(QtGui.QKeySequence('Alt+3'))
-        self.setCentralAs4Act = QtGui.QAction('Set Status to 4 (Center Panel)', None)
-        self.setCentralAs4Act.triggered.connect(self.SetCentralAs4)
-        self.setCentralAs4Act.setShortcut(QtGui.QKeySequence('Alt+4'))
+        self.setCentralAsActs = []
+        for i in range( Globals.configData.TranslationStagesCount + 1 ):
+            action = QtGui.QAction( 'Set Status to {0} (Center Panel)'.format(i), None )
+            action.triggered.connect( self.SetCentralAsClosure(i) )
+            action.setShortcut( QtGui.QKeySequence( 'Alt+' + str(i) ) )
+            self.setCentralAsActs.append( action )
 
         self.openStatisticsAction = QtGui.QAction(QtGui.QIcon('icons/report.png'), 'Reports', None)
         self.openStatisticsAction.triggered.connect(self.ShowStats)
@@ -665,11 +654,8 @@ class Scripts2(QtGui.QWidget):
         parent.editMenu.addAction(self.runSaveAsMultiPngAction)
 
         parent.editMenu.addSeparator()
-        parent.editMenu.addAction(self.setCentralAs0Act)
-        parent.editMenu.addAction(self.setCentralAs1Act)
-        parent.editMenu.addAction(self.setCentralAs2Act)
-        parent.editMenu.addAction(self.setCentralAs3Act)
-        parent.editMenu.addAction(self.setCentralAs4Act)
+        for action in self.setCentralAsActs:
+            parent.editMenu.addAction( action )
         
         fileMenu = QtGui.QMenu("File", self)
         
@@ -1826,17 +1812,10 @@ class Scripts2(QtGui.QWidget):
     def PlayCentralAudio(self):
         self.xTextBoxesENG[1].playAudio()
 
-    def SetCentralAs0(self):
-        self.SetCentralAs(0)
-    def SetCentralAs1(self):
-        self.SetCentralAs(1)
-    def SetCentralAs2(self):
-        self.SetCentralAs(2)
-    def SetCentralAs3(self):
-        self.SetCentralAs(3)
-    def SetCentralAs4(self):
-        self.SetCentralAs(4)
-
+    def SetCentralAsClosure(self, status):
+        def callFunc():
+            self.SetCentralAs(status)
+        return callFunc
     def SetCentralAs(self, status):
         self.xTextBoxesENG[1].manualEdit.emit(status, self.xTextBoxesENG[1], self.textEditingFootersENG[1])
         

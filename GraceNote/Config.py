@@ -29,6 +29,8 @@ class Configuration:
     VoicePathEnPrefix = ''
     VoicePathEnPostfix = ''
     VoiceEntryOffset = 0
+
+    TranslationStagesCount = 4
     
     Images = []
     Terms = []
