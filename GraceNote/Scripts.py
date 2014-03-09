@@ -241,9 +241,6 @@ class Scripts2(QtGui.QWidget):
         else:
             self.entryTreeViewHeaderState = None
 
-        self.rolenames = ['None', 'Translation', 'Translation Review', 'Contextual Review', 'Editing']
-        self.roletext = ['Doing Nothing', 'Translating', 'Reviewing Translations', 'Reviewing Context', 'Editing']
-
         self.SetWindowTitle()
         #>>> Globals.CursorGracesJapanese.execute('create table Log(ID int primary key, File text, Name text, Timestamp int)')
 
@@ -974,9 +971,9 @@ class Scripts2(QtGui.QWidget):
     def SetWindowTitle(self):
         t = "GraceNote"
         if Globals.ModeFlag == 'Auto':
-            t = t + " - {0} in {1} mode (Threshold: {2})".format(self.roletext[self.role], Globals.ModeFlag, self.rolenames[self.autoThreshold])
+            t = t + " - {0} in {1} mode (Threshold: {2})".format(Globals.configData.TranslationStagesVerbs[self.role], Globals.ModeFlag, Globals.configData.TranslationStagesNames[self.autoThreshold])
         else:
-            t = t + " - {0} in {1} mode".format(self.roletext[self.role], Globals.ModeFlag)
+            t = t + " - {0} in {1} mode".format(Globals.configData.TranslationStagesVerbs[self.role], Globals.ModeFlag)
         t = t + " - "
         if Globals.HaveUnsavedChanges:
             t = t + "*"
