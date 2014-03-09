@@ -1137,7 +1137,7 @@ class Scripts2(QtGui.QWidget):
 
             linecountTotal = data[0]
             linecountCurrentStage = data[self.role]
-            commentAmount = rows[-2]
+            commentAmount = data[-2]
                     
             if linecountCurrentStage >= linecountTotal:
                 treeItem.setBackground(QtGui.QBrush( Globals.ColorCurrentStatus ));
@@ -1147,13 +1147,16 @@ class Scripts2(QtGui.QWidget):
             # figure out the minimum status of all entries in the DB
             dbPhase = 0
             for i in range(1, Globals.configData.TranslationStagesCount + 1):
-                if linecountTotal == data[i]:
-                    dbPhase += 1
+                try:
+                    if linecountTotal == data[i]:
+                        dbPhase += 1
+                except KeyError:
+                    pass
 
             if commentAmount > 0:
-                treeItem.setText('[' + str(dbPhase) + 'C] ' + treeItem.text())
+                treeItem.setText('[' + str(dbPhase) + 'c] ' + treeItem.text())
             else:
-                treeItem.setText('[' + str(dbPhase) + '] ' + treeItem.text())
+                treeItem.setText('[' + str(dbPhase) + '  ] ' + treeItem.text())
         return
 
     def FormatEntryListItemColor(self, item, status):

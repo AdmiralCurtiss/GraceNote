@@ -447,6 +447,8 @@ class XTextBox(QtGui.QTextEdit):
         return callFunc
 
     def iconToggle(self, icon):
+        if icon > Globals.configData.TranslationStagesCount:
+            icon = Globals.configData.TranslationStagesCount
         for i in range( 1, Globals.configData.TranslationStagesCount + 1 ):
             self.StatusButtons[i].setIcon(QtGui.QIcon('icons/status/{0}.png'.format(i)))
         for i in range( 1, icon + 1 ):
