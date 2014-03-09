@@ -41,8 +41,9 @@ class CompletionTable(QtGui.QDialog):
         progress = QtGui.QProgressDialog("Calculating percentages...", "Abort", 0, progressMax)
         progress.setWindowModality(QtCore.Qt.WindowModal)
 
-        bigTotal = 0
-        bigTrans = 0
+        totalCounts = []
+        for i in range(0, Globals.configData.TranslationStagesCount + 1):
+            totalCounts.append(0)
 
         aListCounter = 1
         aList = Globals.configData.FileList
@@ -61,12 +62,12 @@ class CompletionTable(QtGui.QDialog):
             categoryCommentCount = 0
             
             for item in aList[aListCounter]:                
-                try:
-                    # TODO: not a good way to handle the non-existance of data, fix that
-                    tempCur.execute("SELECT type, amount FROM StatusData WHERE Database = ?", [item])
-                except:
+                tempCur.execute("SELECT Count(1) FROM StatusData WHERE Database = ?", [item])
+                exists = tempCur.fetchall()[0][0]
+                if exists < Globals.configData.TranslationStagesCount + 2:
                     CalculateCompletionForDatabase(item)
-                    tempCur.execute("SELECT type, amount FROM StatusData WHERE Database = ?", [item])
+
+                tempCur.execute("SELECT type, amount FROM StatusData WHERE Database = ?", [item])
                 rows = tempCur.fetchall()
 
                 databaseCounts = {}
@@ -102,20 +103,22 @@ class CompletionTable(QtGui.QDialog):
                 cat.setData(i, 0, '{0:06.2f}% ({1:06d}/{2:06d})'.format(float(categoryCounts[i])/float(categoryCounts[0])*100, categoryCounts[i], categoryCounts[0]))
             cat.setData(i+1, 0, '{0}'.format(categoryCommentCount))
             
-            bigTotal += categoryCounts[0]
-            bigTrans += categoryCounts[1]           
+            for i in range(0, Globals.configData.TranslationStagesCount + 1):
+                totalCounts[i] += categoryCounts[i]
                 
             aListCounter = aListCounter + 1
 
         self.treewidget.sortItems(0, 1)
         progress.setValue(progressMax)
         
-        
         geom = Globals.Settings.value('Geometry/CompletionTable')
         if geom is not None:
             self.restoreGeometry(geom)
 
-        self.setWindowTitle('Current Phase: Translation, at {0:.2f}% completion'.format(float(bigTrans)/float(bigTotal)*100))
+        for i in range(1, Globals.configData.TranslationStagesCount + 1):
+            self.setWindowTitle('Current Phase: ' + Globals.configData.TranslationStagesNames[i] + ', at {0:.2f}% completion'.format(float(totalCounts[i])/float(totalCounts[0])*100))
+            if totalCounts[0] != totalCounts[i]:
+                break
 
     def JumpToFile(self, item, column):
         if item.childCount() > 0:
