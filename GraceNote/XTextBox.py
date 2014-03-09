@@ -27,10 +27,7 @@ class XTextBox(QtGui.QTextEdit):
         self.Jpcur = self.Jpcon.cursor()
         self.modified = False
         
-        self.one = False
-        self.two = False
-        self.three = False
-        self.four = False
+        self.currentlySetStatus = 0
 
         self.buttons = []
 
@@ -42,53 +39,39 @@ class XTextBox(QtGui.QTextEdit):
             Phonon.createPath(self.player, self.audioOutput)
 
         if HUD == None:
-            self.translate = QtGui.QToolButton()
-            self.translate.setAutoRaise(True)
-            self.translate.setIcon(QtGui.QIcon('icons/status/1.png'))
+            self.StatusButtons = {}
+            for i in range( 1, Globals.configData.TranslationStagesCount + 1 ):
+                button = QtGui.QToolButton()
+                button.setAutoRaise(True)
+                button.setIcon(QtGui.QIcon('icons/status/{0}.png'.format(i)))
+                self.StatusButtons[i] = button
     
-            self.tlCheck = QtGui.QToolButton()
-            self.tlCheck.setAutoRaise(True)
-            self.tlCheck.setIcon(QtGui.QIcon('icons/status/2.png'))
-    
-            self.rewrite = QtGui.QToolButton()
-            self.rewrite.setAutoRaise(True)
-            self.rewrite.setIcon(QtGui.QIcon('icons/status/3.png'))
-    
-            self.grammar = QtGui.QToolButton()
-            self.grammar.setAutoRaise(True)
-            self.grammar.setIcon(QtGui.QIcon('icons/status/4.png'))
-
-            self.button = QtGui.QToolButton()
-            self.button.setIcon(self.style().standardIcon(QtGui.QStyle.SP_MediaPlay))
-            self.button.setAutoRaise(True)
-            self.button.released.connect(self.playAudioNormal)
-            self.button.hide()
-            self.buttonAlt = QtGui.QToolButton()
-            self.buttonAlt.setIcon(self.style().standardIcon(QtGui.QStyle.SP_MediaPlay))
-            self.buttonAlt.setAutoRaise(True)
-            self.buttonAlt.released.connect(self.playAudioAlt)
-            self.buttonAlt.hide()
+            self.AudioButtonJpn = QtGui.QToolButton()
+            self.AudioButtonJpn.setIcon(self.style().standardIcon(QtGui.QStyle.SP_MediaPlay))
+            self.AudioButtonJpn.setAutoRaise(True)
+            self.AudioButtonJpn.released.connect(self.playAudioJpn)
+            self.AudioButtonJpn.hide()
+            self.AudioButtonEng = QtGui.QToolButton()
+            self.AudioButtonEng.setIcon(self.style().standardIcon(QtGui.QStyle.SP_MediaPlay))
+            self.AudioButtonEng.setAutoRaise(True)
+            self.AudioButtonEng.released.connect(self.playAudioEng)
+            self.AudioButtonEng.hide()
 
             topLayout = QtGui.QHBoxLayout()
 
             layout = HUDLayout()
-            layout.addWidget(self.grammar)
-            layout.addWidget(self.rewrite)
-            layout.addWidget(self.tlCheck)
-            layout.addWidget(self.translate)
-            layout.addWidget(self.buttonAlt)
-            layout.addWidget(self.button)
+            for i in range( Globals.configData.TranslationStagesCount, 0, -1 ):
+                layout.addWidget(self.StatusButtons[i])
+            layout.addWidget(self.AudioButtonEng)
+            layout.addWidget(self.AudioButtonJpn)
             
             topLayout.setMargin(0)
             topLayout.addLayout(layout)
             self.setLayout(topLayout)
 
             if not self.readOnly:
-                self.translate.released.connect(self.transTogglem)
-                self.tlCheck.released.connect(self.checkTogglem)
-                self.rewrite.released.connect(self.rewriteTogglem)
-                self.grammar.released.connect(self.grammarTogglem)
-
+                for i in range( 1, Globals.configData.TranslationStagesCount + 1 ):
+                    self.StatusButtons[i].released.connect(self.ToggleStatusButtonClosure(i))
 
         elif HUD == 'jp' or HUD == 'com':
             self.jpflag = QtGui.QToolButton()
@@ -100,8 +83,6 @@ class XTextBox(QtGui.QTextEdit):
             layout.addWidget(self.jpflag)
             self.setLayout(layout)
 
-            #if not self.readOnly:
-            #    self.jpflag.released.connect(self.flagToggle)
             self.role = 1
 
             if HUD == 'com':
@@ -142,15 +123,15 @@ class XTextBox(QtGui.QTextEdit):
     
     def makePlaybackButtons(self, clipList):
         self.audioClips = clipList
-        self.button.show()
+        self.AudioButtonJpn.show()
         # only display the second button if there are actually two different voice clips
         if not ( Globals.configData.VoicePathEnPrefix == Globals.configData.VoicePathJpPrefix and Globals.configData.VoicePathEnPostfix == Globals.configData.VoicePathJpPostfix ):
-            self.buttonAlt.show()
+            self.AudioButtonEng.show()
                 
     def clearPlaybackButtons(self):
         self.audioClips = []
-        self.button.hide()
-        self.buttonAlt.hide()
+        self.AudioButtonJpn.hide()
+        self.AudioButtonEng.hide()
 
                         
     def lookupAudioHash(self, name, forceAlternateLanguage):
@@ -181,9 +162,9 @@ class XTextBox(QtGui.QTextEdit):
             return Globals.configData.VoicePathEnPrefix + filename + Globals.configData.VoicePathEnPostfix
         return Globals.configData.VoicePathJpPrefix + filename + Globals.configData.VoicePathJpPostfix
 
-    def playAudioNormal(self):
+    def playAudioJpn(self):
         self.playAudio(self.audioClips, False)
-    def playAudioAlt(self):
+    def playAudioEng(self):
         self.playAudio(self.audioClips, True)
 
     def playAudio(self, clips, forceAlternateLanguage):
@@ -451,82 +432,26 @@ class XTextBox(QtGui.QTextEdit):
             cursor.endEditBlock()
 
 
-    def transTogglem(self):
-        if not self.readOnly:
-            if not self.one:
-                self.translate.setIcon(QtGui.QIcon('icons/status/1g.png'))
-                self.one = True
-                self.manualEdit.emit(1, self, self.footer)
-            else:
-                self.translate.setIcon(QtGui.QIcon('icons/status/1.png'))
-                self.one = False
-                self.manualEdit.emit(0, self, self.footer)
 
-            
-    def checkTogglem(self):
-        if not self.readOnly:
-            if not self.two:
-                self.tlCheck.setIcon(QtGui.QIcon('icons/status/2g.png'))
-                self.two = True
-                self.manualEdit.emit(2, self, self.footer)
-            else:
-                self.tlCheck.setIcon(QtGui.QIcon('icons/status/2.png'))
-                self.two = False
-                self.manualEdit.emit(1, self, self.footer)
-
-
-    def rewriteTogglem(self):
-        if not self.readOnly:
-            if not self.three:
-                self.rewrite.setIcon(QtGui.QIcon('icons/status/3g.png'))
-                self.three = True
-                self.manualEdit.emit(3, self, self.footer)
-            else:
-                self.rewrite.setIcon(QtGui.QIcon('icons/status/3.png'))
-                self.three = False
-                self.manualEdit.emit(2, self, self.footer)
-
-
-    def grammarTogglem(self):
-        if not self.readOnly:
-            if not self.four:
-                self.grammar.setIcon(QtGui.QIcon('icons/status/4g.png'))
-                self.four = True
-                self.manualEdit.emit(4, self, self.footer)
-            else:
-                self.grammar.setIcon(QtGui.QIcon('icons/status/4.png'))
-                self.four = False
-                self.manualEdit.emit(3, self, self.footer)
-
-
+    def ToggleStatusButtonClosure(self, status):
+        def callFunc():
+            if not self.readOnly:
+                if self.currentlySetStatus != status:
+                    self.StatusButtons[status].setIcon(QtGui.QIcon('icons/status/{0}g.png'.format(status)))
+                    self.currentlySetStatus = status
+                    self.manualEdit.emit(status, self, self.footer)
+                else:
+                    self.StatusButtons[status].setIcon(QtGui.QIcon('icons/status/{0}.png'.format(status)))
+                    self.currentlySetStatus = status - 1
+                    self.manualEdit.emit(status - 1, self, self.footer)
+        return callFunc
 
     def iconToggle(self, icon):
-        self.translate.setIcon(QtGui.QIcon('icons/status/1.png'))
-        self.tlCheck.setIcon(QtGui.QIcon('icons/status/2.png'))
-        self.rewrite.setIcon(QtGui.QIcon('icons/status/3.png'))
-        self.grammar.setIcon(QtGui.QIcon('icons/status/4.png'))
-
-        self.one = False
-        self.two = False
-        self.three = False
-        self.four = False
-    
-        if icon >= 1:
-            self.translate.setIcon(QtGui.QIcon('icons/status/1g.png'))
-            self.one = True
-            
-            if icon >= 2:
-                self.tlCheck.setIcon(QtGui.QIcon('icons/status/2g.png'))
-                self.two = True
-                
-                if icon >= 3:
-                    self.rewrite.setIcon(QtGui.QIcon('icons/status/3g.png'))
-                    self.three = True
-                    
-                    if icon == 4:
-                        self.grammar.setIcon(QtGui.QIcon('icons/status/4g.png'))
-                        self.four = True
-
+        for i in range( 1, Globals.configData.TranslationStagesCount + 1 ):
+            self.StatusButtons[i].setIcon(QtGui.QIcon('icons/status/{0}.png'.format(i)))
+        for i in range( 1, icon + 1 ):
+            self.StatusButtons[i].setIcon(QtGui.QIcon('icons/status/{0}g.png'.format(i)))
+        self.currentlySetStatus = icon
 
     def flagToggle(self):
         if self.readOnly:
