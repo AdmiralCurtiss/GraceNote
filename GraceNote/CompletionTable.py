@@ -17,15 +17,17 @@ class CompletionTable(QtGui.QDialog):
 
         self.treewidget = QtGui.QTreeWidget()
         
-        self.treewidget.setColumnCount(6)
-        self.treewidget.setHeaderLabels(['Name', 'Translation', 'Editing 1', 'Editing 2', 'Editing 3', 'Comments'])
+        self.treewidget.setColumnCount( Globals.configData.TranslationStagesCount + 2 )
+        labels = ['Name']
+        for i in range(1, Globals.configData.TranslationStagesCount + 1):
+            labels.append( Globals.configData.TranslationStagesNames[i] )
+        labels.append( 'Comments' )
+        self.treewidget.setHeaderLabels(labels)
         self.treewidget.setSortingEnabled(True)
         
         self.treewidget.setColumnWidth(0, 200)
-        self.treewidget.setColumnWidth(1, 150)
-        self.treewidget.setColumnWidth(2, 150)
-        self.treewidget.setColumnWidth(3, 150)
-        self.treewidget.setColumnWidth(4, 150)
+        for i in range(1, Globals.configData.TranslationStagesCount + 1):
+            self.treewidget.setColumnWidth(i, 140)
         
         self.treewidget.setMinimumSize(620, 500)
 
@@ -35,13 +37,14 @@ class CompletionTable(QtGui.QDialog):
 
         self.treewidget.itemDoubleClicked.connect(self.JumpToFile)
 
-        progress = QtGui.QProgressDialog("Calculating percentages...", "Abort", 0, len(os.listdir(Globals.configData.LocalDatabasePath))+1)
+        progressMax = len(os.listdir(Globals.configData.LocalDatabasePath))+1
+        progress = QtGui.QProgressDialog("Calculating percentages...", "Abort", 0, progressMax)
         progress.setWindowModality(QtCore.Qt.WindowModal)
 
         bigTotal = 0
         bigTrans = 0
 
-        i = 1
+        aListCounter = 1
         aList = Globals.configData.FileList
             
             
@@ -50,65 +53,62 @@ class CompletionTable(QtGui.QDialog):
             
         for item in aList[0]:
                         
-            cat = QtGui.QTreeWidgetItem(self.treewidget, [item, '-', '-', '-', '-', '-'])
+            cat = QtGui.QTreeWidgetItem(self.treewidget, [item])
             
-            catTotalDB = 0
-            catTrans = 0
-            catTlCheck = 0
-            catRewrite = 0
-            catGrammar = 0
-            catTotalComments = 0
+            categoryCounts = []
+            for i in range(0, Globals.configData.TranslationStagesCount + 1):
+                categoryCounts.append(0)
+            categoryCommentCount = 0
             
-            for item in aList[i]:                
+            for item in aList[aListCounter]:                
                 try:
-                    CalculateCompletionForDatabase(item)
-                    tempCur.execute("SELECT entries, translation, editing1, editing2, editing3, comments FROM Percentages WHERE Database = ?", [item])
+                    # TODO: not a good way to handle the non-existance of data, fix that
+                    tempCur.execute("SELECT type, amount FROM StatusData WHERE Database = ?", [item])
                 except:
                     CalculateCompletionForDatabase(item)
-                    tempCur.execute("SELECT entries, translation, editing1, editing2, editing3, comments FROM Percentages WHERE Database = ?", [item])
+                    tempCur.execute("SELECT type, amount FROM StatusData WHERE Database = ?", [item])
                 rows = tempCur.fetchall()
-                totalDB = rows[0][0]
-                translated = rows[0][1]
-                tlCheck = rows[0][2]
-                rewrite = rows[0][3]
-                grammar = rows[0][4]
-                commentamount = rows[0][5]
-                    
-                catTotalDB += totalDB
-                catTotalComments += commentamount
-                catTrans += translated
-                catTlCheck += tlCheck
-                catRewrite += rewrite
-                catGrammar += grammar
 
-                if totalDB != 0:
-                    translationPercent = '{0:06.2f}% ({1:04d}/{2:04d})'.format(float(translated)/float(totalDB)*100, translated, totalDB)
-                    tlCheckPercent = '{0:06.2f}% ({1:04d}/{2:04d})'.format(float(tlCheck)/float(totalDB)*100, tlCheck, totalDB)
-                    rewritePercent = '{0:06.2f}% ({1:04d}/{2:04d})'.format(float(rewrite)/float(totalDB)*100, rewrite, totalDB)
-                    grammarPercent = '{0:06.2f}% ({1:04d}/{2:04d})'.format(float(grammar)/float(totalDB)*100, grammar, totalDB)
-                else:
-                    translationPercent = 'N/A'
-                    tlCheckPercent = 'N/A'
-                    rewritePercent = 'N/A'
-                    grammarPercent = 'N/A'
+                databaseCounts = {}
+                for row in rows:
+                    type = row[0]
+                    count = row[1]
+                    databaseCounts[type] = count
+
+                for i in range(0, Globals.configData.TranslationStagesCount + 1):
+                    categoryCounts[i] += databaseCounts[i]
                     
-                newrow = QtGui.QTreeWidgetItem(cat, [item, translationPercent, tlCheckPercent, rewritePercent, grammarPercent, '{0}'.format(commentamount)])
+                commentamount = databaseCounts[-2]
+                categoryCommentCount += commentamount
+
+                databaseCountStrings = []
+                if databaseCounts[0] != 0:
+                    for i in range(1, Globals.configData.TranslationStagesCount + 1):
+                        databaseCountStrings.append( '{0:06.2f}% ({1:04d}/{2:04d})'.format(float(databaseCounts[i])/float(databaseCounts[0])*100, databaseCounts[i], databaseCounts[0]) )
+                else:
+                    for i in range(0, Globals.configData.TranslationStagesCount):
+                        databaseCountStrings.append('N/A')
+                   
+                rowdata = [item]
+                for s in databaseCountStrings:
+                    rowdata.append(s)
+                rowdata.append('{0}'.format(commentamount))
+
+                newrow = QtGui.QTreeWidgetItem(cat, rowdata)
                     
                 progress.setValue(progress.value() + 1)
     
-            cat.setData(1, 0, '{0:06.2f}% ({1:06d}/{2:06d})'.format(float(catTrans)/float(catTotalDB)*100, catTrans, catTotalDB))
-            cat.setData(2, 0, '{0:06.2f}% ({1:06d}/{2:06d})'.format(float(catTlCheck)/float(catTotalDB)*100, catTlCheck, catTotalDB))
-            cat.setData(3, 0, '{0:06.2f}% ({1:06d}/{2:06d})'.format(float(catRewrite)/float(catTotalDB)*100, catRewrite, catTotalDB)) 
-            cat.setData(4, 0, '{0:06.2f}% ({1:06d}/{2:06d})'.format(float(catGrammar)/float(catTotalDB)*100, catGrammar, catTotalDB))
-            cat.setData(5, 0, '{0}'.format(catTotalComments))
+            for i in range(1, Globals.configData.TranslationStagesCount + 1):
+                cat.setData(i, 0, '{0:06.2f}% ({1:06d}/{2:06d})'.format(float(categoryCounts[i])/float(categoryCounts[0])*100, categoryCounts[i], categoryCounts[0]))
+            cat.setData(i+1, 0, '{0}'.format(categoryCommentCount))
             
-            bigTotal += catTotalDB
-            bigTrans += catTrans           
+            bigTotal += categoryCounts[0]
+            bigTrans += categoryCounts[1]           
                 
-            i = i + 1
+            aListCounter = aListCounter + 1
 
         self.treewidget.sortItems(0, 1)
-        progress.setValue(len(os.listdir(Globals.configData.LocalDatabasePath))+1)
+        progress.setValue(progressMax)
         
         
         geom = Globals.Settings.value('Geometry/CompletionTable')
