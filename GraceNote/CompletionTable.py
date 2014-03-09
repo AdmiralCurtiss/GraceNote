@@ -61,6 +61,7 @@ class CompletionTable(QtGui.QDialog):
             
             for item in aList[i]:                
                 try:
+                    CalculateCompletionForDatabase(item)
                     tempCur.execute("SELECT entries, translation, editing1, editing2, editing3, comments FROM Percentages WHERE Database = ?", [item])
                 except:
                     CalculateCompletionForDatabase(item)
@@ -138,38 +139,32 @@ def CalculateCompletionForDatabase(database):
     
     Globals.Cache.databaseAccessRLock.acquire()
 
-    tempCon = DatabaseHandler.OpenEntryDatabase(database)
-    tempCur = tempCon.cursor()
-    
-    tempCur.execute("SELECT Count(1) from Text where status>=0")
-    totalDB = tempCur.fetchall()[0][0]
+    CompletionConnection, CompletionCursor = DatabaseHandler.GetCompletionPercentageConnectionAndCursor()
+    DatabaseConnection = DatabaseHandler.OpenEntryDatabase(database)
+    DatabaseCursor = DatabaseConnection.cursor()
 
-    tempCur.execute("SELECT Count(1) from Text where status>=1")
-    translated = tempCur.fetchall()[0][0]
+    for i in range(0, Globals.configData.TranslationStagesCount + 1):
+        DatabaseCursor.execute('SELECT Count(1) FROM Text WHERE status >= {0}'.format(i))
+        count = DatabaseCursor.fetchall()[0][0]
 
-    tempCur.execute("SELECT Count(1) from Text where status>=2")
-    tlCheck = tempCur.fetchall()[0][0]
+        CompletionCursor.execute("SELECT Count(1) FROM StatusData WHERE database = ? AND type = ?", [database, i])
+        exists = CompletionCursor.fetchall()[0][0]
+        if exists > 0:
+            CompletionCursor.execute("UPDATE StatusData SET amount = ? WHERE database = ? AND type = ?", [count, database, i])
+        else:
+            CompletionCursor.execute("INSERT INTO StatusData (database, type, amount) VALUES (?, ?, ?)", [database, i, count])
 
-    tempCur.execute("SELECT Count(1) from Text where status>=3")
-    rewrite = tempCur.fetchall()[0][0]
+    DatabaseCursor.execute("SELECT Count(1) FROM Text WHERE comment != ''")
+    count = DatabaseCursor.fetchall()[0][0]
 
-    tempCur.execute("SELECT Count(1) from Text where status>=4")
-    grammar = tempCur.fetchall()[0][0]
-
-    tempCur.execute("SELECT Count(1) FROM Text WHERE comment != ''")
-    commentAmount = tempCur.fetchall()[0][0]
-    
-    tempCon = sqlite3.connect(Globals.configData.LocalDatabasePath + '/CompletionPercentage')
-    tempCur = tempCon.cursor()
-    
-    tempCur.execute("SELECT Count(1) FROM Percentages WHERE Database = ?", [database])
-    exists = tempCur.fetchall()[0][0]
-    
+    CompletionCursor.execute("SELECT Count(1) FROM StatusData WHERE database = ? AND type = -2", [database])
+    exists = CompletionCursor.fetchall()[0][0]
     if exists > 0:
-        tempCur.execute("UPDATE Percentages SET entries = ?, translation = ?, editing1 = ?, editing2 = ?, editing3 = ?, comments = ? WHERE Database = ?", [totalDB, translated, tlCheck, rewrite, grammar, commentAmount, database])
+        CompletionCursor.execute("UPDATE StatusData SET amount = ? WHERE database = ? AND type = -2", [count, database])
     else:
-        tempCur.execute("INSERT INTO Percentages (entries, translation, editing1, editing2, editing3, comments, Database) VALUES (?, ?, ?, ?, ?, ?, ?)", [totalDB, translated, tlCheck, rewrite, grammar, commentAmount, database])
-    tempCon.commit()
+        CompletionCursor.execute("INSERT INTO StatusData (database, type, amount) VALUES (?, -2, ?)", [database, count])
+    
+    CompletionConnection.commit()
 
     Globals.Cache.databaseAccessRLock.release()
 

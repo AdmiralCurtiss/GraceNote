@@ -82,7 +82,6 @@ def MergeDatabaseWithServerVersionBeforeUpload(LocalMergeCur, RemoteMergeCur):
                                (item[1], item[2], item[3], item[4], item[5], item[0]))
 
         # 3) Sync Histories into Server History
-        # TODO: TEST IF THIS WORKS AS EXPECTED
         LocalMergeCur.execute(u'SELECT english, comment, status, UpdatedBy, UpdatedTimestamp FROM History WHERE ID=?', (item[0],))
         LocalHistory = set(LocalMergeCur.fetchall())
         RemoteMergeCur.execute(u'SELECT english, comment, status, UpdatedBy, UpdatedTimestamp FROM History WHERE ID=?', (item[0],))
@@ -95,3 +94,15 @@ def MergeDatabaseWithServerVersionBeforeUpload(LocalMergeCur, RemoteMergeCur):
     # 4) File is ready for upload
     return
 
+def GetCompletionPercentageConnectionAndCursor():
+    connection = sqlite3.connect(Globals.configData.LocalDatabasePath + '/CompletionPercentage')
+    cursor = connection.cursor()
+    
+    # create tables if they don't exist
+    cursor.execute("SELECT Count(1) FROM sqlite_master WHERE type='table' AND name='StatusData'")
+    exists = cursor.fetchall()[0][0]
+    if not exists:
+        # type == 0 -> non-debug linecount, type == -2 -> comment count, otherwise type == status
+        cursor.execute("CREATE TABLE StatusData(database TEXT, type INT, amount INT, PRIMARY KEY (database, type))")
+        connection.commit()
+    return connection, cursor

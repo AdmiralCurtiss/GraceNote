@@ -75,13 +75,6 @@ def SetupEnvironment():
     else:
         Globals.HashTableExists = False
 
-    # create CompletionPercentage if it doesn't exist
-    if not os.path.exists(Globals.configData.LocalDatabasePath + '/CompletionPercentage'):
-        CreateConnection = sqlite3.connect(Globals.configData.LocalDatabasePath + '/CompletionPercentage')
-        CreateCursor = CreateConnection.cursor()
-        CreateCursor.execute("CREATE TABLE Percentages (Database TEXT PRIMARY KEY, entries INT, translation INT, editing1 INT, editing2 INT, editing3 INT, comments INT)")
-        CreateConnection.commit()
-
     try:
         import enchant
         Globals.enchanted = True
@@ -1107,8 +1100,7 @@ class Scripts2(QtGui.QWidget):
         
         self.databaseTreeModel.clear()
         
-        PercentageConnection = sqlite3.connect(Globals.configData.LocalDatabasePath + "/CompletionPercentage")
-        PercentageCursor = PercentageConnection.cursor()
+        PercentageConnection, PercentageCursor = DatabaseHandler.GetCompletionPercentageConnectionAndCursor()
         
         i = 1
         for item in FileList[0]:
@@ -1128,44 +1120,40 @@ class Scripts2(QtGui.QWidget):
 
     def FormatDatabaseListItem(self, databaseName, treeItem, PercentageCursor = None):
         if PercentageCursor is None:
-            PercentageConnection = sqlite3.connect(Globals.configData.LocalDatabasePath + "/CompletionPercentage")
-            PercentageCursor = PercentageConnection.cursor()
+            PercentageConnection, PercentageCursor = DatabaseHandler.GetCompletionPercentageConnectionAndCursor()
 
         treeItem.setText(Globals.GetDatabaseDescriptionString(databaseName))
-        PercentageCursor.execute("SELECT Count(1) FROM Percentages WHERE Database = ?", [databaseName])
+        PercentageCursor.execute("SELECT Count(1) FROM StatusData WHERE Database = ?", [databaseName])
         exists = PercentageCursor.fetchall()[0][0]
         if exists > 0:
-            PercentageCursor.execute("SELECT entries, translation, editing1, editing2, editing3, comments FROM Percentages WHERE Database = ?", [databaseName])
+            PercentageCursor.execute("SELECT type, amount FROM StatusData WHERE Database = ?", [databaseName])
             rows = PercentageCursor.fetchall()
-            totalDB = rows[0][0]
-            translated = rows[0][self.role]
-            phase1 = rows[0][1]
-            phase2 = rows[0][2]
-            phase3 = rows[0][3]
-            phase4 = rows[0][4]
-            commentAmount = rows[0][5]
+
+            # type == 0 -> non-debug linecount, type == -2 -> comment count, otherwise type == status
+            data = {}
+            for row in rows:
+                type = row[0]
+                data[type] = row[1]
+
+            linecountTotal = data[0]
+            linecountCurrentStage = data[self.role]
+            commentAmount = rows[-2]
                     
-            if translated >= totalDB:
+            if linecountCurrentStage >= linecountTotal:
                 treeItem.setBackground(QtGui.QBrush( Globals.ColorCurrentStatus ));
             else:
                 treeItem.setBackground(QtGui.QBrush( Globals.ColorLowerStatus ));
-                    
+
+            # figure out the minimum status of all entries in the DB
             dbPhase = 0
-            if totalDB == phase1:
-                if totalDB == phase2:
-                    if totalDB == phase3:
-                        if totalDB == phase4:
-                            dbPhase = dbPhase + 1
-                        dbPhase = dbPhase + 1
-                    dbPhase = dbPhase + 1
-                dbPhase = dbPhase + 1
-                        
+            for i in range(1, Globals.configData.TranslationStagesCount + 1):
+                if linecountTotal == data[i]:
+                    dbPhase += 1
+
             if commentAmount > 0:
                 treeItem.setText('[' + str(dbPhase) + 'C] ' + treeItem.text())
             else:
                 treeItem.setText('[' + str(dbPhase) + '] ' + treeItem.text())
-        # color/comments end
-                
         return
 
     def FormatEntryListItemColor(self, item, status):
