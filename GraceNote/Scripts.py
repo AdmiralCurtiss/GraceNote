@@ -1285,12 +1285,12 @@ class Scripts2(QtGui.QWidget):
             # change database entry status if it mismatches the GracesJapanese Debug status
             if TempStatus != -1 and TempDebug == 1: # GracesJapanese says Debug, change DB to match
                 Globals.MainWindow.displayStatusMessage("Setting status of " + databasefilename + ", Entry " + str(TempID) + " to Debug (StringID: " + str(TempList[i][1]) + ")")
-                SaveCur.execute("UPDATE Text SET status=-1 WHERE ID=?", (TempID,))
+                SaveCur.execute("UPDATE Text SET status=-1, updated=1 WHERE ID=?", (TempID,))
                 SaveCon.commit()
                 TempStatus = -1
             elif TempStatus == -1 and TempDebug == 0: # Graces Japanese says not Debug, change DB to match
                 Globals.MainWindow.displayStatusMessage("Setting status of " + databasefilename + ", Entry " + str(TempID) + " to Not Debug (StringID: " + str(TempList[i][1]) + ")")
-                SaveCur.execute("UPDATE Text SET status=0 WHERE ID=?", (TempID,))
+                SaveCur.execute("UPDATE Text SET status=0, updated=1 WHERE ID=?", (TempID,))
                 SaveCon.commit()
                 TempStatus = 0
 

@@ -36,11 +36,11 @@ class MainWindow(QtGui.QMainWindow):
         statusBar = QtGui.QStatusBar()
         self.setStatusBar(statusBar)
         self.displayStatusMessageSignal.connect(statusBar.showMessage)
-        #self.displayStatusMessage("hi!")
 
         self.restoreStateAndGeometry()
 
     def displayStatusMessage(self, message):
+        # print message ## don't do this, leads to threading issues with the current log implementation
         self.displayStatusMessageSignal.emit(message)
 
     def restoreStateAndGeometry(self):
