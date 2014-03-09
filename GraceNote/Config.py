@@ -31,6 +31,14 @@ class Configuration:
     VoiceEntryOffset = 0
 
     TranslationStagesCount = 4
+    TranslationStagesNames = ['Nothing [0]', 'Translation [1]', 'Translation Review [2]', 'Contextual Review [3]', 'Editing [4]', 'Editing [5]', 'Editing [6]', 'Editing [7]', 'Editing [8]', 'Editing [9]']
+    TranslationStagesDescs = [  'Nothing',
+                                '<b>Translation Mode</b>\n\nTranslation mode encompasses the initial phase of translation.',
+                                '<b>Translation Review Mode</b>\n\nTranslation review mode is used for when a second translator reviews an entry.',
+                                '<b>Contextual Review Mode</b>\n\Contextual review mode is reserved for context and localization sensitive rewrites.',
+                                '<b>Editing Mode</b>\n\Editing mode involves a full grammar, structure, phrasing, tone, and consistency check.',
+                                'Editing [5]', 'Editing [6]', 'Editing [7]', 'Editing [8]', 'Editing [9]'
+                              ]
     
     Images = []
     Terms = []

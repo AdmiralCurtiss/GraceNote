@@ -524,27 +524,19 @@ class Scripts2(QtGui.QWidget):
         self.changeToolbarToBelowIconAction = QtGui.QAction('Beneath Icon', None)
         self.changeToolbarToLeftOfIconAction = QtGui.QAction('Beside Icon', None)
 
-        self.setTranslationRole1Action = QtGui.QAction(QtGui.QIcon('icons/status/1g.png'), 'Translation', None)
-        self.setTranslationRole1Action.setToolTip('<b>Translation Mode</b>\n\nTranslation mode encompasses the initial phase of translation.')
-        self.setTranslationRole1Action.setShortcut(QtGui.QKeySequence('Ctrl-Shift-1'))
+        self.setTranslationRoleActions = []
+        for i in range( 1, Globals.configData.TranslationStagesCount + 1 ):
+            action = QtGui.QAction(QtGui.QIcon('icons/status/{0}g.png'.format(i)), Globals.configData.TranslationStagesNames[i], None)
+            action.setToolTip( Globals.configData.TranslationStagesDescs[i] )
+            action.setShortcut(QtGui.QKeySequence('Ctrl-Shift-{0}'.format(i)))
+            self.setTranslationRoleActions.append( action )
 
-        self.setTranslationRole2Action = QtGui.QAction(QtGui.QIcon('icons/status/2g.png'), 'Translation Review', None)
-        self.setTranslationRole2Action.setToolTip('<b>Translation Review Mode</b>\n\nTranslation review mode is used for when a second translator reviews an entry.')
-        self.setTranslationRole2Action.setShortcut(QtGui.QKeySequence('Ctrl-Shift-2'))
-
-        self.setTranslationRole3Action = QtGui.QAction(QtGui.QIcon('icons/status/3g.png'), 'Contextual Review', None)
-        self.setTranslationRole3Action.setToolTip('<b>Contextual Review Mode</b>\n\Contextual review mode is reserved for context and localization sensitive rewrites.')
-        self.setTranslationRole3Action.setShortcut(QtGui.QKeySequence('Ctrl-Shift-3'))
-
-        self.setTranslationRole4Action = QtGui.QAction(QtGui.QIcon('icons/status/4g.png'), 'Editing', None)
-        self.setTranslationRole4Action.setToolTip('<b>Editing Mode</b>\n\Editing mode involves a full grammar, structure, phrasing, tone, and consistency check.')
-        self.setTranslationRole4Action.setShortcut(QtGui.QKeySequence('Ctrl-Shift-4'))
-
-        self.setAutoThreshold0Action = QtGui.QAction(QtGui.QIcon('icons/status/1.png'), 'None', None)
-        self.setAutoThreshold1Action = QtGui.QAction(QtGui.QIcon('icons/status/1g.png'), 'Translation', None)
-        self.setAutoThreshold2Action = QtGui.QAction(QtGui.QIcon('icons/status/2g.png'), 'Translation Review', None)
-        self.setAutoThreshold3Action = QtGui.QAction(QtGui.QIcon('icons/status/3g.png'), 'Contextual Review', None)
-
+        self.setAutoThresholdActions = []
+        action = QtGui.QAction(QtGui.QIcon('icons/status/1.png'), Globals.configData.TranslationStagesNames[0], None)
+        self.setAutoThresholdActions.append( action )
+        for i in range( 1, Globals.configData.TranslationStagesCount ):
+            action = QtGui.QAction(QtGui.QIcon('icons/status/{0}g.png'.format(i)), Globals.configData.TranslationStagesNames[i], None)
+            self.setAutoThresholdActions.append( action )
 
         self.openOptionsWindowAction = QtGui.QAction('Preferences...', None)
         self.openOptionsWindowAction.triggered.connect(self.OpenOptionsWindow)
@@ -593,16 +585,12 @@ class Scripts2(QtGui.QWidget):
         disabledMenuOptionSetThreshold.setEnabled(False)
         
         roleMenu.addAction(disabledMenuOptionSetRole)
-        roleMenu.addAction(self.setTranslationRole1Action)
-        roleMenu.addAction(self.setTranslationRole2Action)
-        roleMenu.addAction(self.setTranslationRole3Action)
-        roleMenu.addAction(self.setTranslationRole4Action)
+        for action in self.setTranslationRoleActions:
+            roleMenu.addAction( action )
         roleMenu.addSeparator()
         roleMenu.addAction(disabledMenuOptionSetThreshold)
-        roleMenu.addAction(self.setAutoThreshold0Action)
-        roleMenu.addAction(self.setAutoThreshold1Action)
-        roleMenu.addAction(self.setAutoThreshold2Action)
-        roleMenu.addAction(self.setAutoThreshold3Action)
+        for action in self.setAutoThresholdActions:
+            roleMenu.addAction( action )
 
         roleMenu.triggered.connect(self.SetTranslationRole)
 
@@ -960,23 +948,15 @@ class Scripts2(QtGui.QWidget):
 
 
     def SetTranslationRole(self, action):
-        if action == self.setTranslationRole1Action:
-            self.role = 1
-        if action == self.setTranslationRole2Action:
-            self.role = 2
-        if action == self.setTranslationRole3Action:
-            self.role = 3
-        if action == self.setTranslationRole4Action:
-            self.role = 4
+        for i, act in enumerate( self.setTranslationRoleActions ):
+            if action == act:
+                self.role = i + 1
+                break
 
-        if action == self.setAutoThreshold0Action:
-            self.autoThreshold = 0
-        if action == self.setAutoThreshold1Action:
-            self.autoThreshold = 1
-        if action == self.setAutoThreshold2Action:
-            self.autoThreshold = 2
-        if action == self.setAutoThreshold3Action:
-            self.autoThreshold = 3
+        for i, act in enumerate( self.setAutoThresholdActions ):
+            if action == act:
+                self.autoThreshold = i
+                break
 
         try:
             Globals.Settings.setValue('role', int(self.role))
