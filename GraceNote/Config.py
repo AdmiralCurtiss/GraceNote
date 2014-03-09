@@ -30,7 +30,7 @@ class Configuration:
     VoicePathEnPostfix = ''
     VoiceEntryOffset = 0
 
-    TranslationStagesCount = 9
+    TranslationStagesCount = 4
     TranslationStagesNames = ['None [0]', 'Translation [1]', 'Translation Review [2]', 'Contextual Review [3]', 'Editing [4]', 'Editing [5]', 'Editing [6]', 'Editing [7]', 'Editing [8]', 'Editing [9]']
     TranslationStagesVerbs = ['Doing Nothing', 'Translating', 'Reviewing Translations', 'Reviewing Context', 'Editing [4]', 'Editing [5]', 'Editing [6]', 'Editing [7]', 'Editing [8]', 'Editing [9]']
     TranslationStagesDescs = [  'None',
@@ -78,6 +78,11 @@ class Configuration:
             self.UseGracesVoiceHash = True
         else:
             self.UseGracesVoiceHash = False
+
+        try:
+            self.TranslationStagesCount = int(mainNode.getAttribute('TranslationStagesCount'))
+        except:
+            self.TranslationStagesCount = 4
 
         try:
             if mainNode.getAttribute('UseLegacyApostropheSettings') == 'true':
