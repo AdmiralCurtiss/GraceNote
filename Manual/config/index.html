@@ -1,0 +1,172 @@
+﻿<html>
+<head><title>GraceNote - Project Setup</title></head>
+<body>
+
+<h1>Setting up a Project</h1>
+
+<p>A GraceNote project requires:
+<ul>
+	<li>
+		An FTP server. Technically optional, but you won't be able to collaborate with other people without one.<br />
+		Other options to transfer files may be available in the future, but for now, only FTP is supported.
+	</li>
+	<li>SQLite database files containing the game's text.</li>
+	<li>A project configuration file.</li>
+</ul>
+
+Optionally, you can also add:
+
+<ul>
+	<li>Audio samples, to play back voice acting.</li>
+	<li>Images, to display character poses or similar.</li>
+	<li>Font images, to display text as it would show up in-game.</li>
+</ul>
+</p>
+
+<h2>Creating the Databases</h2>
+<p>GraceNote's databases are standard <a href="https://sqlite.org">SQLite databases</a>. Their command line utility is good for basic creation of them, but you'll probably want to use a SQLite library for a programming language to actually rip and insert the text. Sample C# code is provided below.</p>
+
+<p>Anyway, to start off, create a database named <code>ChangeLog</code> with the following table:</p>
+
+<pre>
+	CREATE TABLE Log(id INT PRIMARY KEY, file TEXT, name TEXT, timestamp INT);
+</pre>
+
+<p>This is used to store which user made changes to what files when, or in other words which files were changed since the last check and should be updated from the server.</p>
+
+<p>Then, create a SQLite file named <code>GracesJapanese</code> with the following tables:</p>
+
+<pre>
+	CREATE TABLE Japanese(id INT PRIMARY KEY, string TEXT, debug INT);
+	CREATE TABLE descriptions(filename TEXT PRIMARY KEY, shortdesc TEXT, desc TEXT);
+</pre>
+
+<p>This stores the original, unmodified text from the game, and provides a way to change the displayed name of a database within GraceNote without changing the actual database filename.</p>
+
+<p>With these, you can get to the actual text ripping. If you're comfortable with C#, I recommend using my <a href="https://github.com/AdmiralCurtiss/HyoutaTools/tree/master/GraceNote">HyoutaTools</a>' <a href="https://github.com/AdmiralCurtiss/HyoutaTools/blob/master/GraceNote/GraceNoteDatabaseEntry.cs">GraceNoteDatabaseEntry</a> class, filling an array of those with the extracted game text, and using the static InsertSQL method to insert them into database files based on <a href="https://github.com/AdmiralCurtiss/HyoutaTools/blob/master/Files/gndb_template">this database template</a>. For example:</p>
+
+<pre>
+	RandomGameFile GameFile = new RandomGameFile( System.IO.File.ReadAllBytes( "gamefile.arc" ) );
+	System.IO.File.WriteAllBytes( "gamefile.db", Properties.Resources.gndb_template );
+	List<GraceNoteDatabaseEntry> Entries = new List<GraceNoteDatabaseEntry>( GameFile.Strings.Count );
+	foreach ( var x in GameFile.Strings ) {
+		Entries.Add( new GraceNoteDatabaseEntry( x.Text ) );
+	}
+	GraceNoteDatabaseEntry.InsertSQL( Entries.ToArray(), "Data Source=gamefile.db", "Data Source=GracesJapanese" );
+</pre>
+
+<p>If you cannot use the provided template database, create one using the following SQL commands:</p>
+
+<pre>
+	CREATE TABLE History(id INT, english TEXT, comment TEXT, status TINYINT, UpdatedBy TEXT, UpdatedTimestamp INT);
+	CREATE TABLE Text(id INT PRIMARY KEY, StringID INT, english TEXT, comment TEXT, updated TINYINT, status TINYINT, PointerRef integer, IdentifyString TEXT, IdentifyPointerRef INT, UpdatedBy TEXT, UpdatedTimestamp INT);
+	CREATE INDEX History_ID_Index ON History(id);
+</pre>
+
+<p>Some additional info, such as the location of a pointer to the string in the original file, may be needed to reinsert the translated text later. If so, provide them to the GraceNoteDatabaseEntry constructor as PointerRef, IdentifyString or IdentifyPointerRef -- the names are kind of arbitrary, but you can use them as you like. Do note that IdentifyString is displayed within GraceNote next to the entry itself, so it can be used to provide additional info to the translator if possible, such as the name of the person speaking the line.</p>
+
+<p>If the game uses special characters for things like variables or formatting, you should replace them with something more user friendly in this process, then revert that when it comes to reinserting the translated text. For example, if a game uses a 0x06 byte for printing the name of an in-game renamable hero character, replace that with something nicer like '&lt;Hero&gt;'. Pointy brackets are recommended.</p>
+
+<p>As a rule, one game file database should be created for each actual game file. If the game you're working with has lots of entries (several thousand or more) in one file or no logical separation of game text, it might make sense to split it into several game file databases.</p>
+
+<p>If you would rather create those databases using your own code, keep these things in mind:
+<ul>
+<li>Feel free to ignore the History table, it will be used by GraceNote itself. Insert your strings into the Text table.</li>
+<li>Each original language (usually Japanese) entry also needs to be inserted into the GracesJapanese database. For GraceNote's Duplicate Text feature, each original language string should only be inserted once, even if it appears multiple times in the game files.</li>
+<li>The 'id' column of the game file must start at 1 and not skip any number as it goes up.</li>
+<li>The 'StringId' column must reference the 'id' column of the GracesJapanese database's corresponding original language entry.</li>
+<li>The 'comment' column should be, unless some special information to the translator is neccesary, an empty string. It will be visible and editable in GraceNote.</li>
+<li>The 'status' column should be 0.</li>
+<li>You may want to set the UpdatedBy to the name of your ripping tool and the UpdatedTimestamp to the current timestamp (unix time), but it's not necessary.</li>
+</ul>
+</p>
+
+<h2>Creating the Project Configuration File</h2>
+
+<p>Compared to the databases, this is pretty simple. All you need here is some settings and a list of all your databases, and optionally some other game-specific data. Take a look at the <a href="https://github.com/AdmiralCurtiss/GraceNote/blob/master/Projects/config_template.xml">template config file</a> and base yours off that. All the <b>nodes</b> and <i>properties</i> are explained in more detail below.</p>
+
+<h3>The root GraceNoteConfig node</h3>
+
+<p>The root node stores some basic information as properties.
+
+<ul>
+<li><b>GraceNoteConfig</b>
+<ul>
+<li>
+	<i>ID</i><br />
+	The ID should be a unique string naming the project, usually the game's name is fine. It will be used to store and load user info such as your settings and state of the program when you close it.
+</li>
+<li>
+	<i>LocalDatabasePath</i><br />
+	The local path to the project's databases, relative to the config file.
+</li>
+<li>
+	<i>RemoteDatabasePath</i><br />
+	The remote FTP path to the project's databases, relative to the FTP root.
+</li>
+<li><i>FTPServer</i></li><li><i>FTPPort</i></li><li><i>FTPUsername</i></li><li><i>FTPPassword</i><br />
+	Information on how to connect to the FTP. Should be self-explanatory.
+</li>
+<li>
+	<i>TranslationStagesCount</i><br />
+	The amount of available translation stages or statuses. 4 is the default, 9 the maximum.
+</li>
+<li>
+	<i>VoicePathJpPrefix</i></li><li><i>VoicePathJpPostfix</i></li><li><i>VoicePathEnPrefix</i></li><li><i>VoicePathEnPostfix</i><br />
+	Path information for where to find audio files. For example, if the game text contains references to audio files as &lt;Voice: SCE01_001&gt; and the corresponding file sits at GameVoices/JP_SCE01_001_final.mp3, fill the prefix with "GameVoices/JP_" and the postfix with "_final.mp3". Two sets are provided in case both Japanese and English voice acting (or whatever languages, really) exist; if not, just fill both sets with the same paths.
+</li>
+<li>
+	<i>VoiceEntryOffset</i><br />
+	An offset of where to search for an entry's audio clip reference. If the reference is in the same entry as the text, fill with 0; if the reference is one entry above the text, fill with -1; etc.
+</li>
+</ul>
+</li>
+</ul>
+</p>
+<p>All other nodes described below are sub-nodes of this GraceNoteConfig node.</p>
+
+<h3>The Categories node</h3>
+<p>This node contains references to all the game text databases and categorizes them for finding them more easily while editing in GraceNote.
+
+<ul>
+	<li>
+		<b>Categories</b>
+		<ul>
+			<li>
+				<b>Category</b>
+				<ul>
+					<li><i>name</i><br />
+					The name of the Category.
+					</li>
+					<li><b>File</b>
+						<ul>
+							<li><i>name</i><br />
+							The filename of the referenced database.
+							</li>
+							<li><i>desc</i><br />
+							Optional. A string to display within GraceNote instead of the filename.
+							</li>
+						</ul>
+					</li>
+				</ul>
+			</li>
+		</ul>
+	</li>
+</ul>
+</p>
+<p>There is no limit on the number of Category nodes, but each game file database may only be listed once.</p>
+
+<h3>The Dictionary node</h3>
+<p>This node contains words that should be added to the internal dictionary, so that they won't get recognized as misspelled. Use to add game-specific terms, names, and so on.</p>
+
+<h3>The Terms node</h3>
+<p>This allows you to specify substrings in the Japanese text so that GraceNote notifies you whenever a specific term appears in it, as well as an English translation to go along with it. Useful for making sure a specific term is always translated in the same way.</p>
+
+<h3>The Fonts node</h3>
+<p>This allows you to create a font from images, so that you can replicate or at least approximate the in-game look of text. This is very helpful when you have to make sure that text doesn't go offscreen or outside of textboxes, and so on.</p>
+
+<h3>The Images node</h3>
+<p>This allows you to add images to be displayed for specific commands in the text. This can be used, for example, to display character poses in Visual Novel-style conversations and similar.</p>
+
+</body>
+</html>

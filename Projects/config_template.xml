@@ -9,28 +9,59 @@
  FTPUsername="user"
  FTPPassword="pass"
  
- UseGracesVoiceHash="false"
+ TranslationStagesCount="4"
+ 
  VoicePathJpPrefix="ExampleVoices/"
  VoicePathJpPostfix=".mp3"
  VoicePathEnPrefix="ExampleVoices/US_"
  VoicePathEnPostfix=".mp3"
  VoiceEntryOffset="0"
 >
+	<Categories>
+		<Category name="Example Category 1">
+			<File name="ExampleDatabase1" />
+			<File name="ExampleDatabase2" />
+			<File name="ExampleDatabase3" desc="ExampleDescription" />
+		</Category>
+		<Category name="Example Category 2">
+			<File name="ExampleDatabase4" />
+			<File name="ExampleDatabase5" />
+			<File name="ExampleDatabase6" />
+		</Category>
+	</Categories>
 	<Dictionary>
 		<Entry Word="Example" />
 	</Dictionary>
+	<Terms>
+		<Term
+		 JP="ヒョウタ"
+		 EN="Hyouta"
+		/>
+	</Terms>
 	<Fonts>
-		<Replacement old="&lt;Name: EXAMPLE&gt;" new="Example" />
+		<Replacement old="&lt;Name: EX&gt;" new="Example" />
 		<Line style="2" x="700" y="0" color="green" name="Green: Textbox end" />
+		<Formatting Trigger="Col0" Font="default" />
+		<Formatting Trigger="Col1" Font="default" color="orange" />
+		<Formatting Trigger="Col2" Font="default" colorR="223" colorG="186" colorB="248" />
+		<Formatting Trigger="Col3" Font="battle" />
 		<Font name="default">
 			<Image Path="ExampleFont/Font.png">
 				<Glyph char=" " x="0" y="0" width="14" height="32" />
 			</Image>
 		</Font>
+		<Font name="battle">
+			<Image Path="ExampleFont/BattleFont.png">
+				<Glyph char=" " x="0" y="0" width="14" height="32" />
+			</Image>
+		</Font>
 	</Fonts>
-	<Categories>
-		<Category name="Example Category">
-			<File name="ExampleDatabase" />
-		</Category>
-	</Categories>
+	<Images>
+		<Image
+		 Name="VN-style Sprite"
+		 Variable="Sprite"
+		 Path="Sprites/char_{1}_{2}.png"
+		 Offset="-1"
+		/>
+	</Images>
 </GraceNoteConfig>
