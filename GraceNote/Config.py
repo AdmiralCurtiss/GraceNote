@@ -51,6 +51,7 @@ class Configuration:
     Dictionary = []
 
     FileList = []
+    FileDescriptions = {}
     
     def __init__(self, configfilename):
         dom = minidom.parse(configfilename)
@@ -74,9 +75,11 @@ class Configuration:
             self.FTPPort = 21
         self.FTPUsername = mainNode.getAttribute('FTPUsername')
         self.FTPPassword = mainNode.getAttribute('FTPPassword')
-        if mainNode.getAttribute('UseGracesVoiceHash') == 'true':
-            self.UseGracesVoiceHash = True
-        else:
+        
+        try:
+            if mainNode.getAttribute('UseGracesVoiceHash') == 'true':
+                self.UseGracesVoiceHash = True
+        except:
             self.UseGracesVoiceHash = False
 
         try:
@@ -109,16 +112,25 @@ class Configuration:
 
     def LoadFileList(self, mainNode):
         self.FileList = [ [] ]
+        self.FileDescriptions = {}
         categories = mainNode.getElementsByTagName('Categories')[0].getElementsByTagName('Category')
         categorycounter = 0
         for category in categories:
             categorycounter = categorycounter + 1
-            self.FileList[0].append(category.getAttribute('name'))
+            categoryName = category.getAttribute('name')
+            self.FileList[0].append(categoryName)
             files = category.getElementsByTagName('File')
             
             newfiles = []
             for filename in files:
-                newfiles.append(filename.getAttribute('name'))
+                databaseName = filename.getAttribute('name')
+                newfiles.append(databaseName)
+                try:
+                    databaseDescription = filename.getAttribute('desc')
+                    if databaseDescription != '':
+                        self.FileDescriptions[databaseName] = databaseDescription
+                except:
+                    pass
             self.FileList.append(newfiles)
         
     def LoadFont(self, mainNode):

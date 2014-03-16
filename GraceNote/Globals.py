@@ -387,6 +387,9 @@ SubstitutionTable = [
 
 
 def GetDatabaseDescriptionString(filename):
+    if configData.FileDescriptions.has_key(filename):
+        return configData.FileDescriptions[filename]
+
     CursorGracesJapanese.execute("SELECT count(1) FROM descriptions WHERE filename = ?", [filename])
     exists = CursorGracesJapanese.fetchall()[0][0]
     if exists > 0:
