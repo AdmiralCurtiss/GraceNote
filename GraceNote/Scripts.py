@@ -1341,10 +1341,7 @@ class Scripts2(QtGui.QWidget):
                 
             self.text.append([TempENG, TempJPN, TempCOM, TempDebug, TempStatus, TempIdentifyString])
             
-        if containsComments:
-            Globals.commentsAvailableLabel.setText(databasefilename + " | Comments exist!")
-        else:
-            Globals.commentsAvailableLabel.setText(databasefilename)
+        Globals.commentsAvailableLabel.setText(databasefilename)
             
         if self.entrySortFilterProxyModel.rowCount() != 1:
             index = self.entrySortFilterProxyModel.index(1, 0)
@@ -1414,8 +1411,6 @@ class Scripts2(QtGui.QWidget):
                 textEntries3.append( Globals.VariableReplace(self.text[rowBoxes[i]][self.xTextBoxesCOM[i].role]) )
                 textEntries3raw.append( self.text[rowBoxes[i]][self.xTextBoxesCOM[i].role] )
                 commentTexts[i] = self.text[rowBoxes[i]][5] + '     '
-                if self.text[rowBoxes[i]][2] != '':
-                    commentTexts[i] = commentTexts[i] + 'Comment Available'
                 self.xTextBoxesENG[i].iconToggle(self.text[rowBoxes[i]][4])
                 self.xTextBoxesENG[i].currentEntry = rowBoxes[i] + 1
                 self.xTextBoxesJPN[i].currentEntry = rowBoxes[i] + 1
