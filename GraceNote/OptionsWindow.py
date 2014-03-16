@@ -11,7 +11,7 @@ class OptionsWindow(QtGui.QDialog):
         
         self.updateLowerStatusCheckbox = QtGui.QCheckBox('Update Status if current Role is lower than current Status')
         self.enableFooterCheckbox = QtGui.QCheckBox('Enable Footer')
-        self.writeToHddCheckbox = QtGui.QCheckBox('Write entries to HDD every time the displayed entry changes')
+        self.writeToHddCheckbox = QtGui.QCheckBox('Write changes to disk every time the displayed entry changes')
 
         self.applyButton = QtGui.QPushButton('Apply')
         self.cancelButton = QtGui.QPushButton('Cancel')

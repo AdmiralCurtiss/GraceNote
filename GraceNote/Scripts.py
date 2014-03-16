@@ -569,16 +569,25 @@ class Scripts2(QtGui.QWidget):
 
         roleMenu = QtGui.QMenu('Role', self)
 
-        disabledMenuOptionSetRole = QtGui.QAction('Role', None)
-        disabledMenuOptionSetRole.setEnabled(False)
-        disabledMenuOptionSetThreshold = QtGui.QAction('Auto Mode Threshold', None)
-        disabledMenuOptionSetThreshold.setEnabled(False)
+        self.disabledMenuOptionSetRole = QtGui.QAction('Role', None)
+        self.disabledMenuOptionSetRole.setEnabled(False)
+        self.disabledMenuOptionSetMode = QtGui.QAction('Mode', None)
+        self.disabledMenuOptionSetMode.setEnabled(False)
+        self.disabledMenuOptionSetThreshold = QtGui.QAction('Auto Mode Threshold', None)
+        self.disabledMenuOptionSetThreshold.setEnabled(False)
         
-        roleMenu.addAction(disabledMenuOptionSetRole)
+        roleMenu.addAction(self.disabledMenuOptionSetRole)
         for action in self.setTranslationRoleActions:
             roleMenu.addAction( action )
+        
         roleMenu.addSeparator()
-        roleMenu.addAction(disabledMenuOptionSetThreshold)
+        roleMenu.addAction(self.disabledMenuOptionSetMode)
+        roleMenu.addAction(self.setTranslationModeAutoAction)
+        roleMenu.addAction(self.setTranslationModeSemiautoAction)
+        roleMenu.addAction(self.setTranslationModeManualAction)
+            
+        roleMenu.addSeparator()
+        roleMenu.addAction(self.disabledMenuOptionSetThreshold)
         for action in self.setAutoThresholdActions:
             roleMenu.addAction( action )
 
@@ -710,12 +719,6 @@ class Scripts2(QtGui.QWidget):
         toolsMenu.addAction(self.runRefreshCompletionDatabaseAction)
         toolsMenu.addAction(self.runFindUsedSymbolsAction)
         
-        modeMenu = QtGui.QMenu("Mode", self)
-        modeMenu.addAction(self.setTranslationModeAutoAction)
-        modeMenu.addAction(self.setTranslationModeSemiautoAction)
-        modeMenu.addAction(self.setTranslationModeManualAction)
-        modeMenu.triggered.connect(self.SetTranslationMode)
-        
         optionsMenu = QtGui.QMenu("Options", self)
         optionsMenu.addAction(self.openOptionsWindowAction)
 
@@ -723,7 +726,6 @@ class Scripts2(QtGui.QWidget):
         parent.menuBar().addMenu(parent.editMenu)
         parent.menuBar().addMenu(viewMenu)
         parent.menuBar().addMenu(roleMenu)
-        parent.menuBar().addMenu(modeMenu)
         parent.menuBar().addMenu(toolsMenu)
         parent.menuBar().addMenu(optionsMenu)
 
@@ -938,6 +940,14 @@ class Scripts2(QtGui.QWidget):
 
 
     def SetTranslationRole(self, action):
+        if action == self.setTranslationModeAutoAction:
+            Globals.ModeFlag = 'Auto'
+        if action == self.setTranslationModeSemiautoAction:
+            Globals.ModeFlag = 'Semi-Auto'
+        if action == self.setTranslationModeManualAction:
+            Globals.ModeFlag = 'Manual'
+        Globals.Settings.setValue('mode', Globals.ModeFlag)
+
         for i, act in enumerate( self.setTranslationRoleActions ):
             if action == act:
                 self.role = i + 1
@@ -972,19 +982,6 @@ class Scripts2(QtGui.QWidget):
             t = t + "*"
         t = t + Globals.configfile
         self.parent.setWindowTitle(t)
-
-    def SetTranslationMode(self, action):
-        if action == self.setTranslationModeAutoAction:
-            mode = 'Auto'
-        if action == self.setTranslationModeSemiautoAction:
-            mode = 'Semi-Auto'
-        if action == self.setTranslationModeManualAction:
-            mode = 'Manual'
-            
-        Globals.Settings.setValue('mode', mode)
-        Globals.ModeFlag = mode
-
-        self.SetWindowTitle()
 
 
     def ReloadConfiguration(self):
