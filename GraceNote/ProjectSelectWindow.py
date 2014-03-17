@@ -45,17 +45,19 @@ class ProjectSelectWindow(QtGui.QDialog):
             for filename in files:
                 try:
                     cfg = Config.Configuration('Projects/' + filename)
-                    self.ProjectList.addItem(filename)
-                    #self.ProjectList.addItem(cfg.ID + ' (' + filename + ')')
+                    item = QtGui.QListWidgetItem(cfg.ID + ' (' + filename + ')')
+                    item.GraceNoteConfigurationFilename = filename
+                    self.ProjectList.addItem(item)
                 except:
                     pass
         except:
             pass
+        self.ProjectList.sortItems()
         return
 
     def OkAndClose(self):
         item = self.ProjectList.currentItem()
-        self.configfile = u'Projects/' + unicode(item.text())
+        self.configfile = u'Projects/' + unicode(item.GraceNoteConfigurationFilename)
         self.configFileSelected = True
 
         self.done(0)
