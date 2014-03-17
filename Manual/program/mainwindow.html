@@ -2,11 +2,6 @@
 <head><title>GraceNote - The Main Window</title></head>
 <body>
 
-<!--### Introduction ###
-On program start up, Grace Note will download any new files from the server that have been modified by others, as long as an internet connection is available.
--->
-
-
 <h2>The Main Window</h2>
 
 <center><img src="mainwindow.png" /></center>
@@ -29,15 +24,21 @@ On program start up, Grace Note will download any new files from the server that
 <!-- maybe some stuff about debug here? -->
 
 <h3>Entry Display</h3>
-<p></p>
+<p>Here you'll actually modify the game text. The Entry Display is right in the middle of the program, and shows a configurable amount of entries, from a minimum of 3 all the way up to 20, if your screen resolution can handle it.</p>
 
-<!-- The three editing windows show the above, currently selected, and below entries, respectively. When an entry is selected, these boxes will contain the entry text, which can be edited. Variables are shown between angle brackets (<>), and newlines have been ornamented with a carriage return symbol. The brackets ARE required for all variables, but the carriage return symbol is optional, and need not be typed. Variables will also appear in colour. Editing windows support copy, paste, cut, select all, undo, and redo, via keyboard shortcuts and the right click menu ONLY. The edit menu is non-functional at this time, excepting full-text copy.
+<p>The second entry will always be the one that you've selected in the Entry List, and the one that keyboard shortcuts such as CTRL + digit (change status) affect.</p>
 
-In the lower right corner are four symbols. These symbols denote the completion status of the entry. Green signifies the stage is complete, and blue signifies incomplete. These will be automatically modified dependent on the role you have set. You may also change them manually by clicking on them. The four stages are Translation, Translation Review, Context Review, and Editing, from left to right.
+<p>Assuming you haven't turned any of the columns off, the left column will display the current English translation, which you can change, the middle displays the original Japanese, and the right displays a comment on that entry, which is also freely editable.</p>
 
-If Pyenchant is installed, red lines beneath typed words will denote misspelled words. You may correct these yourself, or right-click them to pop up a list of suggestions.
+<p>The circles below the English translation represent the current status of the entry. You can manually change the status of an entry by clicking on those circles. Please refer to the <a href="index.html">general usage guidelines</a> for an explanation of the status.</p>
 
-At any time, you may select a Japanese word and right click it. The contextual menu will contain a list of suggested words, as well as their English equivalents and definitions. The dictionary used is an abridged dictionary, for conciseness. The dictionary also includes a very succinct kanji lookup. -->
+<p>Text shown between &lt;pointy brackets&gt; is a variable or control code, which gets replaced in-game by something else. They should usually be fairly self-explanatory and are entirely game-specific.</p>
+
+<p>To distinguish between line breaks added because the text automatically wrapped and line breaks that were actually placed (and thus would show up in-game), actual line breaks are ornamented by a carriage return symbol (&#x21b5;). It is not necessary to manually add this when adding a line break, a simple new line with Enter is fine.</p>
+
+<p>If spellchecking via PyEnchant is installed, words that were not recognized will be underlined in red. You can right-click on those to display a list of spelling suggestions.</p>
+
+<p>GraceNote also has a built-in Japanese dictionary. Just highlight and then rightclick any set of Japanese characters to get possible translations for that word or phrase. The dictionary used is an abridged dictionary. It also includes a very succinct kanji lookup.</p>
 
 <h3>Toolbar</h3>
 <p>The Toolbar at the top of the window allows quick access to several useful tools and features.</p>
@@ -49,69 +50,25 @@ At any time, you may select a Japanese word and right click it. The contextual m
 <p>The Jump To box allows you to quickly jump to a specific database if you know its filename but don't want to search for it in the list to the left. Just type in the name and press Enter.</p>
 <p>The Search box allows you to quickly find entries containing text you search for. For more involved Search features check out the Mass Replace tool.</p>
 
+<p>The Display Debug button toggles visibility of entries that have been marked as Debug, which are hidden by default. To mark an entry as Debug, check the checkbox in the "Debug?" column of the Entry List. This will hide all entries across all databases that have the same Japanese original text, so be careful with what you mark as debug.</p>
 
+<p>And finally, the Always on Top button makes the program stay on top of other windows.</p>
 
-<!--
-This is all super outdated, doesn't even make sense to nicely format it.
+<h3>Menu</h3>
 
+<p>A lot of menu options are self-explanatory, but here's a few of them that might not be.</p>
 
+<p><b>File -&gt; Save</b>, <b>File -&gt; Update</b> - This saves and retrieves changes to/from the server. Refer to the <a href="index.html">general usage guidelines</a> for more information.</p>
+<p><b>File -&gt; Revert</b> - Warning! This throws away all changes made since the last save to the server. Handle with caution.</p>
+<p><b>File -&gt; Find Unsaved Databases</b> - This searches all databases for changes that were not yet uploaded to the server. Use in case the program crashes in the middle of a session, or when you've changed the translation of entries via external tools.</p>
 
+<p><b>Edit -&gt; Full Text Copy</b> - This copies the contents of the currently opened database to the clipboard.</p>
 
+<p><b>Role</b> - Use this menu to change the current role, mode, or threshold. Refer to the <a href="index.html">general usage guidelines</a> for more information.</p>
 
-
-
-
-
-
-
-
-#### Debug Toggle ####
-Debug toggle changes the viewing of debug entries on or off. This is off by default.
-
-
-### The Menu Bar ###
-The menu bar contains all functions present in the toolbar, as well as several others.
-
-
-#### File Menu ####
-
-##### Save #####
-Saves all changes done this session to the server. This may take some time, but there should be a progress bar.
-
-
-#### Edit Menu ####
-Most functions in the Edit Menu, for reasons beyond mortal comprehension, do not work. You may access these functions through their standard keyboard shortcuts, but selecting the menu item does not work.
-
-
-##### Full-Text Copy #####
-Full Text Copy only functions when a file or entry is selected. It will paste the entire contents of the file to the clipboard.
-
-
-#### View Menu ####
-
-
-
-
-#### Role Menu ####
-The Role which is currently set determines to which completion meter you add. The role is displayed in the title of the Main Window. Setting the role correctly is important to ensuring proper progress bars.
-
-#### Mode Menu ####
-The Mode is used in conjunction with Roles in order to determine which files can be labelled complete.
-
-##### Semi-Auto #####
-In semi-auto mode, any entries you edit will be marked as ‘complete’ for your current role, and the completion percentage updated accordingly. You can manually set an entry to complete by using the icons in the lower right a text box when an entry is selected. This is the default mode.
-
-##### Auto #####
-In automatic mode, any entries which are viewed on screen will be set to ‘complete’ for your current role, and the completion percentage updated accordingly. You can manually set an entry to complete by using the icons in the lower right a text box when an entry is selected. This is useful for editing where entries may need to be read, but not necessarily edited, and manual clicking becomes tedious. This mode will not currently be kept between sessions, and must reset each time.
-
-##### Manual #####
-No changes to the status of entries will happen in this mode unless the status icons in each entry are manually clicked.
-
-
-
--->
-
-
+<p><b>Tools -&gt; Propagate Debug</b> - If you've changed the debug status of entries via external tools, you can use these options to sync that status to other entries using the same original Japanese text.</p>
+<p><b>Tools -&gt; Refresh Completion Database</b> - This refreshes the cached data on how many entries are at what stage in which database, which is used to display the data in the Completion window as well as color in the databases in the Database List. You shouldn't have to run this ever, but if the data becomes incorrect for whatever reason, you can use this to fix it.</p>
+<p><b>Tools -&gt; Find Used Symbols</b> - This saves a file containing a set of all characters used in the entire body of game text to "used_symbols.txt" in the GraceNote directory. Useful if you're creating a font and need to know which glyphs should be available.</p>
 
 </body>
 </html>
