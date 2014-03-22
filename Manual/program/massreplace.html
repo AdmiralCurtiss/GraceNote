@@ -1,17 +1,30 @@
 ﻿<html>
-<head><title>GraceNote - </title></head>
+<head><title>GraceNote - Mass Replace</title></head>
 <body>
 
-<!--
-#### Mass Replace ####
-Mass Replace is a powerful tool for searching and replacing text across files. You can search for text as part of an entry (exact match), or an entire entry on it’s own (entry match). Upon searching, a list will be generated that details the entry’s current English, if available, or Japanese if not, the file that contains it, and the entry number it occupies. You may selectively replace searches by modifying the check boxes provided. No text will be replaced until you click replace in the bottom left. This action can not be undone!
+<p>Mass Replace is a powerful tool for searching and replacing text across files.</p>
 
-Some notes about Mass Replace. Is it possible and recommended to use the search feature on it’s own for a more precise search. You may not Mass replace whitespace or non-visible characters. Replace will not take effect without a search being done prior to the replacement. Deleting the text in search before replacing will modify the text to be replaced, so, it is possible to search for entries with ‘foo’ and then replace all instances of ‘bar’ within that set with some other text of choice (such as ‘I pity the’).
+<p>To search for any string, simply enter that string into the Search For textbox and hit the Search button. The results, if any, will be displayed in the big window below. Doubleclick any of the results to jump directly to that entry in the main window.</p>
 
+<p>You can adjust searching behavior in several ways:</p>
+<ul>
+<li>The radio buttons near the top right decide where the search string may be found. The default, Any: English Only, searches for any substring within the current translations. Any Match adds the Japanese original text to the previous set. Complete Entry, however, only finds entries that match the search text in its entirety, both Japanese and English.</li>
+<!-- by writing this up I realize how convoluted this is, might be a better way to present these options -->
+<li>By entering something in the Filter by File textbox, only databases whose names contain that string will be searched.</li>
+<li>By entering something in the Excluding textbox, results containing that exclusionary string will not be displayed.</li>
+<li>Check the Match Case checkbox to make the search case-sensitve (it is case-insensitive by default).</li>
+<li>Check the Search Debug checkbox to also search entries marked as Debug, which are excluded by default.</li>
+</ul>
 
--->
+<p>Search results will be displayed in tabs. To close a set of results, switch to that tab and hit the Remove Tab button at the bottom.</p>
 
+<p>To mass replace text within the search results, enter the desired new text in the Replace With textbox, check the "Replace" checkbox next to all entries that should have text replaced, and hit the Replace button. This will replace the string of the original search within the English entry<!-- at some point you could change the original Search For before replacing and affect the replacement that way, find a way to re-add that in a way that makes sense --> with the new string in the Replace textbox. Replacing text in the Complete Entry mode will always result in the whole entry being set to the text in the Replace With box. Replacing will also close the set of search results.</p>
+<!-- instead of making the user guess or imagine how the new entry will look, add an auto-updating column that shows it -->
 
+<p>Note that this cannot be reverted unless you hit the Revert option in the main window to discard all changes since the last save to the server.</p>
+<!-- might be some better way to handle this? -->
+
+<p>Replacing text via mass replaces changes an entry's status in the same way as if you had manually edited it and not hit any of the status buttons. In other words, it respects the current translation mode and status updating preferences.</p>
 
 </body>
 </html>
