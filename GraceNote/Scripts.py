@@ -2136,10 +2136,17 @@ class Scripts2(QtGui.QWidget):
 
     def CallSavetoServer(self):
         return NetworkHandler.SavetoServer(self)
-        return
     
     def CallRevertFromServer(self):
-        NetworkHandler.RevertFromServer(self)
+        self.WriteDatabaseStorageToHdd()
+
+        if len(self.update) == 0:
+            Globals.MainWindow.displayStatusMessage( 'Nothing to revert!' )
+            return
+
+        reply = QtGui.QMessageBox.warning(self, "Warning!", "This will discard all changes since the last save to the server.\nAre you really sure you want to revert?", QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
+        if reply == QtGui.QMessageBox.Yes:
+            NetworkHandler.RevertFromServer(self)
         return
 
     def CallRetrieveModifiedFiles(self):
