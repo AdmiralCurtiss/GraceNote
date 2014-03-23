@@ -99,41 +99,14 @@ def RetrieveModifiedFilesWorker(scripts, splash, networkTransferWindow, sendWind
                 
             # Download the files that have been changed
             for item, transferWindowIdx in FilesToDownload:
-                #desc = Globals.GetDatabaseDescriptionString(item)
-                #print 'Downloading ' + desc + ' [' + item + ']...'
-                   
                 networkTransferWindow.modifyListEntryStatus(transferWindowIdx, "Downloading...")
-
-                DownloadFile(scripts, ftp, item, 'temp')
-
-                # Clean up downloaded file
-                WipeUpdateCon = DatabaseHandler.OpenEntryDatabase('temp')
-                WipeUpdateCur = WipeUpdateCon.cursor()
-                WipeUpdateCur.execute(u"UPDATE Text SET updated=0")
-                WipeUpdateCon.commit()
-
-                # Copy it to the right place
-                old = open(Globals.configData.LocalDatabasePath + '/{0}'.format(item), 'wb')
-                new = open(Globals.configData.LocalDatabasePath + '/temp', 'rb')
-                old.write(new.read())
-                new.close()
-                old.close()
-                    
-                CompletionTable.CalculateCompletionForDatabase(item)
-                Globals.Cache.LoadDatabase(item)
-
+                DownloadDatabaseAndClean(scripts, ftp, item)
                 networkTransferWindow.modifyListEntryStatus(transferWindowIdx, "Complete!")
 
             ftp.close()
 
-            
             # Copy new change log over old
-
-            old = open(Globals.configData.LocalDatabasePath + '/ChangeLog', 'wb')
-            new = open(Globals.configData.LocalDatabasePath + '/NewChangeLog', 'rb')
-            old.write(new.read())
-            new.close()
-            old.close()
+            Globals.CopyFile( Globals.configData.LocalDatabasePath + '/NewChangeLog', Globals.configData.LocalDatabasePath + '/ChangeLog' )
 
             break
                 
@@ -153,6 +126,22 @@ def RetrieveModifiedFilesWorker(scripts, splash, networkTransferWindow, sendWind
     Globals.Cache.databaseAccessRLock.release()
     if sendWindowCloseSignal:
         networkTransferWindow.allowCloseSignal.emit(True)
+    return
+
+def DownloadDatabaseAndClean(scripts, ftp, item):
+    DownloadFile(scripts, ftp, item, 'temp')
+
+    # Clean up downloaded file
+    WipeUpdateCon = DatabaseHandler.OpenEntryDatabase('temp')
+    WipeUpdateCur = WipeUpdateCon.cursor()
+    WipeUpdateCur.execute(u"UPDATE Text SET updated=0")
+    WipeUpdateCon.commit()
+
+    # Copy it to the right place
+    Globals.CopyFile( Globals.configData.LocalDatabasePath + '/temp', Globals.configData.LocalDatabasePath + '/{0}'.format(item) )
+                    
+    CompletionTable.CalculateCompletionForDatabase(item)
+    Globals.Cache.LoadDatabase(item)
     return
 
 def DownloadFile(scripts, ftp, source, dest):
@@ -185,7 +174,7 @@ def DownloadFile(scripts, ftp, source, dest):
                 success = True
                 break
         if not success:
-            "Looks like {0} won't download. Moving on, I suppose.".format(source)
+            print "Looks like {0} won't download. Moving on, I suppose.".format(source)
             return False
                 
         
