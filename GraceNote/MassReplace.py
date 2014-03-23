@@ -36,7 +36,6 @@ class MassReplace(QtGui.QDialog):
         self.matchEngCheckbox = QtGui.QCheckBox('Search English')
         self.matchEntryCheckbox = QtGui.QCheckBox('Complete Entry Only')
         self.matchEngCheckbox.setChecked(True)
-        self.fileFilter.setToolTip('Wildcards implicit. eg CHT will match all skits')
         self.matchCase = QtGui.QCheckBox('Match Case')
         self.searchDebug = QtGui.QCheckBox('Include Debug')
         self.searchStartOfEntry = QtGui.QCheckBox('At Start of Entry')
@@ -54,7 +53,8 @@ class MassReplace(QtGui.QDialog):
         replaceLabel.setFont(font)
         
         filterLabel = QtGui.QLabel('Filter by File:')
-        filterLabel.setToolTip('Wildcards implicit. eg CHT will match all skits')
+        filterLabel.setToolTip('Wildcards implicit, so "scene" selects all databases with "scene" anywhere in the name.')
+        self.fileFilter.setToolTip('Wildcards implicit, so "scene" selects all databases with "scene" anywhere in the name.')
         filterLabel.setFont(font)
         
         self.search = QtGui.QPushButton('Search')
@@ -225,9 +225,10 @@ class MassReplace(QtGui.QDialog):
                 for match in Globals.CursorGracesJapanese.fetchall():
                     JPmatches.add(int(match[0]))
 
+        dbFilter = unicode( self.fileFilter.text() ).lower()
         for j in range(1, len(aList)):
             for File in aList[j]:
-                if File.find(self.fileFilter.text()) >= 0 or Globals.GetDatabaseDescriptionString(File).find(self.fileFilter.text()) >= 0:
+                if dbFilter in File.lower() or dbFilter in Globals.GetDatabaseDescriptionString(File).lower():
                     data = Globals.Cache.GetDatabase(File)
                     for i in xrange(len(data)):
                         if ( matchJapanese and data[i].stringId in JPmatches ) \
