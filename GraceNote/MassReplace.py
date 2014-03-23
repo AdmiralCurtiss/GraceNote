@@ -32,19 +32,19 @@ class MassReplace(QtGui.QDialog):
         self.replacement.setFixedHeight(50)
         self.exceptions = QtGui.QLineEdit()
         self.fileFilter = QtGui.QLineEdit()
-        self.matchAnyRadio = QtGui.QRadioButton('Any Match')
-        self.matchAnyEnglishOnlyRadio = QtGui.QRadioButton('Any: English Only')
-        self.matchCompleteRadio = QtGui.QRadioButton('Complete Entry')
-        self.matchAnyEnglishOnlyRadio.setChecked(True)
+        self.matchJpnCheckbox = QtGui.QCheckBox('Search Japanese')
+        self.matchEngCheckbox = QtGui.QCheckBox('Search English')
+        self.matchEntryCheckbox = QtGui.QCheckBox('Complete Entry Only')
+        self.matchEngCheckbox.setChecked(True)
         self.fileFilter.setToolTip('Wildcards implicit. eg CHT will match all skits')
-        self.matchCase = QtGui.QCheckBox('Match case')
-        self.searchDebug = QtGui.QCheckBox('Search Debug')
+        self.matchCase = QtGui.QCheckBox('Match Case')
+        self.searchDebug = QtGui.QCheckBox('Include Debug')
         self.searchStartOfEntry = QtGui.QCheckBox('At Start of Entry')
         self.searchEndOfEntry = QtGui.QCheckBox('At End of Entry')
 
-        self.matchAnyEnglishOnlyRadio.setFont(font)
-        self.matchAnyRadio.setFont(font)
-        self.matchCompleteRadio.setFont(font)
+        self.matchEngCheckbox.setFont(font)
+        self.matchJpnCheckbox.setFont(font)
+        self.matchEntryCheckbox.setFont(font)
                 
         originalLabel = QtGui.QLabel('Search for:')
         originalLabel.setFont(font)
@@ -102,9 +102,9 @@ class MassReplace(QtGui.QDialog):
         inputLayout.addWidget(optionsWidget    , 4, 0, 1, 2)
         inputLayout.addWidget(filterLabel      , 0, 2, 1, 1)
         inputLayout.addWidget(self.fileFilter  , 1, 2, 1, 1)
-        inputLayout.addWidget(self.matchCompleteRadio  , 2, 2, 1, 1)
-        inputLayout.addWidget(self.matchAnyRadio  , 3, 2, 1, 1)
-        inputLayout.addWidget(self.matchAnyEnglishOnlyRadio, 4, 2, 1, 1)
+        inputLayout.addWidget(self.matchEntryCheckbox  , 2, 2, 1, 1)
+        inputLayout.addWidget(self.matchJpnCheckbox  , 3, 2, 1, 1)
+        inputLayout.addWidget(self.matchEngCheckbox, 4, 2, 1, 1)
         
         inputLayout.setColumnStretch(1, 1)
         
@@ -183,7 +183,13 @@ class MassReplace(QtGui.QDialog):
         tabNameString = matchString
         matchString = Globals.VariableRemove(matchString)
         
-        if not self.matchCompleteRadio.isChecked():
+        searchDebug = self.searchDebug.isChecked()
+        matchCase = self.matchCase.isChecked()
+        matchFullEntry = self.matchEntryCheckbox.isChecked()
+        matchJapanese = self.matchJpnCheckbox.isChecked()
+        matchEnglish = self.matchEngCheckbox.isChecked()
+
+        if not matchFullEntry:
             if len(matchString) == 1:
                 if ord(matchString) <= 0x20:
                     reply = QtGui.QMessageBox.question(self, "Questionable Search Usage", "Warning:\n\nYour search only consists of a space, a form feed, a newline, or a tab.\nAre you sure you want to search for this?", QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
@@ -195,42 +201,34 @@ class MassReplace(QtGui.QDialog):
 
         MatchedEntries = []
         aList = Globals.configData.FileList
-        searchDebug = self.searchDebug.isChecked()
-        matchCase = self.matchCase.isChecked()
-        matchFullEntry = self.matchCompleteRadio.isChecked()
 
         # turn on case sensitive checking
         if matchCase:
             Globals.CursorGracesJapanese.execute(u"PRAGMA case_sensitive_like = ON")
 
-        # any match within a string
-        if self.matchAnyRadio.isChecked():
-            Globals.CursorGracesJapanese.execute(u"SELECT ID FROM Japanese WHERE string LIKE ?", ('%' + unicode(matchString) + '%', ))
-            JPmatches = set()
-            for match in Globals.CursorGracesJapanese.fetchall():
-                JPmatches.add(int(match[0]))
-            ReplacementType = 'Substr'
-        # any match in English strings only
-        elif self.matchAnyEnglishOnlyRadio.isChecked():
-            JPmatches = set()
-            ReplacementType = 'Substr'
-        # match the entire entry
-        elif self.matchCompleteRadio.isChecked():
-            Globals.CursorGracesJapanese.execute(u"SELECT ID FROM Japanese WHERE string LIKE ?", (unicode(matchString),))
-            JPmatches = set()
-            for match in Globals.CursorGracesJapanese.fetchall():
-                JPmatches.add(int(match[0]))
+        JPmatches = set()
+        if matchFullEntry:
             ReplacementType = 'Entry'
-            
+            if matchJapanese:
+                Globals.CursorGracesJapanese.execute(u"SELECT ID FROM Japanese WHERE string LIKE ?", (unicode(matchString),))
+                for match in Globals.CursorGracesJapanese.fetchall():
+                    JPmatches.add(int(match[0]))
+        else:
+            ReplacementType = 'Substr'
+            if matchJapanese:
+                Globals.CursorGracesJapanese.execute(u"SELECT ID FROM Japanese WHERE string LIKE ?", ('%' + unicode(matchString) + '%', ))
+                for match in Globals.CursorGracesJapanese.fetchall():
+                    JPmatches.add(int(match[0]))
+
         for j in range(1, len(aList)):
             for File in aList[j]:
                 if File.find(self.fileFilter.text()) >= 0 or Globals.GetDatabaseDescriptionString(File).find(self.fileFilter.text()) >= 0:
                     data = Globals.Cache.GetDatabase(File)
                     for i in xrange(len(data)):
-                        if ( data[i].stringId in JPmatches ) \
-                        or ( matchFullEntry and data[i].english == matchString ) \
-                        or ( not matchFullEntry and matchCase and matchString in data[i].english ) \
-                        or ( not matchFullEntry and not matchCase and matchString.upper() in data[i].english.upper() > -1 ):
+                        if ( matchJapanese and data[i].stringId in JPmatches ) \
+                        or ( matchEnglish and matchFullEntry and data[i].english == matchString ) \
+                        or ( matchEnglish and not matchFullEntry and matchCase and matchString in data[i].english ) \
+                        or ( matchEnglish and not matchFullEntry and not matchCase and matchString.upper() in data[i].english.upper() > -1 ):
                             if searchDebug or data[i].status >= 0:
                                 Globals.CursorGracesJapanese.execute('SELECT string FROM Japanese WHERE ID={0}'.format(data[i].stringId))
                                 JPString = Globals.CursorGracesJapanese.fetchall()[0][0]
