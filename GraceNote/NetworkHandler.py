@@ -416,16 +416,22 @@ def SavetoServerWorker(scripts, networkTransferWindow, sendWindowCloseSignal):
     return False
 
 def RevertFromServer(scripts):
+    scripts.WriteDatabaseStorageToHdd()
+
+    if len(scripts.update) == 0:
+        Globals.MainWindow.displayStatusMessage( 'Nothing to revert!' )
+        return
+
+    networkTransferWindow = NetworkTransferWindow.NetworkTransferWindow()
+    networkTransferThread = threading.Thread(target=RevertFromServerWorker, args=(scripts, networkTransferWindow, True))
+    networkTransferThread.start()
+    networkTransferWindow.exec_()
+
+def RevertFromServerWorker(scripts, networkTransferWindow, sendWindowCloseSignal):
     Globals.Cache.databaseAccessRLock.acquire()
     scripts.WriteDatabaseStorageToHdd()
         
-    if len(scripts.update) == 0:
-        Globals.MainWindow.displayStatusMessage( 'Nothing to revert!' )
-        Globals.Cache.databaseAccessRLock.release()
-        return
-
-    print 'Reverting databases...'
-        
+    updateList = list(scripts.update)
         
     for i in range(1, 20):
         try:        
@@ -433,21 +439,25 @@ def RevertFromServer(scripts):
                 scripts.ftp = ConnectToFtp()
             except:
                 if i == 20:
-                    print "FTP connection failed, revert didn't succeed.\nPlease try to revert again at a later date."
-                    Globals.Settings.setValue('update', set(scripts.update))
+                    print 
+                    networkTransferWindow.addListEntry("FTP connection failed, revert didn't succeed.", "< Error >")
+                    Globals.Settings.setValue('update', set(updateList))
                     Globals.Settings.sync()
                     Globals.Cache.databaseAccessRLock.release()
+                    if sendWindowCloseSignal:
+                        networkTransferWindow.allowCloseSignal.emit(False)
                     return
-                print 'Error during FTP transfer, retrying...'
+                networkTransferWindow.addListEntry('Error during FTP connect, retrying...', "< Error >")
                 continue
                
             scripts.ftp.cwd('/')
             scripts.ftp.cwd(Globals.configData.RemoteDatabasePath)
 
-            print "Re-getting changed files from server..."
-            for item in scripts.update:
-                desc = Globals.GetDatabaseDescriptionString(item)
-                print 'Downloading ' + desc + ' [' + item + ']...'
+            # "Re-getting changed files from server..."
+            while len(updateList) > 0:
+                item = updateList[len(updateList) - 1]
+
+                transferWindowIndex = networkTransferWindow.addListEntry("Downloading...", item)
                     
                 DownloadFile(scripts, scripts.ftp, item, item)
                 WipeUpdateCon = DatabaseHandler.OpenEntryDatabase(item)
@@ -455,9 +465,12 @@ def RevertFromServer(scripts):
             
                 WipeUpdateCur.execute(u"UPDATE Text SET updated=0")
                 WipeUpdateCon.commit()
-                    
+                
                 CompletionTable.CalculateCompletionForDatabase(item)
                 Globals.Cache.LoadDatabase(item)
+
+                networkTransferWindow.modifyListEntryStatus(transferWindowIndex, "Complete!")
+                updateList.remove(item)
 
             scripts.ftp.close()
             scripts.update.clear()
@@ -465,14 +478,17 @@ def RevertFromServer(scripts):
             Globals.Settings.sync()
             Globals.HaveUnsavedChanges = False
             scripts.SetWindowTitle()
-            print 'Reverted!'
             break
         except ftplib.all_errors:
             if i == 20:
-                print '20 errors is enough, this is not gonna work. Try again later.'
+                networkTransferWindow.addListEntry('Error during FTP transfer. Databases may be corrupted, please Revert again as soon as possible.', "< Error >")
+                if sendWindowCloseSignal:
+                    networkTransferWindow.allowCloseSignal.emit(False)
                 break
-            print 'Error during FTP transfer, retrying...'
+            networkTransferWindow.addListEntry('Error during FTP transfer, retrying...', "< Error >")
             continue
     Globals.Cache.databaseAccessRLock.release()
+    if sendWindowCloseSignal:
+        networkTransferWindow.allowCloseSignal.emit(True)
     return
     
