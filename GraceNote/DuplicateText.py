@@ -193,8 +193,15 @@ class DuplicateText(QtGui.QDialog):
             self.parent.massDialog.original.setText(parentItem.GraceNoteText)
             self.parent.massDialog.replacement.setText(searchstring)
             
-        self.parent.massDialog.matchCompleteRadio.setChecked(True)
+        # make sure settings are correct
+        self.parent.massDialog.matchEngCheckbox.setChecked(False)
+        self.parent.massDialog.matchJpnCheckbox.setChecked(True)
+        self.parent.massDialog.matchEntryCheckbox.setChecked(True)
         self.parent.massDialog.matchCase.setChecked(True)
+        self.parent.massDialog.searchDebug.setChecked(False)
+        self.parent.massDialog.fileFilter.setText('')
+        self.parent.massDialog.exceptions.setText('')
+
         self.parent.massDialog.Search()
 
     def closeEvent(self, event):
