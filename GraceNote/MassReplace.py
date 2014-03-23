@@ -126,11 +126,14 @@ class MassReplace(QtGui.QDialog):
         if geom is not None:
             self.restoreGeometry(geom)
 
+        self.tabwidget.currentChanged.connect(self.TabChanged)
+        self.replacement.textChanged.connect(self.ReplacementTextChanged)
+
     def generateSearchTab(self):
         treewidget = QtGui.QTreeWidget()
         
-        treewidget.setColumnCount(6)
-        treewidget.setHeaderLabels(['Database Desc.', 'Entry', 'Info', 'Replace', 'E String', 'J String', 'Replacement Type', 'Status', 'Database Name'])
+        treewidget.setColumnCount(10)
+        treewidget.setHeaderLabels(['Database Desc.', 'Entry', 'Info', 'Replace?', 'Current String', 'Replace String', 'Japanese String', 'Status', 'Database Name', 'Replacement Type'])
         treewidget.setSortingEnabled(True)
         treewidget.setRootIsDecorated(False)
         
@@ -140,9 +143,11 @@ class MassReplace(QtGui.QDialog):
         treewidget.setColumnWidth(3, 20)
         treewidget.setColumnWidth(4, 275)
         treewidget.setColumnWidth(5, 275)
-        treewidget.setColumnWidth(6, 30)
+        treewidget.setColumnWidth(6, 275)
+        treewidget.setColumnWidth(7, 30)
+        treewidget.setColumnWidth(8, 100)
+        treewidget.setColumnWidth(9, 50)
         
-        #treewidget.setMinimumSize(780, 400)
         treewidget.sortItems(0, QtCore.Qt.AscendingOrder)
         
         treewidget.itemDoubleClicked.connect(self.JumpToFile)
@@ -256,7 +261,7 @@ class MassReplace(QtGui.QDialog):
                     if exceptString in englishString or exceptString in japaneseString:
                         continue
                     
-                treeItem = QtGui.QTreeWidgetItem([databaseDescriptor, str(entryID), str(infoString), "", englishString, japaneseString, ReplacementType, str(int(status)), filename])
+                treeItem = QtGui.QTreeWidgetItem([databaseDescriptor, str(entryID), str(infoString), "", englishString, englishString, japaneseString, str(int(status)), filename, ReplacementType])
                 treeItem.setCheckState(3, QtCore.Qt.Checked)
                 newSearchTab.addTopLevelItem(treeItem)
             except:
@@ -268,19 +273,20 @@ class MassReplace(QtGui.QDialog):
             
         self.tabwidget.addTab(newSearchTab, tabNameString)
         self.tabwidget.setCurrentIndex(self.tabwidget.count()-1)
+        self.UpdateReplacementText()
         
     def Replace(self):
         self.parent.WriteDatabaseStorageToHdd()
         currentTab = self.tabwidget.currentWidget()
         if currentTab == None:
             return
-        Iterator = QtGui.QTreeWidgetItemIterator(currentTab)
 
         if len(self.replacement.toPlainText()) == 0:
             reply = QtGui.QMessageBox.question(self, "Questionable Replacement", "Warning:\n\nYour replacement is empty.\nDo you really want to replace with nothing?", QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
             if reply != QtGui.QMessageBox.Yes:
                 return
                 
+        Iterator = QtGui.QTreeWidgetItemIterator(currentTab)
         while Iterator.value():
         
             if Iterator.value().checkState(3) == 2:
@@ -289,31 +295,68 @@ class MassReplace(QtGui.QDialog):
                 entryID = int(Iterator.value().data(1, 0))
                 currentStatus = int(Iterator.value().data(7, 0))
                 updateStatusValue = self.parent.FigureOutNewStatusValue(self.parent.role, currentStatus, 'ENG', False, False)
-                ReplacementType = Iterator.value().data(6, 0)
+                ReplacementType = Iterator.value().data(9, 0)
+                originalText = Iterator.value().data(4, 0)
+                originalPartToReplace = self.tabwidget.tabText(self.tabwidget.currentIndex())
+                replacementPartToReplace = self.replacement.toPlainText()
 
-                if ReplacementType == 'Substr':
-                    string = unicode(Iterator.value().data(4, 0))
-                    
-                    orig = unicode(self.tabwidget.tabText(self.tabwidget.currentIndex()))
-                    repl = unicode(self.replacement.toPlainText())
-                    if self.matchCase.isChecked():
-                        string = string.replace(orig, repl)
-                    else:
-                        string = re.sub('(?i)' + re.escape(orig), repl, string)
-                        
-                    string = Globals.VariableRemove(string)
-                elif ReplacementType == 'Entry':
-                    string = unicode(self.replacement.toPlainText())
-                    string = Globals.VariableRemove(string)
+                stringWithVars = self.ReplaceInStringWithSettings(originalText, originalPartToReplace, replacementPartToReplace, ReplacementType)
+                string = Globals.VariableRemove(stringWithVars)
                                 
                 self.parent.InsertOrUpdateEntryToWrite(DatabaseCache.UpdatedDatabaseEntry(unicode(string), None, unicode(databaseName), entryID, updateStatusValue))
                 self.parent.AddDatabaseToUpdateSet(unicode(databaseName))
 
+                Iterator.value().setData(4, 0, stringWithVars)
+                Iterator.value().setData(7, 0, str(updateStatusValue)) 
+
             Iterator += 1 
         
         self.parent.WriteDatabaseStorageToHdd()    
-        self.tabwidget.removeTab( self.tabwidget.currentIndex() )
+        self.UpdateReplacementText()
 
+        return
+
+    def ReplaceInStringWithSettings(self, text, original, replacement, type):
+        if type == 'Substr':
+            string = unicode(text)
+                    
+            orig = unicode(original)
+            repl = unicode(replacement)
+            if self.matchCase.isChecked():
+                string = string.replace(orig, repl)
+            else:
+                string = re.sub('(?i)' + re.escape(orig), repl, string)
+                        
+        elif type == 'Entry':
+            string = unicode(replacement)
+        else:
+            string = original
+
+        return string
+
+    def TabChanged(self, index):
+        self.UpdateReplacementText()
+
+    def ReplacementTextChanged(self):
+        self.UpdateReplacementText()
+
+    def UpdateReplacementText(self):
+        currentTab = self.tabwidget.currentWidget()
+        if currentTab == None:
+            return
+
+        Iterator = QtGui.QTreeWidgetItemIterator(currentTab)
+        while Iterator.value():
+            ReplacementType = Iterator.value().data(9, 0)
+            originalText = Iterator.value().data(4, 0)
+            originalPartToReplace = self.tabwidget.tabText(self.tabwidget.currentIndex())
+            replacementPartToReplace = self.replacement.toPlainText()
+
+            string = self.ReplaceInStringWithSettings(originalText, originalPartToReplace, replacementPartToReplace, ReplacementType)
+               
+            Iterator.value().setData(5, 0, string) 
+            Iterator += 1 
+        return
         
     def JumpToFile(self, item, column):
         if item.childCount() > 0:
