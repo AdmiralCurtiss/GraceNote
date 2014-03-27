@@ -103,6 +103,12 @@ def renderText(text, painter, lineHeight, defaultFont):
 
                     currentColor = fmt.Color
                     currentScale = fmt.Scale
+                else:
+                    # if variable doesn't exist, write it as if it was normal text
+                    currentX, maxY = renderChar('<', currentFont, painter, currentX, currentY, currentScale, currentColor, lineHeight, maxY)
+                    for c in stopDrawList:
+                        currentX, maxY = renderChar(c, currentFont, painter, currentX, currentY, currentScale, currentColor, lineHeight, maxY)
+                    currentX, maxY = renderChar('>', currentFont, painter, currentX, currentY, currentScale, currentColor, lineHeight, maxY)
         
                 stopDrawList = []
                 continue
@@ -116,30 +122,33 @@ def renderText(text, painter, lineHeight, defaultFont):
                 continue
                 
             if not stopDrawing:
-                glyph = currentFont[char]
-
-                if currentScale != 1.0:
-                    newGlyph = GlyphStruct()
-                    newGlyph.img = glyph.img.copy(glyph.x, glyph.y, glyph.width, glyph.height).scaled(glyph.width * currentScale, glyph.height * currentScale, Qt.Qt.IgnoreAspectRatio, Qt.Qt.SmoothTransformation)
-                    newGlyph.x = 0
-                    newGlyph.y = 0
-                    newGlyph.width = newGlyph.img.width()
-                    newGlyph.height = newGlyph.img.height()
-                    glyph = newGlyph
-
-                if painter is not None: # actually render
-                    painter.drawImage(currentX, currentY + ( lineHeight - glyph.height ), glyph.img, glyph.x, glyph.y, glyph.width, glyph.height)
-                    painter.fillRect( currentX, currentY + ( lineHeight - glyph.height ), glyph.width, glyph.height, currentColor )
-                    currentX += glyph.width
-                else: # just calculate the image size
-                    currentX += glyph.width
-                    maxY = max(glyph.height, maxY)
+                currentX, maxY = renderChar(char, currentFont, painter, currentX, currentY, currentScale, currentColor, lineHeight, maxY)
         except:
             pass
     maxX = max(maxX, currentX)
     return maxX, maxY
 
+def renderChar(char, currentFont, painter, currentX, currentY, currentScale, currentColor, lineHeight, maxY):
+    glyph = currentFont[char]
 
+    if currentScale != 1.0:
+        newGlyph = GlyphStruct()
+        newGlyph.img = glyph.img.copy(glyph.x, glyph.y, glyph.width, glyph.height).scaled(glyph.width * currentScale, glyph.height * currentScale, Qt.Qt.IgnoreAspectRatio, Qt.Qt.SmoothTransformation)
+        newGlyph.x = 0
+        newGlyph.y = 0
+        newGlyph.width = newGlyph.img.width()
+        newGlyph.height = newGlyph.img.height()
+        glyph = newGlyph
+
+    if painter is not None: # actually render
+        painter.drawImage(currentX, currentY + ( lineHeight - glyph.height ), glyph.img, glyph.x, glyph.y, glyph.width, glyph.height)
+        painter.fillRect( currentX, currentY + ( lineHeight - glyph.height ), glyph.width, glyph.height, currentColor )
+        currentX += glyph.width
+    else: # just calculate the image size
+        currentX += glyph.width
+        maxY = max(glyph.height, maxY)
+
+    return currentX, maxY
 
 class FontDisplayWindow(QtGui.QDialog):
 
