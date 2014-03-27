@@ -222,11 +222,11 @@ def SavetoServer(scripts):
         Globals.MainWindow.displayStatusMessage('Nothing to save!')
         return False
 
-    # TODO: properly propagate return value
     networkTransferWindow = NetworkTransferWindow.NetworkTransferWindow()
     networkTransferThread = threading.Thread(target=SavetoServerWorker, args=(scripts, networkTransferWindow, True))
     networkTransferThread.start()
     networkTransferWindow.exec_()
+    return networkTransferWindow.Successful
                 
 def SavetoServerWorker(scripts, networkTransferWindow, sendWindowCloseSignal):
     Globals.Cache.databaseAccessRLock.acquire()

@@ -41,6 +41,8 @@ class NetworkTransferWindow(QtGui.QDialog):
             self.autoCloseCheckbox.setChecked(True)
 
         self.allowCloseSignal.connect(self.AllowClose)
+
+        self.Successful = None
         
     def addListEntry(self, status, name):
         statusItem = QtGui.QStandardItem(status)
@@ -71,6 +73,7 @@ class NetworkTransferWindow(QtGui.QDialog):
         Globals.Settings.setValue('NetworkTransferWindowAutoClose', 'True' if self.autoCloseCheckbox.isChecked() else 'False')
 
     def AllowClose(self, successful):
+        self.Successful = successful
         self.closeButton.setEnabled(True)
         self.closeButton.clicked.connect(self.accept)
         if successful and self.autoCloseCheckbox.isChecked():
