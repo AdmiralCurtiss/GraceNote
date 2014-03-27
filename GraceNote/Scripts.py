@@ -287,14 +287,18 @@ class Scripts2(QtGui.QWidget):
 
         self.termInEntryIcon = QtGui.QPixmap( 'icons/pictogram-din-m000-general.png' )
         self.termInEntryIcon = self.termInEntryIcon.scaled(13, 13, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation);
+        self.warningInEntryIcon = QtGui.QPixmap( 'icons/pictogram-din-w000-general.png' )
+        self.warningInEntryIcon = self.warningInEntryIcon.scaled(13, 13, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation);
 
         # --- Textboxes in the middle ---
+        # should probably make this more readable and cleaner at some point...
         self.xTextBoxesENG = []
         self.xTextBoxesJPN = []
         self.xTextBoxesCOM = []
         self.textEditingBoxes = []
         self.textEditingTitles = []
         self.textEditingTermIcons = []
+        self.textEditingWarningIcons = []
         self.textEditingFootersENG = []
         self.textEditingFootersJPN = []
         for i in range(Globals.AmountEditingWindows):
@@ -334,8 +338,10 @@ class Scripts2(QtGui.QWidget):
             tmplayout = QtGui.QGridLayout()
             title = QtGui.QLabel('')
             termicon = QtGui.QLabel('')
+            warningIcon = QtGui.QLabel('')
 
             htitlelayout = QtGui.QHBoxLayout()
+            htitlelayout.addWidget(warningIcon)
             htitlelayout.addWidget(termicon)
             htitlelayout.addWidget(title)
             htitlelayout.setContentsMargins(0, 0, 0, 0)
@@ -357,10 +363,14 @@ class Scripts2(QtGui.QWidget):
             termicon.setPixmap(self.termInEntryIcon)
             termicon.hide()
             termicon.setFixedSize(13, 13)
+            warningIcon.setPixmap(self.warningInEntryIcon)
+            warningIcon.hide()
+            warningIcon.setFixedSize(13, 13)
             
             self.textEditingBoxes.append(tmpqgrpbox)
             self.textEditingTitles.append(title)
             self.textEditingTermIcons.append(termicon)
+            self.textEditingWarningIcons.append(warningIcon)
             
         # ------------------------------------------------------ #
 
@@ -1491,12 +1501,21 @@ class Scripts2(QtGui.QWidget):
                 else:
                     self.textEditingTermIcons[i].setToolTip('')
                     self.textEditingTermIcons[i].hide()
+
+                if textEntries1[i].count('<') != textEntries1[i].count('>'):
+                    self.textEditingWarningIcons[i].setToolTip('WARNING: It looks like there\'s a broken variable or control code in this entry.')
+                    self.textEditingWarningIcons[i].show()
+                else:
+                    self.textEditingWarningIcons[i].setToolTip('')
+                    self.textEditingWarningIcons[i].hide()
             else:
                 self.textEditingTitles[i].setText('')
                 self.textEditingFootersENG[i].setText('')
                 self.textEditingFootersJPN[i].setText('')
                 self.textEditingTermIcons[i].setToolTip('')
                 self.textEditingTermIcons[i].hide()
+                self.textEditingWarningIcons[i].setToolTip('')
+                self.textEditingWarningIcons[i].hide()
             
 
         # auto-update in Auto mode
