@@ -3,6 +3,7 @@
 from xml.dom import minidom
 from PyQt4 import QtCore, QtGui
 import os
+import re
 
 class ImageMediumStruct():
     def __init__(self):
@@ -246,3 +247,13 @@ class Configuration:
         except:
             self.Dictionary = []
 
+    def ReplaceInGameString(self, text):
+        for replacement in self.FontReplacements:
+            old = replacement[0]
+            new = replacement[1]
+            type = replacement[2]
+            if type == 'simple':
+                text = text.replace(old, new)
+            elif type == 'regex':
+                text = re.sub(old, new, text)
+        return text

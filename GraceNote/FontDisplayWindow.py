@@ -191,14 +191,7 @@ class FontDisplayWindow(QtGui.QDialog):
 
         text = text.replace('\f', '\n')
         text = Globals.VariableReplace(text)
-        for replacement in Globals.configData.FontReplacements:
-            old = replacement[0]
-            new = replacement[1]
-            type = replacement[2]
-            if type == 'simple':
-                text = text.replace(old, new)
-            elif type == 'regex':
-                text = re.sub(old, new, text)
+        text = Globals.configData.ReplaceInGameString(text)
 
         maxX = 0
         maxY = 0
