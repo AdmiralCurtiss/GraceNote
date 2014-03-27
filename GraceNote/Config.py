@@ -45,7 +45,7 @@ class Configuration:
     Images = []
     Terms = []
     Fonts = {}
-    FontReplacements = {}
+    FontReplacements = []
     FontLines = []
     FontFormatting = {}
     Dictionary = []
@@ -161,13 +161,14 @@ class Configuration:
 
         try:
             repls = mainNode.getElementsByTagName('Fonts')[0].getElementsByTagName('Replacement')
-            self.FontReplacements = {}
+            self.FontReplacements = []
             for rep in repls:
                 o = rep.getAttribute('old')
                 n = rep.getAttribute('new')
-                self.FontReplacements[o] = n
+                type = rep.getAttribute('type')
+                self.FontReplacements.append( (o, n, type) )
         except:
-            self.FontReplacements = {}
+            self.FontReplacements = []
 
         try:
             lines = mainNode.getElementsByTagName('Fonts')[0].getElementsByTagName('Line')

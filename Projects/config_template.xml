@@ -39,7 +39,8 @@
 		/>
 	</Terms>
 	<Fonts>
-		<Replacement old="&lt;Name: EX&gt;" new="Example" />
+		<Replacement type="simple" old="&lt;Name: EX&gt;" new="Example" />
+		<Replacement type="regex" old="&lt;Voice: [0-9]+&gt;" new="" />
 		<Line style="2" x="700" y="0" color="green" name="Green: Textbox end" />
 		<Formatting Trigger="Col0" Font="default" />
 		<Formatting Trigger="Col1" Font="default" color="orange" />
