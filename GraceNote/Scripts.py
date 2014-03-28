@@ -1817,8 +1817,8 @@ class Scripts2(QtGui.QWidget):
         unformattedText = Globals.VariableRemove(self.xTextBoxesENG[1].toPlainText())
         jpnText = Globals.VariableRemove(self.xTextBoxesJPN[1].toPlainText())
 
-        width = FontDisplayWindow.renderText(jpnText, None, 1, font)[0]
-        linecount = jpnText.count('\n')
+        width = FontDisplayWindow.renderText(Globals.configData.ReplaceInGameString(jpnText), None, 1, font)[0]
+        linecount = jpnText.replace('\f', '\n').count('\n') + 1
 
         formattedText = FontDisplayWindow.formatText(unformattedText, font, width, linecount, mode)
         self.xTextBoxesENG[1].setText( Globals.VariableReplace(formattedText) )

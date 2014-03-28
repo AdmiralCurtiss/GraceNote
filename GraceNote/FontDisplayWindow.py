@@ -16,28 +16,50 @@ class FontFormattingModes:
 def formatText(text, font, preferredWidth, preferredLinecount, fontFormattingMode):
     treatWidthAsMaximum = True
     unformattedText = re.sub('[ \r\n]+', ' ', text).strip()
+    if preferredLinecount < 1:
+        preferredLinecount = 1
 
     if fontFormattingMode == FontFormattingModes.AutoWidth_ExactLinecount:
         # in this mode, figure out the rough target width by getting the width of the entire text on a single line divided by linecount
-        preferredWidth = renderText(unformattedText, None, 1, font)[0]
+        preferredWidth = renderText( Globals.configData.ReplaceInGameString(unformattedText), None, 1, font)[0]
         preferredWidth /= preferredLinecount
         treatWidthAsMaximum = False
 
     unformattedtextAsCharList = []
     for char in unformattedText:
         unformattedtextAsCharList.append(char)
+
+    # key == start of the replacement, value == (char length of replacement, horizontal pixel size of replacement)
+    # used to format newlines according to how the text shows up in game, with name variables and stuff
+    replacementDict = {}
         
-    formattedtextAsCharList, currentWidth, currentLinecount = formatText_PlaceNewlines(unformattedtextAsCharList, font, preferredWidth, treatWidthAsMaximum)
+    for replacement in Globals.configData.FontReplacements:
+        old = replacement[0]
+        new = replacement[1]
+        type = replacement[2]
+        if type == 'simple':
+            idx = text.find(old, 0)
+            while idx != -1:
+                replacementDict[idx] = (len(old), renderText(new, None, 1, font)[0])
+                idx = text.find(old, idx + len(old))
+        elif type == 'regex':
+            r = re.compile(old)
+            match = r.search(text, pos = 0)
+            while match:
+                replacementDict[match.start()] = (match.end() - match.start(), renderText(new, None, 1, font)[0])
+                match = r.search(text, pos = match.end() + 1)
+
+    formattedtextAsCharList, currentWidth, currentLinecount = formatText_PlaceNewlines(unformattedtextAsCharList, font, replacementDict, preferredWidth, treatWidthAsMaximum)
 
     if fontFormattingMode == FontFormattingModes.AllowExceedWidth_MaximumLinecount and currentLinecount > preferredLinecount:
         # not the most efficient way to handle this but should work
         while currentLinecount > preferredLinecount:
             preferredWidth += 1
-            formattedtextAsCharList, currentWidth, currentLinecount = formatText_PlaceNewlines(unformattedtextAsCharList, font, preferredWidth, treatWidthAsMaximum)
+            formattedtextAsCharList, currentWidth, currentLinecount = formatText_PlaceNewlines(unformattedtextAsCharList, font, replacementDict, preferredWidth, treatWidthAsMaximum)
         
     return ''.join(formattedtextAsCharList)
 
-def formatText_PlaceNewlines(unformattedtextAsCharList, font, preferredWidth, treatWidthAsMaximum):
+def formatText_PlaceNewlines(unformattedtextAsCharList, font, replacementDict, preferredWidth, treatWidthAsMaximum):
     currentWidth = 0
     currentLinecount = 1
     lastSpaceAt = -1
@@ -49,10 +71,23 @@ def formatText_PlaceNewlines(unformattedtextAsCharList, font, preferredWidth, tr
 
     i = 0
     while i < len(s):
-        char = s[i]
-        if char == ' ':
-            lastSpaceAt = i
-        currentWidth += font[char].width
+        if replacementDict.get(i) == None:
+            # no replace-string here, do default character lookup
+            char = s[i]
+
+            if char == ' ':
+                lastSpaceAt = i
+
+            glyph = font.get(char)
+            if glyph == None:
+                glyph = font['_fallback_']
+            currentWidth += glyph.width
+        else:
+            # skip past the replace-string
+            rep = replacementDict[i]
+            i += rep[0] - 1
+            currentWidth += rep[1]
+            char = ''
 
         if currentWidth > preferredWidth:
             if (treatWidthAsMaximum or char == ' ') and lastSpaceAt >= 0:
