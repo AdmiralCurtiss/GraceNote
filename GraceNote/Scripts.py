@@ -1490,7 +1490,7 @@ class Scripts2(QtGui.QWidget):
 
         # inform font box
         databasefilename = self.databaseTreeModel.itemFromIndex(self.databaseTreeView.currentIndex()).statusTip()
-        self.fontWindow.drawText( self.text[rowBoxes[centerPanel]][t], Globals.GetDatabaseDescriptionString(str(databasefilename)) )
+        self.fontWindow.drawText( self.text[rowBoxes[centerPanel]][0], self.text[rowBoxes[centerPanel]][1], Globals.GetDatabaseDescriptionString(str(databasefilename)) )
 
         # inform history window
         self.historyWindow.displayHistoryOfEntry(self.xTextBoxesENG[centerPanel].currentEntry)
@@ -2018,7 +2018,7 @@ class Scripts2(QtGui.QWidget):
         
         # should probably make this optional
         if not CommandOriginAutoMode:
-            self.fontWindow.drawText( GoodString, Globals.GetDatabaseDescriptionString(str(databasefilename)) )
+            self.fontWindow.drawText( GoodString, None, Globals.GetDatabaseDescriptionString(str(databasefilename)) )
 
         return
 

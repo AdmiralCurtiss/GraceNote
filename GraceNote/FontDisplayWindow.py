@@ -191,13 +191,18 @@ class FontDisplayWindow(QtGui.QDialog):
             self.IsAlwaysOnTop = False
         self.show()
                    
-    def drawText(self, text, databaseDesc): # database desc is only passed for Dangan Ronpa!! can be removed in generic GN version
+    def drawText(self, text, japaneseText = None, databaseDesc = None): # database desc is only passed for Dangan Ronpa!! can be removed in generic GN version
         if not Globals.configData.Fonts:
             return
 
         text = text.replace('\f', '\n')
         text = Globals.VariableReplace(text)
         text = Globals.configData.ReplaceInGameString(text)
+
+        if japaneseText != None:
+            japaneseText = japaneseText.replace('\f', '\n')
+            japaneseText = Globals.VariableReplace(japaneseText)
+            japaneseText = Globals.configData.ReplaceInGameString(japaneseText)
 
         maxX = 0
         maxY = 0
@@ -247,6 +252,16 @@ class FontDisplayWindow(QtGui.QDialog):
                 tooltip += line.name + '\n'
             except:
                 pass
+
+        # if japanese text was given, mark its dimensions in the image as well
+        if japaneseText != None:
+            jpnX, jpnY = renderText( japaneseText, None, 0, currentFont )
+            jpnY *= (japaneseText.count('\n') + 1)
+            painter.setPen( Qt.QColor( 'magenta' ) )
+            painter.drawLine( jpnX - 1, 0, jpnX - 1, img.height() - 1 )
+            painter.drawLine( 0, jpnY - 1, img.width() - 1, jpnY - 1 )
+            tooltip += 'Magenta: Dimensions of original Japanese string (might not be accurate)'
+
         
         painter.end()
 
