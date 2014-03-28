@@ -419,11 +419,11 @@ class Scripts2(QtGui.QWidget):
         self.playCentralAudioAction = QtGui.QAction('Play Audio (2nd Textbox)', None)
         self.playCentralAudioAction.triggered.connect(self.PlayCentralAudio)
         self.playCentralAudioAction.setShortcut(QtGui.QKeySequence('Ctrl+-'))
-        self.formatCentralTextMode1Action = QtGui.QAction('Format Text (Mode 1)', None)
+        self.formatCentralTextMode1Action = QtGui.QAction('[BETA] Format Text (Max JP Width, any linecount)', None)
         self.formatCentralTextMode1Action.triggered.connect(self.FormatCentralTextMatchJapaneseWidth)
-        self.formatCentralTextMode2Action = QtGui.QAction('Format Text (Mode 2)', None)
+        self.formatCentralTextMode2Action = QtGui.QAction('[BETA] Format Text (Any width, max JP linecount)', None)
         self.formatCentralTextMode2Action.triggered.connect(self.FormatCentralTextAllowExceedWidth)
-        self.formatCentralTextMode3Action = QtGui.QAction('Format Text (Mode 3)', None)
+        self.formatCentralTextMode3Action = QtGui.QAction('[BETA] Format Text (Match JP Linecount in Block)', None)
         self.formatCentralTextMode3Action.triggered.connect(self.FormatCentralTextMatchJapaneseLinecountAsBlock)
         
 
@@ -622,9 +622,9 @@ class Scripts2(QtGui.QWidget):
         self.Toolbar.addAction(self.openCompletionAction)
         self.Toolbar.addAction(self.openDuplicateTextAction)
         self.Toolbar.addWidget(FlexibleSpace)
-        self.Toolbar.addAction(self.formatCentralTextMode1Action)
-        self.Toolbar.addAction(self.formatCentralTextMode2Action)
-        self.Toolbar.addAction(self.formatCentralTextMode3Action)
+        #self.Toolbar.addAction(self.formatCentralTextMode1Action)
+        #self.Toolbar.addAction(self.formatCentralTextMode2Action)
+        #self.Toolbar.addAction(self.formatCentralTextMode3Action)
         self.Toolbar.addSeparator()
         
         jumpToAndSearchLabelsVBoxLayout = QtGui.QVBoxLayout()
