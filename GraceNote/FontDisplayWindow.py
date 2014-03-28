@@ -55,10 +55,11 @@ def formatText_PlaceNewlines(unformattedtextAsCharList, font, preferredWidth, tr
         currentWidth += font[char].width
 
         if currentWidth > preferredWidth:
-            if treatWidthAsMaximum or char == ' ':
+            if (treatWidthAsMaximum or char == ' ') and lastSpaceAt >= 0:
                 s[lastSpaceAt] = '\n'
                 currentWidth = 0
                 i = lastSpaceAt
+                lastSpaceAt = -1
                 currentLinecount += 1
 
         i += 1
@@ -81,6 +82,9 @@ def renderText(text, painter, lineHeight, defaultFont):
 
     for char in text:
         try:
+            if char == u'\u21B5': # that ↵ return symbol
+                continue
+
             if char == '\n':
                 currentY += lineHeight
                 maxX = max(maxX, currentX)
@@ -129,7 +133,9 @@ def renderText(text, painter, lineHeight, defaultFont):
     return maxX, maxY
 
 def renderChar(char, currentFont, painter, currentX, currentY, currentScale, currentColor, lineHeight, maxY):
-    glyph = currentFont[char]
+    glyph = currentFont.get(char, None)
+    if glyph == None:
+        glyph = currentFont['_fallback_']
 
     if currentScale != 1.0:
         newGlyph = GlyphStruct()
