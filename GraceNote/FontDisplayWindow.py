@@ -15,7 +15,7 @@ class FontFormattingModes:
 
 def formatText(text, font, preferredWidth, preferredLinecount, fontFormattingMode):
     treatWidthAsMaximum = True
-    unformattedText = re.sub('[ \r\n]+', ' ', text).strip()
+    unformattedText = re.sub('[ \r\n]+', ' ', text).rstrip()
     if preferredLinecount < 1:
         preferredLinecount = 1
 
@@ -216,6 +216,7 @@ class FontDisplayWindow(QtGui.QDialog):
             self.resize(500, 150)
 
         self.IsAlwaysOnTop = False
+        self.ShowingJpnDimensions = True
 
     def AlwaysOnTopToggle(self, enabled):
         if enabled:
@@ -289,7 +290,7 @@ class FontDisplayWindow(QtGui.QDialog):
                 pass
 
         # if japanese text was given, mark its dimensions in the image as well
-        if japaneseText != None:
+        if japaneseText != None and self.ShowingJpnDimensions:
             jpnX, jpnY = renderText( japaneseText, None, 0, currentFont )
             jpnY *= (japaneseText.count('\n') + 1)
             painter.setPen( Qt.QColor( 'magenta' ) )
@@ -317,10 +318,15 @@ class FontDisplayWindow(QtGui.QDialog):
     def contextMenuEvent(self, event):
         rightClickMenu = QtGui.QMenu()
         
-        action = QtGui.QAction('Toggle Always on Top', rightClickMenu)
-        action.setChecked(self.IsAlwaysOnTop)
-        action.triggered.connect(self.contextMenuClickAlwaysOnTopToggle)
-        rightClickMenu.addAction(action)
+        actionAlwaysOnTop = QtGui.QAction('Toggle Always on Top', rightClickMenu)
+        actionAlwaysOnTop.setChecked(self.IsAlwaysOnTop)
+        actionAlwaysOnTop.triggered.connect(self.contextMenuClickAlwaysOnTopToggle)
+        rightClickMenu.addAction(actionAlwaysOnTop)
+
+        actionShowJpnDimensions = QtGui.QAction('Toggle Japanese Dimensions (Magenta)', rightClickMenu)
+        actionShowJpnDimensions.setChecked(self.ShowingJpnDimensions)
+        actionShowJpnDimensions.triggered.connect(self.contextMenuClickShowJpnDimensionsToggle)
+        rightClickMenu.addAction(actionShowJpnDimensions)
     
         rightClickMenu.exec_(event.globalPos())
 
@@ -329,5 +335,12 @@ class FontDisplayWindow(QtGui.QDialog):
             self.AlwaysOnTopToggle(False)
         else:
             self.AlwaysOnTopToggle(True)
+        return
+
+    def contextMenuClickShowJpnDimensionsToggle(self, enabled):
+        if self.ShowingJpnDimensions:
+            self.ShowingJpnDimensions = False
+        else:
+            self.ShowingJpnDimensions = True
         return
 

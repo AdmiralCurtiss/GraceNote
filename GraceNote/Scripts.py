@@ -2017,8 +2017,8 @@ class Scripts2(QtGui.QWidget):
             self.text[textBox.currentEntry - 1][2] = GoodString
         
         # should probably make this optional
-        if not CommandOriginAutoMode:
-            self.fontWindow.drawText( GoodString, None, Globals.GetDatabaseDescriptionString(str(databasefilename)) )
+        if not CommandOriginAutoMode and textBox.currentContentState == 'ENG':
+            self.fontWindow.drawText( GoodString, self.text[textBox.currentEntry - 1][1], Globals.GetDatabaseDescriptionString(str(databasefilename)) )
 
         return
 
