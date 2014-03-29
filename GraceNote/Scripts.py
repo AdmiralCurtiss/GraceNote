@@ -1820,12 +1820,23 @@ class Scripts2(QtGui.QWidget):
         unformattedText = Globals.VariableRemove(self.xTextBoxesENG[1].toPlainText())
         jpnText = Globals.VariableRemove(self.xTextBoxesJPN[1].toPlainText())
 
-        width = FontDisplayWindow.renderText(Globals.configData.ReplaceInGameString(jpnText), None, 1, font)[0]
-        linecount = jpnText.replace('\f', '\n').count('\n') + 1
+        engTextSplit = unformattedText.split('\f')
+        jpnTextSplit = jpnText.split('\f')
 
-        formattedText = FontDisplayWindow.formatText(unformattedText, font, width, linecount, mode)
-        self.xTextBoxesENG[1].setText( Globals.VariableReplace(formattedText) )
-        self.xTextBoxesENG[1].manualEdit.emit(-1, self.xTextBoxesENG[1], self.textEditingFootersENG[1])
+        if len(engTextSplit) != len(jpnTextSplit):
+            self.parent.displayStatusMessage('<Feed> count inconsistent between English and Japanese, can\'t format.')
+            return
+
+        formattedTextSplit = []
+        for i in range(len(engTextSplit)):
+            width = FontDisplayWindow.renderText(Globals.configData.ReplaceInGameString(jpnTextSplit[i]), None, 1, font)[0]
+            linecount = jpnTextSplit[i].count('\n') + 1
+
+            formattedText = FontDisplayWindow.formatText(engTextSplit[i], font, width, linecount, mode)
+            formattedTextSplit.append( formattedText )
+
+        self.xTextBoxesENG[1].setText( Globals.VariableReplace( '\f'.join(formattedTextSplit) ) )
+        self.xTextBoxesENG[1].manualEdit.emit( -1, self.xTextBoxesENG[1], self.textEditingFootersENG[1] )
 
     def SetCentralAsClosure(self, status):
         def callFunc():
