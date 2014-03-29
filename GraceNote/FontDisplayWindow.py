@@ -318,12 +318,14 @@ class FontDisplayWindow(QtGui.QDialog):
     def contextMenuEvent(self, event):
         rightClickMenu = QtGui.QMenu()
         
-        actionAlwaysOnTop = QtGui.QAction('Toggle Always on Top', rightClickMenu)
+        actionAlwaysOnTop = QtGui.QAction('Always on Top', rightClickMenu)
+        actionAlwaysOnTop.setCheckable(True)
         actionAlwaysOnTop.setChecked(self.IsAlwaysOnTop)
         actionAlwaysOnTop.triggered.connect(self.contextMenuClickAlwaysOnTopToggle)
         rightClickMenu.addAction(actionAlwaysOnTop)
 
-        actionShowJpnDimensions = QtGui.QAction('Toggle Japanese Dimensions (Magenta)', rightClickMenu)
+        actionShowJpnDimensions = QtGui.QAction('Japanese Dimensions (Magenta)', rightClickMenu)
+        actionShowJpnDimensions.setCheckable(True)
         actionShowJpnDimensions.setChecked(self.ShowingJpnDimensions)
         actionShowJpnDimensions.triggered.connect(self.contextMenuClickShowJpnDimensionsToggle)
         rightClickMenu.addAction(actionShowJpnDimensions)
