@@ -5,7 +5,7 @@ import sip
 sip.setapi('QVariant', 2)
 
 import Globals
-from PyQt4 import QtCore, QtGui
+from PyQt4 import Qt, QtCore, QtGui
 import sqlite3
 import os, sys, re, time, platform
 from binascii import hexlify, unhexlify
@@ -622,9 +622,12 @@ class Scripts2(QtGui.QWidget):
         self.Toolbar.addAction(self.openCompletionAction)
         self.Toolbar.addAction(self.openDuplicateTextAction)
         self.Toolbar.addWidget(FlexibleSpace)
-        #self.Toolbar.addAction(self.formatCentralTextMode1Action)
-        #self.Toolbar.addAction(self.formatCentralTextMode2Action)
-        #self.Toolbar.addAction(self.formatCentralTextMode3Action)
+        formatButtonToolbar = QtGui.QToolBar()
+        formatButtonToolbar.setOrientation( Qt.Qt.Vertical )
+        formatButtonToolbar.addAction(self.formatCentralTextMode1Action)
+        formatButtonToolbar.addAction(self.formatCentralTextMode2Action)
+        formatButtonToolbar.addAction(self.formatCentralTextMode3Action)
+        self.Toolbar.addWidget( formatButtonToolbar )
         self.Toolbar.addSeparator()
         
         jumpToAndSearchLabelsVBoxLayout = QtGui.QVBoxLayout()
