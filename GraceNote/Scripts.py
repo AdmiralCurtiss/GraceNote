@@ -510,7 +510,7 @@ class Scripts2(QtGui.QWidget):
 
         self.openLocalChangelogAction = QtGui.QAction(QtGui.QIcon('icons/changelog.png'), 'Changelog', None)
         self.openLocalChangelogAction.triggered.connect(self.ShowChangelog)
-        self.openLocalChangelogAction.setShortcut(QtGui.QKeySequence('Ctrl+Shift+G'))
+        self.openLocalChangelogAction.setShortcut(QtGui.QKeySequence('Ctrl+L'))
 
         self.openDuplicateTextAction = QtGui.QAction(QtGui.QIcon('icons/ruta.png'), 'Duplicate Text', None)
         self.openDuplicateTextAction.triggered.connect(self.ShowDuplicateText)
@@ -518,7 +518,7 @@ class Scripts2(QtGui.QWidget):
 
         self.runQuitAction = QtGui.QAction('Quit', None)
         self.runQuitAction.triggered.connect(self.CleanUpAndQuit)
-        self.runQuitAction.setShortcut(QtGui.QKeySequence('Ctrl-Q'))
+        self.runQuitAction.setShortcut(QtGui.QKeySequence('Ctrl+W'))
 
 
         self.toolbarIconSizes = [12, 16, 18, 24, 36, 48, 64]
@@ -535,7 +535,6 @@ class Scripts2(QtGui.QWidget):
         for i in range( 1, Globals.configData.TranslationStagesCount + 1 ):
             action = QtGui.QAction(QtGui.QIcon('icons/status/{0}g.png'.format(i)), Globals.configData.TranslationStagesNames[i], None)
             action.setToolTip( Globals.configData.TranslationStagesDescs[i] )
-            action.setShortcut(QtGui.QKeySequence('Ctrl-Shift-{0}'.format(i)))
             self.setTranslationRoleActions.append( action )
 
         self.setAutoThresholdActions = []
@@ -548,11 +547,6 @@ class Scripts2(QtGui.QWidget):
         self.openOptionsWindowAction = QtGui.QAction('Preferences...', None)
         self.openOptionsWindowAction.triggered.connect(self.OpenOptionsWindow)
 
-        self.runReloadConfigAction = QtGui.QAction('Reload Config', None)
-        self.runReloadConfigAction.triggered.connect(self.ReloadConfiguration)
-        self.runReloadConfigAction.setShortcut(QtGui.QKeySequence('Ctrl-Shift-Alt-R'))
-        
-        
         self.setTranslationModeAutoAction = QtGui.QAction('Auto', None)
         self.setTranslationModeSemiautoAction = QtGui.QAction('Semi-Auto', None)
         self.setTranslationModeManualAction = QtGui.QAction('Manual', None)
@@ -673,12 +667,12 @@ class Scripts2(QtGui.QWidget):
         fileMenu.addAction(self.runRetrieveModifiedFilesAction)
         fileMenu.addAction(self.runFindUnsavedDatabasesAction)
         fileMenu.addSeparator()
-        fileMenu.addAction(self.runSaveToPatchAction)
-        fileMenu.addAction(self.runPatchDolAction)
-        fileMenu.addAction(self.runPatchXmlVersion0Action)
-        fileMenu.addAction(self.runPatchXmlVersion2Action)
-        fileMenu.addAction(self.runPatchGracesFDemoAction)
-        fileMenu.addSeparator()
+        #fileMenu.addAction(self.runSaveToPatchAction)
+        #fileMenu.addAction(self.runPatchDolAction)
+        #fileMenu.addAction(self.runPatchXmlVersion0Action)
+        #fileMenu.addAction(self.runPatchXmlVersion2Action)
+        #fileMenu.addAction(self.runPatchGracesFDemoAction)
+        #fileMenu.addSeparator()
         fileMenu.addAction(self.runRevertFromServerAction)
         fileMenu.addSeparator()
         fileMenu.addAction(self.runQuitAction)
@@ -1011,14 +1005,6 @@ class Scripts2(QtGui.QWidget):
         self.parent.setWindowTitle(t)
 
 
-    def ReloadConfiguration(self):
-        self.WriteDatabaseStorageToHdd()
-        
-        Globals.configData = Configuration(Globals.configfile)
-        Globals.configData.DelayedLoad()
-        self.PopulateDatabaseView(Globals.configData.FileList)
-        
-       
     def SetToolbarIconSize(self, action):
         i = 0
         for size in self.toolbarIconSizes:
