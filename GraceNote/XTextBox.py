@@ -19,7 +19,7 @@ class XTextBox(QtGui.QTextEdit):
     currentEntry = -1
 
 
-    def __init__(self, HUD, parent, readOnly = False):
+    def __init__(self, HUD, parent, readOnly = False, buttonLess = False):
         super(XTextBox, self).__init__()
         
         self.parent = parent
@@ -32,6 +32,7 @@ class XTextBox(QtGui.QTextEdit):
         self.buttons = []
 
         self.readOnly = readOnly
+        self.buttonLess = buttonLess
 
         if Globals.Audio:
             self.audioOutput = Phonon.AudioOutput(Phonon.MusicCategory)
@@ -44,6 +45,8 @@ class XTextBox(QtGui.QTextEdit):
                 button = QtGui.QToolButton()
                 button.setAutoRaise(True)
                 button.setIcon(QtGui.QIcon('icons/status/{0}.png'.format(i)))
+                if self.buttonLess:
+                    button.hide()
                 self.StatusButtons[i] = button
     
             self.AudioButtonJpn = QtGui.QToolButton()
@@ -122,11 +125,12 @@ class XTextBox(QtGui.QTextEdit):
         self.footer.setText(prepend + 'Textboxes: ' + str(feedCount+1) + ' / Highest Box: ' + str(highestBoxNewlines) + ' lines / Longest Line: ' + str(longestLineChars) + ' chars')
     
     def makePlaybackButtons(self, clipList):
-        self.audioClips = clipList
-        self.AudioButtonJpn.show()
-        # only display the second button if there are actually two different voice clips
-        if not ( Globals.configData.VoicePathEnPrefix == Globals.configData.VoicePathJpPrefix and Globals.configData.VoicePathEnPostfix == Globals.configData.VoicePathJpPostfix ):
-            self.AudioButtonEng.show()
+        if not self.buttonLess:
+            self.audioClips = clipList
+            self.AudioButtonJpn.show()
+            # only display the second button if there are actually two different voice clips
+            if not ( Globals.configData.VoicePathEnPrefix == Globals.configData.VoicePathJpPrefix and Globals.configData.VoicePathEnPostfix == Globals.configData.VoicePathJpPostfix ):
+                self.AudioButtonEng.show()
                 
     def clearPlaybackButtons(self):
         self.audioClips = []

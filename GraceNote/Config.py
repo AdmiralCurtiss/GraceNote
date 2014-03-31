@@ -32,6 +32,7 @@ class Configuration:
     VoiceEntryOffset = 0
 
     TranslationStagesCount = 4
+    TranslationStagesCountMaximum = 9
     TranslationStagesNames = ['None [0]', 'Translation [1]', 'Translation Review [2]', 'Contextual Review [3]', 'Editing [4]', 'Editing [5]', 'Editing [6]', 'Editing [7]', 'Editing [8]', 'Editing [9]']
     TranslationStagesVerbs = ['Doing Nothing', 'Translating', 'Reviewing Translations', 'Reviewing Context', 'Editing [4]', 'Editing [5]', 'Editing [6]', 'Editing [7]', 'Editing [8]', 'Editing [9]']
     TranslationStagesDescs = [  'None',

@@ -1,7 +1,12 @@
-from PyQt4 import QtCore, QtGui
+from PyQt4 import Qt, QtCore, QtGui
 import Globals
 import time
 import XTextBox
+
+class HistoryDataHelper():
+    englishTextBox = None
+    commentTextBox = None
+    statusIconLabel = None
 
 class HistoryWindow(QtGui.QDialog):
 
@@ -23,13 +28,62 @@ class HistoryWindow(QtGui.QDialog):
         self.entryCommentTextbox.setReadOnly(True)
         self.entryList.selectionModel().selectionChanged.connect(self.EntryModelSelectionChanged)
 
+        self.viewAllButton = QtGui.QPushButton( 'View All' )
+        self.viewAllButton.released.connect( self.ShowFullHistory )
+        self.viewDetailButton = QtGui.QPushButton( 'View Detail' )
+        self.viewDetailButton.released.connect( self.ShowDetailedHistory )
+        self.detailLayout = QtGui.QVBoxLayout()
+        self.detailLayout.addWidget(self.viewDetailButton)
+
         self.entryList.setRootIsDecorated(False)
 
+        self.listLayout = QtGui.QVBoxLayout()
+        self.listLayout.addWidget(self.viewAllButton)
+        self.listLayout.addWidget(self.entryList)
+        self.listLayout.addWidget(self.entryTextTextbox)
+        self.listLayout.addWidget(self.entryCommentTextbox)
+
+        self.listAreaWidget = QtGui.QWidget()
+        self.listAreaWidget.setLayout(self.listLayout)
+        self.detailAreaWidget = QtGui.QWidget()
+        self.detailAreaWidget.setLayout(self.detailLayout)
+
+        self.stackedWidget = QtGui.QStackedWidget()
+        self.stackedWidget.addWidget(self.listAreaWidget)
+        self.stackedWidget.addWidget(self.detailAreaWidget)
+
+        self.expandedAreaTextboxsWidget = QtGui.QWidget()
+        # my eternal nemesis: scroll bars
+        mainWidget = QtGui.QWidget(self);
+        self.vLayout = QtGui.QVBoxLayout(mainWidget);
+        scrollArea = QtGui.QScrollArea(mainWidget);
+        scrollArea.setWidgetResizable(False);
+        self.scrollAreaGridLayout = QtGui.QGridLayout();
+        scrollAreaWidgetContents = QtGui.QWidget();
+        scrollAreaWidgetContents.setLayout(self.scrollAreaGridLayout);
+        self.scrollAreaGridLayout.setSizeConstraint(Qt.QLayout.SetFixedSize);
+        scrollArea.setWidget(scrollAreaWidgetContents);
+        self.vLayout.addWidget(scrollArea);
+        self.expandedAreaTextboxsWidget.setLayout(self.vLayout)
+        self.detailLayout.addWidget(self.expandedAreaTextboxsWidget) 
+        # scroll bars end
+
         self.layout = QtGui.QVBoxLayout()
-        self.layout.addWidget(self.entryList)
-        self.layout.addWidget(self.entryTextTextbox)
-        self.layout.addWidget(self.entryCommentTextbox)
+        self.layout.addWidget(self.stackedWidget)
         self.setLayout(self.layout)
+
+        self.detailHistoryLabels = []
+
+        self.StatusIcons = {}
+        self.StatusIcons[-1] = QtGui.QPixmap('icons/status/debugOn.png').scaled(13, 13, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation);
+        self.StatusIcons[0] = QtGui.QPixmap('icons/status/1.png').scaled(13, 13, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation);
+        for i in range( 1, Globals.configData.TranslationStagesCountMaximum + 1 ):
+            self.StatusIcons[i] = QtGui.QPixmap('icons/status/{0}g.png'.format(i)).scaled(13, 13, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation);
+
+        self.scrollAreaGridLayout.addWidget( QtGui.QLabel("English"), 0, 1 )
+        self.scrollAreaGridLayout.addWidget( QtGui.QLabel("Comment"), 0, 2 )
+
+        self.ShowFullHistory()
 
         geom = Globals.Settings.value('Geometry/HistoryWindow')
         if geom is not None:
@@ -114,6 +168,44 @@ class HistoryWindow(QtGui.QDialog):
         else:
             self.entryList.setCurrentIndex(self.entryModel.index(0, 0))
 
+        self.ShowExpandedHistoryOfEntry(entryId)
+
+        return
+
+    def ShowExpandedHistoryOfEntry(self, entryId):
+        existingBoxCount = len( self.detailHistoryLabels )
+        for d in self.detailHistoryLabels:
+            d.englishTextBox.hide()
+            d.commentTextBox.hide()
+            d.statusIconLabel.hide()
+
+        for index, entry in enumerate( self.History[entryId] ):
+            text = Globals.VariableReplace( entry[1] ).replace( '\n', '' ).replace( '<Feed>', '<Feed>\n' )
+            comment = Globals.VariableReplace( entry[2] )
+            icon = self.StatusIcons[entry[3]]
+
+            if index < existingBoxCount:
+                self.detailHistoryLabels[index].englishTextBox.setText( text )
+                self.detailHistoryLabels[index].englishTextBox.show()
+                self.detailHistoryLabels[index].commentTextBox.setText( comment )
+                self.detailHistoryLabels[index].commentTextBox.show()
+                self.detailHistoryLabels[index].statusIconLabel.setPixmap( icon )
+                self.detailHistoryLabels[index].statusIconLabel.show()
+            else:
+                textbox = QtGui.QLabel( text )
+                commentbox = QtGui.QLabel( comment )
+                statusIconLabel = QtGui.QLabel()
+                statusIconLabel.setPixmap( icon )
+
+                self.scrollAreaGridLayout.addWidget( statusIconLabel, index + 1, 0 )
+                self.scrollAreaGridLayout.addWidget( textbox, index + 1, 1 )
+                self.scrollAreaGridLayout.addWidget( commentbox, index + 1, 2 )
+                
+                d = HistoryDataHelper()
+                d.englishTextBox = textbox
+                d.commentTextBox = commentbox
+                d.statusIconLabel = statusIconLabel
+                self.detailHistoryLabels.append( d )
         return
     
     def clearInfo(self):
@@ -131,6 +223,14 @@ class HistoryWindow(QtGui.QDialog):
         self.entryTextTextbox.iconToggle(data[3])
         self.entryCommentTextbox.setText(Globals.VariableReplace(data[2]))
 
+        return
+
+    def ShowDetailedHistory(self):
+        self.stackedWidget.setCurrentIndex(0)
+        return
+
+    def ShowFullHistory(self):
+        self.stackedWidget.setCurrentIndex(1)
         return
 
     def closeEvent(self, event):

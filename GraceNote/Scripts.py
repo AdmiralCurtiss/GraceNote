@@ -286,9 +286,9 @@ class Scripts2(QtGui.QWidget):
 
 
         self.termInEntryIcon = QtGui.QPixmap( 'icons/pictogram-din-m000-general.png' )
-        self.termInEntryIcon = self.termInEntryIcon.scaled(13, 13, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation);
+        self.termInEntryIcon = self.termInEntryIcon.scaled(13, 13, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
         self.warningInEntryIcon = QtGui.QPixmap( 'icons/pictogram-din-w000-general.png' )
-        self.warningInEntryIcon = self.warningInEntryIcon.scaled(13, 13, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation);
+        self.warningInEntryIcon = self.warningInEntryIcon.scaled(13, 13, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
 
         # --- Textboxes in the middle ---
         # should probably make this more readable and cleaner at some point...
