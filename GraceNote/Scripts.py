@@ -316,9 +316,15 @@ class Scripts2(QtGui.QWidget):
 
             if Globals.Settings.contains('font'):
                 size = int(Globals.Settings.value('font'))
+                font = QtGui.QFont()
+                font.setPointSize( size )
+           
                 tb1.setFontPointSize(size)
+                tb1.document().setDefaultFont( font )
                 tb2.setFontPointSize(size)
+                tb2.document().setDefaultFont( font )
                 tb3.setFontPointSize(size)
+                tb3.document().setDefaultFont( font )
 
             self.xTextBoxesENG.append(tb1)
             self.xTextBoxesJPN.append(tb2)
@@ -949,12 +955,17 @@ class Scripts2(QtGui.QWidget):
     def ChangeFontSize(self, action):
         size = int(action.iconText())
 
+        font = QtGui.QFont()
+        font.setPointSize( size )
         for box in self.xTextBoxesENG:
             box.setFontPointSize(size)
+            box.document().setDefaultFont( font )
         for box in self.xTextBoxesJPN:
             box.setFontPointSize(size)
+            box.document().setDefaultFont( font )
         for box in self.xTextBoxesCOM:
             box.setFontPointSize(size)
+            box.document().setDefaultFont( font )
 
         self.PopulateTextEdit()
         Globals.Settings.setValue('font', size)
@@ -1277,7 +1288,7 @@ class Scripts2(QtGui.QWidget):
             TempUpdatedTimestamp = TempList[i][8]
             TempID = TempList[i][0]
 
-            if TempENG == '':
+            if TempENG == '' or TempENG == None:
                 TempENG = TempJPN
             if TempUpdatedTimestamp is not None:
                 TempUpdatedTimestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(TempUpdatedTimestamp))

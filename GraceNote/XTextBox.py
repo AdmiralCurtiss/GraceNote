@@ -26,6 +26,7 @@ class XTextBox(QtGui.QTextEdit):
         self.Jpcon = sqlite3.connect('Resources/JPDictionary')
         self.Jpcur = self.Jpcon.cursor()
         self.modified = False
+        self.setAcceptRichText( False )
         
         self.currentlySetStatus = 0
 
