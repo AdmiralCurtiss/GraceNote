@@ -44,6 +44,7 @@ class CompletionTable(QtGui.QDialog):
         totalCounts = []
         for i in range(0, Globals.configData.TranslationStagesCount + 1):
             totalCounts.append(0)
+        totalCommentCount = 0
 
         aListCounter = 1
         aList = Globals.configData.FileList
@@ -81,6 +82,7 @@ class CompletionTable(QtGui.QDialog):
                     
                 commentamount = databaseCounts[-2]
                 categoryCommentCount += commentamount
+                totalCommentCount += commentamount
 
                 databaseCountStrings = []
                 if databaseCounts[0] != 0:
@@ -108,7 +110,13 @@ class CompletionTable(QtGui.QDialog):
                 
             aListCounter = aListCounter + 1
 
-        self.treewidget.sortItems(0, 1)
+        # add a list entry for total
+        cat = QtGui.QTreeWidgetItem(self.treewidget, ['--- Total ---'])
+        for i in range(1, Globals.configData.TranslationStagesCount + 1):
+            cat.setData(i, 0, '{0:06.2f}% ({1:06d}/{2:06d})'.format(float(totalCounts[i])/float(totalCounts[0])*100, totalCounts[i], totalCounts[0]))
+        cat.setData(i+1, 0, '{0}'.format(totalCommentCount))
+
+        self.treewidget.sortItems(0, 0)
         progress.setValue(progressMax)
         
         geom = Globals.Settings.value('Geometry/CompletionTable')
