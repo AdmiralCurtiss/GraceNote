@@ -1374,12 +1374,36 @@ class Scripts2(QtGui.QWidget):
         Globals.Cache.databaseAccessRLock.release()
 
     def FormatCurrentlyOpenedEntryIndexes(self):
-        ## DOESNT WORK YET since I can't figure out how to get the QStandardItem() from the self.entrymodel again
+        if self.currentOpenedEntryIndexes is not None:
+            for i, idx in enumerate(self.currentOpenedEntryIndexes):
+                if idx is not None:
+                    self.ReformatEntryInEntryList(idx.row(), i)
         return
-        #if self.currentOpenedEntryIndexes is not None:
-        #    for i in self.currentOpenedEntryIndexes:
-        #        idx = self.entrymodel.itemFromIndex(i)
-        #        ???
+
+    def ReformatEntryInEntryList(self, entryListRow, entryBoxNumber):
+        textBox = self.xTextBoxesENG[entryBoxNumber]
+        for i in range( len( self.entryTreeViewHeaderLabels ) ):
+            item = self.entryStandardItemModel.item( entryListRow, i )
+            self.FormatEntryListItemColor( item, self.text[textBox.currentEntry - 1][4] )
+
+        itemStatus = self.entryStandardItemModel.item( entryListRow, 1 )
+        itemCommentExists = self.entryStandardItemModel.item( entryListRow, 2 )
+        itemText = self.entryStandardItemModel.item( entryListRow, 4 )
+        itemCommentText = self.entryStandardItemModel.item( entryListRow, 5 )
+        itemUpdatedBy = self.entryStandardItemModel.item( entryListRow, 6 )
+        itemTimestamp = self.entryStandardItemModel.item( entryListRow, 7 )
+
+        entryDisplayString = Globals.VariableReplace( self.text[textBox.currentEntry - 1][0].replace('\f', ' ').replace('\n', ' ') )
+        commentDisplayString = Globals.VariableReplace( self.text[textBox.currentEntry - 1][2].replace('\f', ' ').replace('\n', ' ') )
+
+        itemStatus.setText( str(self.text[textBox.currentEntry - 1][4]) )
+        itemCommentExists.setText( '' if commentDisplayString == '' else 'C' )
+        itemText.setText( entryDisplayString )
+        itemCommentText.setText( commentDisplayString )
+        #itemUpdatedBy.setText()
+        #itemTimestamp.setText()
+
+        return
 
     # fills in the textboxes in the middle
     def PopulateTextEdit(self):
@@ -1414,8 +1438,10 @@ class Scripts2(QtGui.QWidget):
                     self.currentOpenedEntryIndexes.append( idx )
                 else:
                     rowBoxes.append( -2 )
+                    self.currentOpenedEntryIndexes.append( None )
             except:
                 rowBoxes.append( -2 )
+                self.currentOpenedEntryIndexes.append( None )
         
         textEntries1 = []
         textEntries1raw = []
