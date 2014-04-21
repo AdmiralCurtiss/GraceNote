@@ -1565,25 +1565,25 @@ class Scripts2(QtGui.QWidget):
 
 
         
-    def GetFullText(self, replaceVariables, dumpEnglish=True, dumpJapanese=False, dumpComments=False):
+    def GetFullText(self, replaceVariables, dumpEnglish=True, dumpJapanese=False, dumpComments=False, seperator='\n', entrySeperator='\n\n\n'):
         string = ''
         i = 1
         for entry in self.text:
             if entry[3] == 0 or self.debugOnOffButton.isChecked():
-                string = string + '{0}'.format(i)
-                string = string + ';' + entry[5]
-                string = string + ';' + str(entry[4])
-                string = string + ';'
+                string = string + '{0}'.format(i) # entry id
+                string = string + seperator + entry[5]  # identifystring
+                string = string + seperator + str(entry[4]) # status
+                string = string + seperator
 
                 currentEntryString = ''
                 if dumpJapanese:
-                    currentEntryString = currentEntryString + (entry[1] if not replaceVariables else Globals.VariableReplace(entry[1])) + ';'
+                    currentEntryString = currentEntryString + (entry[1] if not replaceVariables else Globals.VariableReplace(entry[1])) + seperator
                 if dumpEnglish:
-                    currentEntryString = currentEntryString + (entry[0] if not replaceVariables else Globals.VariableReplace(entry[0])) + ';'
+                    currentEntryString = currentEntryString + (entry[0] if not replaceVariables else Globals.VariableReplace(entry[0])) + seperator
                 if dumpComments:
-                    currentEntryString = currentEntryString + (entry[2] if not replaceVariables else Globals.VariableReplace(entry[2])) + ';'
+                    currentEntryString = currentEntryString + (entry[2] if not replaceVariables else Globals.VariableReplace(entry[2])) + seperator
 
-                string = string + currentEntryString.replace('\n','').replace('\r', '') + "\n"
+                string = string + currentEntryString.replace('\n','').replace('\r', '') + entrySeperator
             
             i += 1
         return string
