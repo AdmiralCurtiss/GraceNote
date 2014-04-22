@@ -59,13 +59,14 @@ class MassReplace(QtGui.QDialog):
         
         self.search = QtGui.QPushButton('Search')
         self.replace = QtGui.QPushButton('Replace')
+        self.replaceAndCloseTabButton = QtGui.QPushButton('Replace && Close Tab')
 
         self.checkAll = QtGui.QToolButton()
         self.checkAll.setText('Check All')
         self.checkNone = QtGui.QToolButton()
         self.checkNone.setText('Check None')
         self.removeTabButton = QtGui.QToolButton()
-        self.removeTabButton.setText('Remove Tab')
+        self.removeTabButton.setText('Close Tab')
         
         checkLayout = QtGui.QHBoxLayout()
         checkLayout.addWidget(self.checkAll)
@@ -76,6 +77,7 @@ class MassReplace(QtGui.QDialog):
         buttonLayout.addLayout(checkLayout)
         buttonLayout.addWidget(self.search)
         buttonLayout.addWidget(self.replace)
+        buttonLayout.addWidget(self.replaceAndCloseTabButton)
                 
         textboxLayout = QtGui.QGridLayout()
         textboxLayout.addWidget(originalLabel    , 0, 0, 1, 1)
@@ -110,6 +112,7 @@ class MassReplace(QtGui.QDialog):
         
         self.search.released.connect(self.Search)
         self.replace.released.connect(self.Replace)
+        self.replaceAndCloseTabButton.released.connect(self.ReplaceAndCloseTab)
         self.checkAll.released.connect(self.checkingAll)
         self.checkNone.released.connect(self.checkingNone)
         self.removeTabButton.released.connect(self.closeCurrentTab)
@@ -172,6 +175,10 @@ class MassReplace(QtGui.QDialog):
 
     def closeCurrentTab(self):
         self.tabwidget.removeTab( self.tabwidget.currentIndex() )
+
+    def ReplaceAndCloseTab(self):
+        self.Replace()
+        self.closeCurrentTab()
             
     def Search(self):
         # Place all matching strings to the search into the tree widget
