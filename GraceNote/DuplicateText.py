@@ -65,9 +65,10 @@ class DuplicateText(QtGui.QDialog):
         layout.addWidget(self.uncollall, y, x)
         self.uncollall.released.connect(self.UncollapseAll)
         
-        self.radioInconsistentTranslation = QtGui.QRadioButton('Inconsistent Translation or Status')
+        self.radioInconsistentTranslationOrStatus = QtGui.QRadioButton('Inconsistent Translation or Status')
+        self.radioInconsistentTranslationOnly = QtGui.QRadioButton('Inconsistent Translation')
         self.radioAllDuplicates = QtGui.QRadioButton('All Duplicates')
-        self.radioInconsistentTranslation.setChecked(True)
+        self.radioInconsistentTranslationOrStatus.setChecked(True)
         
         self.go = QtGui.QPushButton('Search')
 
@@ -77,11 +78,12 @@ class DuplicateText(QtGui.QDialog):
         self.progressLabel = QtGui.QLabel('Pending')
         
         layoutSystemButtons = QtGui.QGridLayout()
-        layoutSystemButtons.addWidget(self.radioInconsistentTranslation, 0, 0)
-        layoutSystemButtons.addWidget(self.radioAllDuplicates, 0, 1)
+        layoutSystemButtons.addWidget(self.radioInconsistentTranslationOrStatus, 0, 0)
+        layoutSystemButtons.addWidget(self.radioInconsistentTranslationOnly, 0, 1)
+        layoutSystemButtons.addWidget(self.radioAllDuplicates, 0, 2)
         #layoutSystemButtons.addWidget(self.progressbar, 3, 1)
         #layoutSystemButtons.addWidget(self.progressLabel, 4, 1)
-        layoutSystemButtons.addWidget(self.go, 0, 2)
+        layoutSystemButtons.addWidget(self.go, 0, 3)
         layoutSystemButtons.setColumnMinimumWidth(0, 100)
         
         self.treewidget.itemDoubleClicked.connect(self.InitiateMassReplaceSearch)
@@ -147,19 +149,26 @@ class DuplicateText(QtGui.QDialog):
                         StringId = item.stringId
                         if BlackList[StringId] == 0:
                             Table[StringId][0] += 1
-                            Table[StringId][1].add((item.english, item.status))
+                            if not self.radioInconsistentTranslationOnly.isChecked():
+                                Table[StringId][1].add((item.english, item.status))
+                            else:
+                                # set status to something constant to remove check against that
+                                Table[StringId][1].add((item.english, 0))
 #                    self.progressbar.setValue(self.progressbar.value() + (6250/len(Globals.configData.FileList[i])))
 #                    self.progressLabel.setText("Processing {0}".format(category))
 #                    self.progressLabel.update()
 #            self.progressbar.setValue(i * 6250)
             i += 1
         
+        showAllDupes = self.radioAllDuplicates.isChecked()
+        showOnlyInconsistencies = self.radioInconsistentTranslationOrStatus.isChecked() or self.radioInconsistentTranslationOnly.isChecked() 
+
         Globals.MainWindow.displayStatusMessage( 'Duplicate Text: Displaying entries...' )
         i = 0
         for item in Table:
             if (
-                    ((self.radioAllDuplicates.isChecked()) and item[0] > 1) or
-                    (self.radioInconsistentTranslation.isChecked() and (((item[0] > 1) and (len(item[1]) >= 2)) or ((item[0] > 1) and (item[1] == set([''])))))
+                    ((showAllDupes) and item[0] > 1) or
+                    ((showOnlyInconsistencies) and (((item[0] > 1) and (len(item[1]) >= 2)) or ((item[0] > 1) and (item[1] == set([''])))))
                 ):
                 Globals.CursorGracesJapanese.execute('SELECT String FROM Japanese WHERE ID=?', (i, ))
                 JP = Globals.CursorGracesJapanese.fetchall()[0][0]
@@ -171,7 +180,11 @@ class DuplicateText(QtGui.QDialog):
                 textOriginalJapaneseText.GraceNoteText = JPvarReplaced
                 for exception in item[1]:
                     ENvarReplaced = Globals.VariableReplace(exception[0])
-                    newline = QtGui.QTreeWidgetItem(textOriginalJapaneseText, ['', '[' + str(exception[1]) + '] [' + ENvarReplaced +']' ])
+                    if not self.radioInconsistentTranslationOnly.isChecked():
+                        englishDisplayText = '[' + str(exception[1]) + '] [' + ENvarReplaced +']'
+                    else:
+                        englishDisplayText = '[' + ENvarReplaced +']'
+                    newline = QtGui.QTreeWidgetItem(textOriginalJapaneseText, ['',  englishDisplayText])
                     newline.GraceNoteText = ENvarReplaced
 #           self.progressLabel.setText("Processing {0}/50000".format(i))
             i += 1
