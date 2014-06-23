@@ -396,7 +396,9 @@ class Scripts2(QtGui.QWidget):
         self.databaseTreeView.selectionModel().selectionChanged.connect(self.PopulateEntryList)
         self.entryTreeView.selectionModel().selectionChanged.connect(self.PopulateTextEdit)
         self.entryStandardItemModel.itemChanged.connect(self.UpdateDebug)
+        self.entryTreeView.setSortingEnabled(True)
         self.entryTreeView.header().setClickable(True)
+        self.entryTreeView.header().setSortIndicatorShown(True)
         self.entryTreeView.header().setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.entryTreeView.header().customContextMenuRequested.connect(self.SpawnEntryListColumnHideMenu)
         for editbox in self.xTextBoxesENG:
@@ -1429,13 +1431,17 @@ class Scripts2(QtGui.QWidget):
         self.currentOpenedEntryIndexes = []
         for i in range(len(self.textEditingBoxes)):
             try:
-                idx = index.sibling(index.row()+(i-1), index.column())
-                entryitem = self.entryStandardItemModel.item(idx.row(), 0)
+                idx = self.entrySortFilterProxyModel.index(index.row()+(i-1), index.column())
+                a = self.entryStandardItemModel.index(index.row()+(i-1), index.column())
+                b = self.entrySortFilterProxyModel.index(a.row(), 0)
+                d = self.entrySortFilterProxyModel.mapToSource(b)
+                c = self.entryStandardItemModel.itemFromIndex(d)
+                entryitem = c
                 entrytextdisplay = self.entrySortFilterProxyModel.data(idx)
 
                 if entrytextdisplay != None:
                     rowBoxes.append( entryitem.GraceNoteEntryId - 1 )
-                    self.currentOpenedEntryIndexes.append( idx )
+                    self.currentOpenedEntryIndexes.append( d )
                 else:
                     rowBoxes.append( -2 )
                     self.currentOpenedEntryIndexes.append( None )
