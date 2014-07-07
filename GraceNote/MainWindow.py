@@ -15,9 +15,6 @@ class MainWindow(QtGui.QMainWindow):
         self.Toolbar = QtGui.QToolBar()
         self.Toolbar.setObjectName('MainToolBar')
         
-        self.editMenu = QtGui.QMenu("&Edit", self)
-        self.menuBar().addMenu(self.editMenu)
-
         self.addToolBar(self.Toolbar)
         self.setUnifiedTitleAndToolBarOnMac(True)
 

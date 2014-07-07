@@ -554,46 +554,21 @@ class Scripts2(QtGui.QWidget):
         self.openHistoryWindowAction.triggered.connect(self.OpenHistoryWindow)
 
 
-        # --- Menus ---
-
-        roleMenu = QtGui.QMenu('Role', self)
-
-        self.disabledMenuOptionSetRole = QtGui.QAction('Role', None)
-        self.disabledMenuOptionSetRole.setEnabled(False)
-        self.disabledMenuOptionSetMode = QtGui.QAction('Mode', None)
-        self.disabledMenuOptionSetMode.setEnabled(False)
-        self.disabledMenuOptionSetThreshold = QtGui.QAction('Auto Mode Threshold', None)
-        self.disabledMenuOptionSetThreshold.setEnabled(False)
-        
-        roleMenu.addAction(self.disabledMenuOptionSetRole)
-        for action in self.setTranslationRoleActions:
-            roleMenu.addAction( action )
-        
-        roleMenu.addSeparator()
-        roleMenu.addAction(self.disabledMenuOptionSetMode)
-        roleMenu.addAction(self.setTranslationModeAutoAction)
-        roleMenu.addAction(self.setTranslationModeSemiautoAction)
-        roleMenu.addAction(self.setTranslationModeManualAction)
-            
-        roleMenu.addSeparator()
-        roleMenu.addAction(self.disabledMenuOptionSetThreshold)
-        for action in self.setAutoThresholdActions:
-            roleMenu.addAction( action )
-
-        roleMenu.triggered.connect(self.SetTranslationRole)
-
-
+        # === Toolbar ===
         self.Toolbar = parent.Toolbar
         self.Toolbar.clear()
         
         self.Toolbar.addAction(self.switchEngOnOffAction)
         self.Toolbar.addAction(self.switchJpnOnOffAction)
         self.Toolbar.addAction(self.switchComOnOffAction)
+        self.Toolbar.addAction(self.openLocalChangelogAction)
+        self.Toolbar.addAction(self.openGlobalChangelogAction)
         self.Toolbar.addAction(self.openStatisticsAction)
-        self.Toolbar.addAction(self.openMassReplaceAction)
         self.Toolbar.addAction(self.openCompletionAction)
+        self.Toolbar.addAction(self.openMassReplaceAction)
         self.Toolbar.addAction(self.openDuplicateTextAction)
         self.Toolbar.addWidget(FlexibleSpace)
+
         formatButtonToolbar = QtGui.QToolBar()
         formatButtonToolbar.setOrientation( Qt.Qt.Vertical )
         formatButtonToolbar.addAction(self.formatCentralTextMode1Action)
@@ -602,41 +577,27 @@ class Scripts2(QtGui.QWidget):
         self.Toolbar.addWidget( formatButtonToolbar )
         self.Toolbar.addSeparator()
         
-        jumpToAndSearchLabelsVBoxLayout = QtGui.QVBoxLayout()
-        jumpToAndSearchLabelsVBoxLayout.addWidget( QtGui.QLabel('Jump To') )
-        jumpToAndSearchLabelsVBoxLayout.addWidget( QtGui.QLabel('Search') )
-        jumpToAndSearchLabelsQGroupBox = QtGui.QGroupBox()
-        jumpToAndSearchLabelsQGroupBox.setLayout(jumpToAndSearchLabelsVBoxLayout)
-        jumpToAndSearchTextboxesVBoxLayout = QtGui.QVBoxLayout()
-        jumpToAndSearchTextboxesVBoxLayout.addWidget( self.jumpToTextbox )
-        jumpToAndSearchTextboxesVBoxLayout.addWidget( self.liveSearchTextbox )
-        jumpToAndSearchTextboxesxQGroupBox = QtGui.QGroupBox()
-        jumpToAndSearchTextboxesxQGroupBox.setLayout(jumpToAndSearchTextboxesVBoxLayout)
-        self.Toolbar.addWidget(jumpToAndSearchLabelsQGroupBox)
-        self.Toolbar.addWidget(jumpToAndSearchTextboxesxQGroupBox)
-        
+        jumpToAndQuickSearchLayout = QtGui.QGridLayout()
+        jumpToAndQuickSearchLayout.addWidget( QtGui.QLabel('Jump To'), 0, 0 )
+        jumpToAndQuickSearchLayout.addWidget( self.jumpToTextbox, 0, 1 )
+        jumpToAndQuickSearchLayout.addWidget( QtGui.QLabel('Quick Search'), 1, 0 )
+        jumpToAndQuickSearchLayout.addWidget( self.liveSearchTextbox, 1, 1 )
+        jumpToAndQuickSearchGroupBox = QtGui.QGroupBox()
+        jumpToAndQuickSearchGroupBox.setLayout( jumpToAndQuickSearchLayout )
+        self.Toolbar.addWidget( jumpToAndQuickSearchGroupBox )
+
         self.Toolbar.addAction(self.debugOnOffButton)
         self.Toolbar.addAction(self.alwaysOnTopButton)
         
         if Globals.Settings.contains('toolicon'):
             self.Toolbar.setIconSize(QtCore.QSize(Globals.Settings.value('toolicon'), Globals.Settings.value('toolicon')))
-
         if Globals.Settings.contains('toolstyle'):
             self.Toolbar.setToolButtonStyle(Globals.Settings.value('toolstyle'))
         else:
             self.Toolbar.setToolButtonStyle(3)
 
-        
-        parent.menuBar().clear()
-        
-        parent.editMenu.addAction(self.runFullTextCopyAction)
-
-        parent.editMenu.addSeparator()
-        for action in self.setCentralAsActs:
-            parent.editMenu.addAction( action )
-        
-        fileMenu = QtGui.QMenu("File", self)
-        
+        # === File Menu ===
+        fileMenu = QtGui.QMenu("&File", self)
         fileMenu.addAction(self.runSaveToServerAction)
         fileMenu.addAction(self.runRetrieveModifiedFilesAction)
         fileMenu.addAction(self.runFindUnsavedDatabasesAction)
@@ -644,13 +605,16 @@ class Scripts2(QtGui.QWidget):
         fileMenu.addAction(self.runRevertFromServerAction)
         fileMenu.addSeparator()
         fileMenu.addAction(self.runQuitAction)
-        
-        
+
+        # === Edit Menu ===
+        editMenu = QtGui.QMenu("&Edit", self)
+        editMenu.addAction(self.runFullTextCopyAction)
+        editMenu.addSeparator()
+        for action in self.setCentralAsActs:
+            editMenu.addAction( action )
+
+        # === View Menu ===
         viewMenu = QtGui.QMenu("View", self)
-        
-        viewMenu.addAction(self.openGlobalChangelogAction)
-        viewMenu.addAction(self.openLocalChangelogAction)
-        viewMenu.addSeparator()
         viewMenu.addAction(self.switchEngOnOffAction)
         viewMenu.addAction(self.switchJpnOnOffAction)
         viewMenu.addAction(self.switchComOnOffAction)
@@ -666,18 +630,23 @@ class Scripts2(QtGui.QWidget):
         viewMenu.addAction(self.openMediaWindowsAction)
         viewMenu.addAction(self.openHistoryWindowAction)
         viewMenu.addSeparator()
-        iconSizeMenu = QtGui.QMenu("Toolbar Icon Size", self)
-        for action in self.changeToolbarIconSizeActions:
-            iconSizeMenu.addAction(action)
+
         textMenu = QtGui.QMenu("Toolbar Style", self)
+        textMenu.triggered.connect(self.SetToolbarStyle)
         textMenu.addAction(self.changeToolbarToOnlyIconAction)
         textMenu.addAction(self.changeToolbarToOnlyTextAction)
         textMenu.addAction(self.changeToolbarToBelowIconAction)
         textMenu.addAction(self.changeToolbarToLeftOfIconAction)
         viewMenu.addMenu(textMenu)
+
+        iconSizeMenu = QtGui.QMenu("Toolbar Icon Size", self)
+        iconSizeMenu.triggered.connect(self.SetToolbarIconSize)
+        for action in self.changeToolbarIconSizeActions:
+            iconSizeMenu.addAction(action)
         viewMenu.addMenu(iconSizeMenu)
 
         fontSizeMenu = QtGui.QMenu("Font Size", self)
+        fontSizeMenu.triggered.connect(self.ChangeFontSize)
         fontSizeMenu.addAction('8')
         fontSizeMenu.addAction('9')
         fontSizeMenu.addAction('10')
@@ -687,16 +656,40 @@ class Scripts2(QtGui.QWidget):
         fontSizeMenu.addAction('24')
         fontSizeMenu.addAction('36')
         viewMenu.addMenu(fontSizeMenu)
-        
-        fontSizeMenu.triggered.connect(self.ChangeFontSize)
-        iconSizeMenu.triggered.connect(self.SetToolbarIconSize)
-        textMenu.triggered.connect(self.SetToolbarStyle)
-        
-        
+
+        # === Role Menu ===
+        roleMenu = QtGui.QMenu('Role', self)
+        roleMenu.triggered.connect(self.SetTranslationRole)
+
+        self.disabledMenuOptionSetRole = QtGui.QAction('Role', None)
+        self.disabledMenuOptionSetRole.setEnabled(False)
+        roleMenu.addAction(self.disabledMenuOptionSetRole)
+        for action in self.setTranslationRoleActions:
+            roleMenu.addAction( action )
+        roleMenu.addSeparator()
+
+        self.disabledMenuOptionSetMode = QtGui.QAction('Mode', None)
+        self.disabledMenuOptionSetMode.setEnabled(False)
+        roleMenu.addAction(self.disabledMenuOptionSetMode)
+        roleMenu.addAction(self.setTranslationModeAutoAction)
+        roleMenu.addAction(self.setTranslationModeSemiautoAction)
+        roleMenu.addAction(self.setTranslationModeManualAction)
+        roleMenu.addSeparator()
+
+        self.disabledMenuOptionSetThreshold = QtGui.QAction('Auto Mode Threshold', None)
+        self.disabledMenuOptionSetThreshold.setEnabled(False)
+        roleMenu.addAction(self.disabledMenuOptionSetThreshold)
+        for action in self.setAutoThresholdActions:
+            roleMenu.addAction( action )
+
+        # === Tools Menu ===
         toolsMenu = QtGui.QMenu("Tools", self)
-        toolsMenu.addAction(self.openMassReplaceAction)
+        toolsMenu.addAction(self.openLocalChangelogAction)
+        toolsMenu.addAction(self.openGlobalChangelogAction)
         toolsMenu.addAction(self.openStatisticsAction)
         toolsMenu.addAction(self.openCompletionAction)
+        toolsMenu.addSeparator()
+        toolsMenu.addAction(self.openMassReplaceAction)
         toolsMenu.addAction(self.openDuplicateTextAction)
         toolsMenu.addSeparator()
         toolsMenu.addAction(self.formatCentralTextMode1Action)
@@ -707,12 +700,15 @@ class Scripts2(QtGui.QWidget):
         toolsMenu.addAction(self.runPropagateDebugD2GAction)
         toolsMenu.addAction(self.runRefreshCompletionDatabaseAction)
         toolsMenu.addAction(self.runFindUsedSymbolsAction)
-        
+
+        # === Options Menu ===
         optionsMenu = QtGui.QMenu("Options", self)
         optionsMenu.addAction(self.openOptionsWindowAction)
 
+        # === Menu Bar ===
+        parent.menuBar().clear()
         parent.menuBar().addMenu(fileMenu)
-        parent.menuBar().addMenu(parent.editMenu)
+        parent.menuBar().addMenu(editMenu)
         parent.menuBar().addMenu(viewMenu)
         parent.menuBar().addMenu(roleMenu)
         parent.menuBar().addMenu(toolsMenu)
@@ -778,7 +774,7 @@ class Scripts2(QtGui.QWidget):
         Globals.Cache.StartBackgroundDatabaseLoadingThread()
 
         Globals.SplashScreen.destroyScreen()
-        
+
     def OpenMediumWindows(self):
         self.media = {}
         self.OpenImageWindows()
