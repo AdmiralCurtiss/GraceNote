@@ -25,7 +25,6 @@ from DuplicateText import *
 import CompletionTable
 import ImageViewerWindow
 import FontDisplayWindow
-import GracesCreation
 import NetworkHandler
 import DatabaseHandler
 import HistoryWindow
@@ -463,15 +462,6 @@ class Scripts2(QtGui.QWidget):
         self.runFullTextCopyAction.triggered.connect(self.FullTextCopy)
         self.runFullTextCopyAction.setShortcut(QtGui.QKeySequence('Ctrl+T'))
 
-        self.runSaveAsPngAction = QtGui.QAction('Save Text as Image', None)
-        self.runSaveAsPngAction.triggered.connect(self.SaveAsPng)
-        self.runSaveAsPngAndOpenAction = QtGui.QAction('Save Text as Image and open', None)
-        self.runSaveAsPngAndOpenAction.triggered.connect(self.SaveAsPngAndOpen)
-        self.runSaveAsPngAndOpenAction.setShortcut(QtGui.QKeySequence('Ctrl+I'))
-        self.runSaveAsMultiPngAction = QtGui.QAction('Save Text as multiple Images', None)
-        self.runSaveAsMultiPngAction.triggered.connect(self.SaveAsMultiplePng)
-        
-        
         self.runSaveToServerAction = QtGui.QAction(QtGui.QIcon('icons/upload.png'), 'Save', None)
         self.runSaveToServerAction.triggered.connect(self.CallSavetoServer)
         self.runSaveToServerAction.setShortcut(QtGui.QKeySequence('Ctrl+S'))
@@ -491,26 +481,6 @@ class Scripts2(QtGui.QWidget):
         
         self.runFindUnsavedDatabasesAction = QtGui.QAction(QtGui.QIcon('icons/refresh.png'), 'Find Unsaved Databases', None)
         self.runFindUnsavedDatabasesAction.triggered.connect(self.FindUnsavedDatabases)
-
-        self.runSaveToPatchAction = QtGui.QAction(QtGui.QIcon('icons/patch.png'), 'Patch Live', None)
-        self.runSaveToPatchAction.triggered.connect(self.CallSavetoPatch)
-        self.runSaveToPatchAction.setShortcut(QtGui.QKeySequence('Ctrl+P'))
-
-        self.runPatchDolAction = QtGui.QAction(QtGui.QIcon('icons/patchdol.png'), 'Patch Embedded Strings', None)
-        self.runPatchDolAction.triggered.connect(self.CallPatchDol)
-        self.runPatchDolAction.setShortcut(QtGui.QKeySequence('Ctrl+Alt+P'))
-
-        self.runPatchXmlVersion0Action = QtGui.QAction(QtGui.QIcon('icons/patchv0.png'), 'Patch XML', None)
-        self.runPatchXmlVersion0Action.triggered.connect(self.CallSavetoXML)
-        self.runPatchXmlVersion0Action.setShortcut(QtGui.QKeySequence('Ctrl+Shift+P'))
-
-        self.runPatchXmlVersion2Action = QtGui.QAction(QtGui.QIcon('icons/patchv2.png'), 'Patch Bugfix XML', None)
-        self.runPatchXmlVersion2Action.triggered.connect(self.CallSavetoBugfixXML)
-        self.runPatchXmlVersion2Action.setShortcut(QtGui.QKeySequence('Ctrl+Shift+Alt+P'))
-
-        self.runPatchGracesFDemoAction = QtGui.QAction(QtGui.QIcon('icons/patchv0.png'), 'Patch Graces f Demo XML', None)
-        self.runPatchGracesFDemoAction.triggered.connect(self.CallSavetoGracesfDemoXML)
-        self.runPatchGracesFDemoAction.setShortcut(QtGui.QKeySequence('Ctrl+Alt+F'))
 
         self.openGlobalChangelogAction = QtGui.QAction(QtGui.QIcon('icons/global.png'), 'Global Changelog', None)
         self.openGlobalChangelogAction.triggered.connect(self.ShowGlobalChangelog)
@@ -659,11 +629,7 @@ class Scripts2(QtGui.QWidget):
         
         parent.menuBar().clear()
         
-        parent.editMenu.addSeparator()
         parent.editMenu.addAction(self.runFullTextCopyAction)
-        parent.editMenu.addAction(self.runSaveAsPngAndOpenAction)
-        parent.editMenu.addAction(self.runSaveAsPngAction)
-        parent.editMenu.addAction(self.runSaveAsMultiPngAction)
 
         parent.editMenu.addSeparator()
         for action in self.setCentralAsActs:
@@ -675,12 +641,6 @@ class Scripts2(QtGui.QWidget):
         fileMenu.addAction(self.runRetrieveModifiedFilesAction)
         fileMenu.addAction(self.runFindUnsavedDatabasesAction)
         fileMenu.addSeparator()
-        #fileMenu.addAction(self.runSaveToPatchAction)
-        #fileMenu.addAction(self.runPatchDolAction)
-        #fileMenu.addAction(self.runPatchXmlVersion0Action)
-        #fileMenu.addAction(self.runPatchXmlVersion2Action)
-        #fileMenu.addAction(self.runPatchGracesFDemoAction)
-        #fileMenu.addSeparator()
         fileMenu.addAction(self.runRevertFromServerAction)
         fileMenu.addSeparator()
         fileMenu.addAction(self.runQuitAction)
@@ -1600,42 +1560,6 @@ class Scripts2(QtGui.QWidget):
         clipboard.setText(string)
         return
 
-    def SaveAsPng(self):
-        string = self.GetFullText(False)
-        txtfile = open('text.txt', 'w')
-        txtfile.write( codecs.BOM_UTF8 )
-        txtfile.write( string.encode( "utf-8" ) )
-        txtfile.close()
-        args = ['FontDisplay.exe', '-fontinfofile', 'ffinfo.bin', '-fontinfofiletype', 'fontinfo', '-textfile', 'text.txt', '-mode', 'png', '-font', 'FONTTEX10.TXV', '-fontblock', '0', '-outfile', 'text.png']
-        proc=subprocess.Popen(args)
-        proc.wait()
-        return
-
-    def SaveAsMultiplePng(self):
-        try:
-            databasefilename = self.databaseTreeModel.itemFromIndex(self.databaseTreeView.currentIndex()).statusTip()
-        except:
-            return
-            
-        string = self.GetFullText(False)
-        txtfile = open('text.txt', 'w')
-        txtfile.write( codecs.BOM_UTF8 )
-        txtfile.write( string.encode( "utf-8" ) )
-        txtfile.close()
-        
-        if databasefilename.startsWith("VScenario") or databasefilename.startsWith("VBattle"):
-            args = ['FontDisplay.exe', '-fontinfofile', 'ffinfo.bin', '-fontinfofiletype', 'fontinfo', '-textfile', 'text.txt', '-mode', 'png', '-font', 'FONTTEX10.TXV', '-fontblock', '0', '-outfile', 'text.png', '-boxbybox', '-dialoguebubble']
-        else:
-            args = ['FontDisplay.exe', '-fontinfofile', 'ffinfo.bin', '-fontinfofiletype', 'fontinfo', '-textfile', 'text.txt', '-mode', 'png', '-font', 'FONTTEX10.TXV', '-fontblock', '0', '-outfile', 'text.png', '-boxbybox']
-        proc=subprocess.Popen(args)
-        proc.wait()
-        return
-        
-    def SaveAsPngAndOpen(self):
-        self.SaveAsPng()
-        os.startfile('text.png')
-        return
-
     def JumpToDatabase(self):
         jumpto = self.jumpToTextbox.text()
         self.JumpToEntry(jumpto, 0)
@@ -2246,24 +2170,4 @@ class Scripts2(QtGui.QWidget):
 
     def CallRetrieveModifiedFiles(self):
         NetworkHandler.RetrieveModifiedFiles(self, None)
-        return
-
-    def CallSavetoPatch(self):
-        GracesCreation.SavetoPatch(self)
-        return
-
-    def CallPatchDol(self):
-        GracesCreation.PatchDol(self)
-        return
-
-    def CallSavetoXML(self):
-        GracesCreation.SavetoXML(self)
-        return
-
-    def CallSavetoBugfixXML(self):
-        GracesCreation.SavetoBugfixXML(self)
-        return
-
-    def CallSavetoGracesfDemoXML(self):
-        GracesCreation.SavetoGracesfDemoXML(self)
         return

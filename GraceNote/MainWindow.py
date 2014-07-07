@@ -16,15 +16,6 @@ class MainWindow(QtGui.QMainWindow):
         self.Toolbar.setObjectName('MainToolBar')
         
         self.editMenu = QtGui.QMenu("&Edit", self)
-                
-        self.editMenu.addAction("Undo")
-        self.editMenu.addAction("Redo")        
-        self.editMenu.addSeparator()
-        self.editMenu.addAction("Cut")
-        self.editMenu.addAction("Copy")
-        self.editMenu.addAction("Paste")
-        self.editMenu.addAction("Select All")
-                        
         self.menuBar().addMenu(self.editMenu)
 
         self.addToolBar(self.Toolbar)
