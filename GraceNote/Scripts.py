@@ -302,15 +302,10 @@ class Scripts2(QtGui.QWidget):
         self.textEditingFootersJPN = []
         for i in range(Globals.AmountEditingWindows):
             # create text boxes, set defaults
-            tb1 = XTextBox(None, self)
-            tb1.currentContentState = 'ENG'
-            
-            tb2 = XTextBox('jp', self)
-            tb2.currentContentState = 'JPN'
+            tb1 = XTextBox(self, 'ENG')
+            tb2 = XTextBox(self, 'JPN')
             tb2.setReadOnly(True)
-
-            tb3 = XTextBox('com', self)
-            tb3.currentContentState = 'COM'
+            tb3 = XTextBox(self, 'COM')
             tb3.setReadOnly(False)
 
             if Globals.Settings.contains('font'):
@@ -1952,35 +1947,35 @@ class Scripts2(QtGui.QWidget):
         else:
             CommandOriginButton = True
         
-        updateStatusValue = self.FigureOutNewStatusValue(role, currentDatabaseStatus, textBox.currentContentState, CommandOriginButton, CommandOriginAutoMode)
+        updateStatusValue = self.FigureOutNewStatusValue(role, currentDatabaseStatus, textBox.contentType, CommandOriginButton, CommandOriginAutoMode)
 
         self.text[textBox.currentEntry - 1][4] = updateStatusValue
-        if textBox.currentContentState == 'ENG':
+        if textBox.contentType == 'ENG':
             textBox.iconToggle(updateStatusValue)
         
         databasefilename = self.databaseTreeModel.itemFromIndex(self.databaseTreeView.currentIndex()).statusTip()
         
         #UpdatedDatabaseEntry(cleanString, databaseName, entry, role, state)
         # keep for later write to HDD
-        if textBox.currentContentState == 'ENG':
+        if textBox.contentType == 'ENG':
             self.InsertOrUpdateEntryToWrite(DatabaseCache.UpdatedDatabaseEntry(GoodString, None, databasefilename, textBox.currentEntry, updateStatusValue))
-        elif textBox.currentContentState == "COM":
+        elif textBox.contentType == "COM":
             self.InsertOrUpdateEntryToWrite(DatabaseCache.UpdatedDatabaseEntry(None, GoodString, databasefilename, textBox.currentEntry, updateStatusValue))
         else:
             Globals.MainWindow.displayStatusMessage("ERROR: Couldn't update entry, ContentState is neither English nor Comment!")
             return
-        textBox.refreshFooter(GoodString, textBox.currentContentState + ': ')
+        textBox.refreshFooter(GoodString, textBox.contentType + ': ')
 
         self.ReStartTimeoutTimer()
         
         # write the new string back into the main window, this is neccessary or else the new string isn't there when the displayed entry is changed!
-        if textBox.currentContentState == 'ENG':
+        if textBox.contentType == 'ENG':
             self.text[textBox.currentEntry - 1][0] = GoodString
-        elif textBox.currentContentState == "COM":
+        elif textBox.contentType == "COM":
             self.text[textBox.currentEntry - 1][2] = GoodString
         
         # should probably make this optional
-        if not CommandOriginAutoMode and textBox.currentContentState == 'ENG':
+        if not CommandOriginAutoMode and textBox.contentType == 'ENG':
             self.fontWindow.drawText( GoodString, self.text[textBox.currentEntry - 1][1], Globals.GetDatabaseDescriptionString(str(databasefilename)) )
 
         return

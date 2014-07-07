@@ -19,7 +19,7 @@ class XTextBox(QtGui.QTextEdit):
     currentEntry = -1
 
 
-    def __init__(self, HUD, parent, readOnly = False, buttonLess = False):
+    def __init__(self, parent, contentType = 'ENG', readOnly = False, buttonLess = False):
         super(XTextBox, self).__init__()
         
         self.parent = parent
@@ -29,6 +29,7 @@ class XTextBox(QtGui.QTextEdit):
         self.setAcceptRichText( False )
         
         self.currentlySetStatus = 0
+        self.contentType = contentType
 
         self.buttons = []
 
@@ -40,7 +41,7 @@ class XTextBox(QtGui.QTextEdit):
             self.player = Phonon.MediaObject()
             Phonon.createPath(self.player, self.audioOutput)
 
-        if HUD == None:
+        if contentType == 'ENG':
             self.StatusButtons = {}
             for i in range( 1, Globals.configData.TranslationStagesCount + 1 ):
                 button = QtGui.QToolButton()
@@ -77,7 +78,7 @@ class XTextBox(QtGui.QTextEdit):
                 for i in range( 1, Globals.configData.TranslationStagesCount + 1 ):
                     self.StatusButtons[i].released.connect(self.ToggleStatusButtonClosure(i))
 
-        elif HUD == 'jp' or HUD == 'com':
+        elif contentType == 'JPN' or contentType == 'COM':
             self.jpflag = QtGui.QToolButton()
             self.jpflag.setCheckable(False)
             self.jpflag.setAutoRaise(True)
@@ -89,7 +90,7 @@ class XTextBox(QtGui.QTextEdit):
 
             self.role = 1
 
-            if HUD == 'com':
+            if contentType == 'COM':
                 self.flagToggle()
             
             
@@ -97,7 +98,7 @@ class XTextBox(QtGui.QTextEdit):
 
         if Globals.enchanted:
             import enchant
-            self.dict = enchant.Dict("en_GB")
+            self.dict = enchant.Dict("en_US")
             for word in Globals.configData.Dictionary:
                 self.dict.add_to_session(word.strip())
             self.highlighter.setDict(self.dict)

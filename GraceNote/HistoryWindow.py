@@ -22,7 +22,7 @@ class HistoryWindow(QtGui.QDialog):
         self.entryModelHeaderLabels = ['E', 'S', 'C', 'Status', 'Time', 'Author']
         self.entryModel.setColumnCount(len(self.entryModelHeaderLabels))
         self.entryList.setModel(self.entryModel)
-        self.entryTextTextbox = XTextBox.XTextBox(None, self, True)
+        self.entryTextTextbox = XTextBox.XTextBox(self, 'ENG', True)
         self.entryTextTextbox.setReadOnly(True)
         self.entryCommentTextbox = QtGui.QTextEdit()
         self.entryCommentTextbox.setReadOnly(True)
