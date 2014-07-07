@@ -218,11 +218,22 @@ class XTextBox(QtGui.QTextEdit):
             cursor.select(QtGui.QTextCursor.WordUnderCursor)
         self.setTextCursor(cursor)
     
-        # Check if the selected word is misspelled or JP and offer spelling
-        # suggestions if it is.
+        popup_menu.addSeparator()
+        searchEntryAction = QtGui.QAction( 'Search for Entry', None )
+        searchEntryAction.triggered.connect( self.SearchEntry )
+        popup_menu.addAction( searchEntryAction )
+
         if self.textCursor().hasSelection():
             text = unicode(self.textCursor().selectedText())
-            
+            searchSelectionAction = TextAction( u'Search for "' + unicode(text) + u'"', popup_menu )
+            searchSelectionAction.data = text
+            searchSelectionAction.textActionTriggered.connect( self.SearchSelection )
+            popup_menu.addAction( searchSelectionAction )
+        popup_menu.addSeparator()
+        
+        if self.textCursor().hasSelection():
+            # Check if the selected word is misspelled or JP and offer spelling
+            # suggestions if it is.
             # JP Lookup
             if ord(text[0]) > 0x79:
                 select = unicode(cursor.selectedText()) + u'%'
@@ -290,8 +301,9 @@ class XTextBox(QtGui.QTextEdit):
                 if not self.dict.check(text):
                     spell_menu = QtGui.QMenu('Spelling Suggestions')
                     for word in self.dict.suggest(text):
-                        action = SpellAction(word, spell_menu)
-                        action.correct.connect(self.correctWord)
+                        action = TextAction(word, spell_menu)
+                        action.data = word
+                        action.textActionTriggered.connect(self.correctWord)
                         spell_menu.addAction(action)
                     # Only add the spelling suggests to the menu if there are
                     # suggestions.
@@ -314,14 +326,39 @@ class XTextBox(QtGui.QTextEdit):
                 selend = selend + 1
                 textplus = unicode(plaintext[selstart : selend])
             if textplus.startswith('[') and textplus.endswith(']'):
-                popup_menu.insertSeparator(popup_menu.actions()[0])
-                action = SpellAction('Jump to ' + textplus, popup_menu)
-                action.correct.connect(self.jumpToDatabaseFromBracketString)
+                popup_menu.addSeparator()
+                action = TextAction(u'Jump to ' + unicode(textplus), popup_menu)
+                action.data = textplus
+                action.textActionTriggered.connect(self.jumpToDatabaseFromBracketString)
                 popup_menu.addAction(action)
                 
-                                
-            popup_menu.exec_(event.globalPos())
 
+
+        popup_menu.exec_( event.globalPos() )
+
+    def SearchSelection(self, text):
+        self.parent.ShowMassReplace()
+        self.parent.massDialog.original.setText( text )
+        self.parent.massDialog.matchEngCheckbox.setChecked( True if self.contentType == 'ENG' else False )
+        self.parent.massDialog.matchJpnCheckbox.setChecked( True if self.contentType == 'JPN' else False )
+        self.parent.massDialog.matchEntryCheckbox.setChecked( False )
+        self.parent.massDialog.matchCase.setChecked( False )
+        self.parent.massDialog.searchDebug.setChecked( False )
+        self.parent.massDialog.fileFilter.setText( '' )
+        self.parent.massDialog.exceptions.setText( '' )
+        self.parent.massDialog.Search()
+
+    def SearchEntry(self):
+        self.parent.ShowMassReplace()
+        self.parent.massDialog.original.setText( self.toPlainText() )
+        self.parent.massDialog.matchEngCheckbox.setChecked( True if self.contentType == 'ENG' else False )
+        self.parent.massDialog.matchJpnCheckbox.setChecked( True if self.contentType == 'JPN' else False )
+        self.parent.massDialog.matchEntryCheckbox.setChecked( True )
+        self.parent.massDialog.matchCase.setChecked( True )
+        self.parent.massDialog.searchDebug.setChecked( False )
+        self.parent.massDialog.fileFilter.setText( '' )
+        self.parent.massDialog.exceptions.setText( '' )
+        self.parent.massDialog.Search()
 
     def DefSplit(self, string):
         
@@ -406,7 +443,7 @@ class XTextBox(QtGui.QTextEdit):
         return cookielist
     
     def jumpToDatabaseFromBracketString(self, word):
-        # word is something like: "Jump to [DRBO1234/56]", "Jump to [1]", "Jump to [VItems]"
+        # word is something like: "[DRBO1234/56]", "[1]", "[VItems]"
         word = unicode(word)
         word = word[word.index('[') + 1 : word.index(']')]
         words = word.split('/', 1)
@@ -474,12 +511,12 @@ class XTextBox(QtGui.QTextEdit):
             self.jpflag.setIcon(QtGui.QIcon('icons/japanflag.png'))
             self.role = 1
 
-class SpellAction(QtGui.QAction):
-    correct = QtCore.pyqtSignal(unicode)
+class TextAction(QtGui.QAction):
+    textActionTriggered = QtCore.pyqtSignal(unicode)
  
     def __init__(self, *args):
         QtGui.QAction.__init__(self, *args)
  
-        self.triggered.connect(lambda x: self.correct.emit(
-            unicode(self.text())))
+        self.triggered.connect(lambda x: self.textActionTriggered.emit(
+            unicode( self.data )))
 
