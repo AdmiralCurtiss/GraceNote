@@ -212,7 +212,6 @@ class MassReplace(QtGui.QDialog):
                 return
 
         MatchedEntries = []
-        aList = Globals.configData.FileList
 
         # turn on case sensitive checking
         if matchCase:
@@ -233,19 +232,18 @@ class MassReplace(QtGui.QDialog):
                     JPmatches.add(int(match[0]))
 
         dbFilter = unicode( self.fileFilter.text() ).lower()
-        for j in range(1, len(aList)):
-            for File in aList[j]:
-                if dbFilter in File.lower() or dbFilter in Globals.GetDatabaseDescriptionString(File).lower():
-                    data = Globals.Cache.GetDatabase(File)
-                    for i in xrange(len(data)):
-                        if ( matchJapanese and data[i].stringId in JPmatches ) \
-                        or ( matchEnglish and matchFullEntry and data[i].english == matchString ) \
-                        or ( matchEnglish and not matchFullEntry and matchCase and matchString in data[i].english ) \
-                        or ( matchEnglish and not matchFullEntry and not matchCase and matchString.upper() in data[i].english.upper() > -1 ):
-                            if searchDebug or data[i].status >= 0:
-                                Globals.CursorGracesJapanese.execute('SELECT string FROM Japanese WHERE ID={0}'.format(data[i].stringId))
-                                JPString = Globals.CursorGracesJapanese.fetchall()[0][0]
-                                MatchedEntries.append( [File, i+1, data[i].english, JPString, data[i].IdentifyString, data[i].status, Globals.GetDatabaseDescriptionString(File)] )
+        for File in Globals.configData.FileList:
+            if dbFilter in File.lower() or dbFilter in Globals.GetDatabaseDescriptionString(File).lower():
+                data = Globals.Cache.GetDatabase(File)
+                for i in xrange(len(data)):
+                    if ( matchJapanese and data[i].stringId in JPmatches ) \
+                    or ( matchEnglish and matchFullEntry and data[i].english == matchString ) \
+                    or ( matchEnglish and not matchFullEntry and matchCase and matchString in data[i].english ) \
+                    or ( matchEnglish and not matchFullEntry and not matchCase and matchString.upper() in data[i].english.upper() > -1 ):
+                        if searchDebug or data[i].status >= 0:
+                            Globals.CursorGracesJapanese.execute('SELECT string FROM Japanese WHERE ID={0}'.format(data[i].stringId))
+                            JPString = Globals.CursorGracesJapanese.fetchall()[0][0]
+                            MatchedEntries.append( [File, i+1, data[i].english, JPString, data[i].IdentifyString, data[i].status, Globals.GetDatabaseDescriptionString(File)] )
                         
         if len(MatchedEntries) == 0:
             return

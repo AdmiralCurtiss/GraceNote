@@ -6,11 +6,16 @@ import os
 import re
 
 class ImageMediumStruct():
-    def __init__(self):
-        return
+    pass
 class GlyphStruct():
-    def __init__(self):
-        return
+    pass
+class DatabaseTreeNode():
+    # if IsCategory == True, Data is a list of DatabaseTreeNodes
+    # if IsCategory == False, Data is nothing
+    def __init__( self, isCategory = False, name = None, data = None ):
+        self.IsCategory = isCategory
+        self.Name = name
+        self.Data = data
 
 class Configuration:
     ID = 'UnknownID'
@@ -52,7 +57,8 @@ class Configuration:
     FontFormatting = {}
     Dictionary = []
 
-    FileList = []
+    FileList = set()
+    FileTree = None
     FileDescriptions = {}
     
     def __init__(self, configfilename):
@@ -113,28 +119,37 @@ class Configuration:
         self.LoadImages(self.mainNode)
 
     def LoadFileList(self, mainNode):
-        self.FileList = [ [] ]
+        self.FileList = set()
+        self.FileTree = DatabaseTreeNode( True, 'root', [] )
         self.FileDescriptions = {}
-        categories = mainNode.getElementsByTagName('Categories')[0].getElementsByTagName('Category')
-        categorycounter = 0
-        for category in categories:
-            categorycounter = categorycounter + 1
+
+        def AddCategory( category, parentTreeNode ):
             categoryName = category.getAttribute('name')
-            self.FileList[0].append(categoryName)
-            files = category.getElementsByTagName('File')
+            treeNode = DatabaseTreeNode( True, categoryName, [] )
             
-            newfiles = []
-            for filename in files:
-                databaseName = filename.getAttribute('name')
-                newfiles.append(databaseName)
+            subCategories = category.getElementsByTagName('Category')
+            for cat in subCategories:
+                AddCategory( cat, treeNode )
+
+            files = category.getElementsByTagName('File')
+            for file in files:
+                databaseName = file.getAttribute('name')
+                self.FileList.add( databaseName )
                 try:
-                    databaseDescription = filename.getAttribute('desc')
+                    databaseDescription = file.getAttribute('desc')
                     if databaseDescription != '':
                         self.FileDescriptions[databaseName] = databaseDescription
                 except:
                     pass
-            self.FileList.append(newfiles)
+                treeNode.Data.append( DatabaseTreeNode( False, databaseName ) )
+
+            parentTreeNode.Data.append( treeNode )
         
+        categories = mainNode.getElementsByTagName('Categories')[0].getElementsByTagName('Category')
+        for category in categories:
+            AddCategory( category, self.FileTree )
+
+       
     def LoadFont(self, mainNode):
         try:
             fonts = mainNode.getElementsByTagName('Fonts')[0].getElementsByTagName('Font')

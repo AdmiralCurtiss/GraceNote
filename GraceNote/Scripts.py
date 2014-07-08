@@ -250,7 +250,7 @@ class Scripts2(QtGui.QWidget):
         self.databaseTreeView.sortByColumn(1, 0)
         self.databaseTreeView.setHeaderHidden(True)
         self.databaseTreeView.setContentsMargins(0, 0, 0, 0)
-        self.PopulateDatabaseView(Globals.configData.FileList)
+        self.PopulateDatabaseView(Globals.configData.FileTree)
         self.databaseTreeView.setModel(self.databaseTreeModel)
 
 
@@ -1006,34 +1006,26 @@ class Scripts2(QtGui.QWidget):
         
         Globals.Cache.databaseAccessRLock.acquire()
 
-        i = 1
-        aList = Globals.configData.FileList
+        for filename in Globals.configData.FileList:
+            Globals.MainWindow.displayStatusMessage( "Consolidate Debug: Processing: {0}".format(filename) )
             
-        for item in aList[0]:
-            for filename in aList[i]:
-
-                Globals.MainWindow.displayStatusMessage( "Consolidate Debug: Processing: {0}".format(filename) )
-            
-                UpdateCon = DatabaseHandler.OpenEntryDatabase(filename)
-                UpdateCur = UpdateCon.cursor()
-                        
-                UpdateCur.execute("SELECT ID, StringID, status FROM Text")
+            UpdateCon = DatabaseHandler.OpenEntryDatabase(filename)
+            UpdateCur = UpdateCon.cursor()
+            UpdateCur.execute("SELECT ID, StringID, status FROM Text")
                 
-                for entry in UpdateCur.fetchall():                        
-                    Globals.CursorGracesJapanese.execute("SELECT debug FROM Japanese where ID=?", (entry[1],))
+            for entry in UpdateCur.fetchall():                        
+                Globals.CursorGracesJapanese.execute("SELECT debug FROM Japanese where ID=?", (entry[1],))
             
-                    try:
-                        if Globals.CursorGracesJapanese.fetchall()[0][0] == 1:
-                            UpdateCur.execute("UPDATE Text SET status=-1 WHERE ID=? AND status != -1", (entry[0],))
-                        else:
-                            if entry[2] == -1:
-                                UpdateCur.execute("UPDATE Text SET status = 0 WHERE ID=? AND status != 0", (entry[0],))
-                    except:
-                        pass
+                try:
+                    if Globals.CursorGracesJapanese.fetchall()[0][0] == 1:
+                        UpdateCur.execute("UPDATE Text SET status=-1 WHERE ID=? AND status != -1", (entry[0],))
+                    else:
+                        if entry[2] == -1:
+                            UpdateCur.execute("UPDATE Text SET status = 0 WHERE ID=? AND status != 0", (entry[0],))
+                except:
+                    pass
                         
-                UpdateCon.commit()
-                
-            i += 1
+            UpdateCon.commit()
 
         Globals.MainWindow.displayStatusMessage( 'Consolidate Debug Finished!' )
         Globals.Cache.databaseAccessRLock.release()
@@ -1046,51 +1038,48 @@ class Scripts2(QtGui.QWidget):
         
         Globals.Cache.databaseAccessRLock.acquire()
 
-        i = 1
-        aList = Globals.configData.FileList
-            
-        for item in aList[0]:
-            for filename in aList[i]:
+        for filename in Globals.configData.FileList:
 
-                Globals.MainWindow.displayStatusMessage( "Consolidate Debug: Processing: {0}".format(filename) )
+            Globals.MainWindow.displayStatusMessage( "Consolidate Debug: Processing: {0}".format(filename) )
             
-                UpdateCon = DatabaseHandler.OpenEntryDatabase(filename)
-                UpdateCur = UpdateCon.cursor()
+            UpdateCon = DatabaseHandler.OpenEntryDatabase(filename)
+            UpdateCur = UpdateCon.cursor()
                         
-                UpdateCur.execute("SELECT StringID FROM Text WHERE status = -1")
+            UpdateCur.execute("SELECT StringID FROM Text WHERE status = -1")
                 
-                for entry in UpdateCur.fetchall():
-                    Globals.CursorGracesJapanese.execute("UPDATE Japanese SET debug = 1 WHERE ID=?", (entry[0],))
-                UpdateCon.rollback()
+            for entry in UpdateCur.fetchall():
+                Globals.CursorGracesJapanese.execute("UPDATE Japanese SET debug = 1 WHERE ID=?", (entry[0],))
+            UpdateCon.rollback()
                 
-            i += 1
         Globals.ConnectionGracesJapanese.commit()
         Globals.MainWindow.displayStatusMessage( 'Consolidate Debug Finished!' )
         Globals.Cache.databaseAccessRLock.release()
 
     # fills in the database list to the left
-    def PopulateDatabaseView(self, FileList):
+    def PopulateDatabaseView(self, fileTree):
         self.WriteDatabaseStorageToHdd()
         
         self.databaseTreeModel.clear()
         
         PercentageConnection, PercentageCursor = DatabaseHandler.GetCompletionPercentageConnectionAndCursor()
         
-        i = 1
-        for item in FileList[0]:
-            cat = QtGui.QStandardItem(item)
-            cat.setEditable(False)
-            self.databaseTreeModel.appendRow(cat)
-            for item in FileList[i]:
-                newrow = QtGui.QStandardItem()
-                newrow.setStatusTip(item)
-                newrow.setEditable(False)
-                
-                # color based on completion / comments exist
-                self.FormatDatabaseListItem(item, newrow, PercentageCursor)
-
-                cat.appendRow(newrow)
-            i = i + 1
+        def AddCategory( category, parent ):
+            categoryItem = QtGui.QStandardItem( category.Name )
+            categoryItem.setEditable( False )
+            parent.appendRow( categoryItem )
+            
+            for db in category.Data:
+                if db.IsCategory:
+                    AddCategory( db, categoryItem )
+                else:
+                    dbItem = QtGui.QStandardItem()
+                    dbItem.setStatusTip( db.Name )
+                    dbItem.setEditable( False )
+                    self.FormatDatabaseListItem( db.Name, dbItem, PercentageCursor )
+                    categoryItem.appendRow( dbItem )
+        
+        for category in fileTree.Data:
+            AddCategory( category, self.databaseTreeModel )
 
     def FormatDatabaseListItem(self, databaseName, treeItem, PercentageCursor = None):
         if PercentageCursor is None:
@@ -1591,19 +1580,17 @@ class Scripts2(QtGui.QWidget):
 
 
         
-        aList = Globals.configData.FileList
-        for j in range(1, len(aList)):
-            for File in aList[j]:
-                data = Globals.Cache.GetDatabase(File)
-                if self.debugOnOffButton.isChecked():
-                    for i in xrange(len(data)):
+        for File in Globals.configData.FileList:
+            data = Globals.Cache.GetDatabase(File)
+            if self.debugOnOffButton.isChecked():
+                for i in xrange(len(data)):
+                    if data[i].stringId in JPmatches or data[i].english.find(matchString) > -1:
+                        MatchedEntries.append((File, i+1, data[i].english))
+            else:
+                for i in xrange(len(data)):
+                    if data[i].status >= 0:
                         if data[i].stringId in JPmatches or data[i].english.find(matchString) > -1:
                             MatchedEntries.append((File, i+1, data[i].english))
-                else:
-                    for i in xrange(len(data)):
-                        if data[i].status >= 0:
-                            if data[i].stringId in JPmatches or data[i].english.find(matchString) > -1:
-                                MatchedEntries.append((File, i+1, data[i].english))
 
         #No matches found case
         if len(MatchedEntries) == 0:
@@ -2104,18 +2091,17 @@ class Scripts2(QtGui.QWidget):
         Globals.Cache.databaseAccessRLock.acquire()
         self.ClearUpdateSet()
         Globals.MainWindow.displayStatusMessage( 'Searching for databases with unsaved changes...' )
-        i = 1
-        for item in Globals.configData.FileList[0]:
-            for item in Globals.configData.FileList[i]:
-                RecalcDbConn = DatabaseHandler.OpenEntryDatabase(item)
-                RecalcDbCur = RecalcDbConn.cursor()
-                RecalcDbCur.execute("SELECT Count(1) FROM Text WHERE updated = 1")
-                exists = RecalcDbCur.fetchall()[0][0]
-                if exists > 0:
-                    self.AddDatabaseToUpdateSet(str(item))
-                    Globals.MainWindow.displayStatusMessage( 'Found database with unsaved changes: ' + item )
-                RecalcDbConn.close()
-            i = i + 1
+
+        for item in Globals.configData.FileList:
+            RecalcDbConn = DatabaseHandler.OpenEntryDatabase(item)
+            RecalcDbCur = RecalcDbConn.cursor()
+            RecalcDbCur.execute("SELECT Count(1) FROM Text WHERE updated = 1")
+            exists = RecalcDbCur.fetchall()[0][0]
+            if exists > 0:
+                self.AddDatabaseToUpdateSet(str(item))
+                Globals.MainWindow.displayStatusMessage( 'Found database with unsaved changes: ' + item )
+            RecalcDbConn.close()
+
         Globals.Settings.setValue('update', set(self.update))
         Globals.Settings.sync()
         Globals.MainWindow.displayStatusMessage( 'Done searching for databases with unsaved changes!' )
@@ -2124,13 +2110,11 @@ class Scripts2(QtGui.QWidget):
     
     def FindAllUsedSymbols(self):
         charSet = set()
-        aList = Globals.configData.FileList
-        for i in range(1, len(aList)):
-            for File in aList[i]:
-                db = Globals.Cache.GetDatabase(str(File))
-                for item in db:
-                    for char in item.english:
-                        charSet.add(char)
+        for File in Globals.configData.FileList:
+            db = Globals.Cache.GetDatabase(str(File))
+            for item in db:
+                for char in item.english:
+                    charSet.add(char)
         
         file = open('used_symbols.txt', 'w')
         charList = sorted(charSet)

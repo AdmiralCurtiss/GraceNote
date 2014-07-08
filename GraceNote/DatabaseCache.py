@@ -46,12 +46,10 @@ class DatabaseCache(object):
         self.loadDatabaseThread.start()
 
     def GetAllDatabasesViaThread(self):
-        aList = Globals.configData.FileList
-        for j in range(1, len(aList)):
-            for File in aList[j]:
-                if Globals.GraceNoteIsTerminating:
-                    return
-                self.GetDatabase(File)
+        for File in Globals.configData.FileList:
+            if Globals.GraceNoteIsTerminating:
+                return
+            self.GetDatabase(File)
         return
 
     def GetDatabase(self, name):
