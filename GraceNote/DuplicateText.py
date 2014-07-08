@@ -30,39 +30,39 @@ class DuplicateText(QtGui.QDialog):
         self.box = QtGui.QGroupBox()
         self.box.setTitle('Search:')
         
-        layout = QtGui.QGridLayout()
+        self.categoryGridLayout = QtGui.QGridLayout()
         
         self.categories = []
+        self.categoryTreeItems = []
+        
+        def AddCategory( categoryNode, i ):
+            self.categories.append( QtGui.QCheckBox( categoryNode.Name ) )
+            self.categoryTreeItems.append( categoryNode )
+            self.categoryGridLayout.addWidget( self.categories[i], i / 6, i % 6 )
+            i += 1
+            for subCategoryNode in categoryNode.Data:
+                if subCategoryNode.IsCategory:
+                    i = AddCategory( subCategoryNode, i )
+            return i
         
         i = 0
-        x = 0
-        y = 0
-        for cat in Globals.configData.FileList[0]:
-            self.categories.append(QtGui.QCheckBox(cat))
-            layout.addWidget(self.categories[i], y, x)
-            i += 1
-            x += 1
-            if x > 5:
-                x = 0
-                y += 1
-        if x != 0:
-            x = 0
+        for cat in Globals.configData.FileTree.Data:
+            i = AddCategory( cat, i )
+
+        y = i / 6
+        if i % 6 != 0:
             y += 1
-        x = 2
         self.checkall = QtGui.QPushButton('Check All')
-        layout.addWidget(self.checkall, y, x)
+        self.categoryGridLayout.addWidget(self.checkall, y, 2)
         self.checkall.released.connect(self.CheckAll)
-        x += 1
         self.checknone = QtGui.QPushButton('Check None')
-        layout.addWidget(self.checknone, y, x)
+        self.categoryGridLayout.addWidget(self.checknone, y, 3)
         self.checknone.released.connect(self.CheckNone)
-        x += 1
         self.collall = QtGui.QPushButton('Collapse All')
-        layout.addWidget(self.collall, y, x)
+        self.categoryGridLayout.addWidget(self.collall, y, 4)
         self.collall.released.connect(self.CollapseAll)
-        x += 1
         self.uncollall = QtGui.QPushButton('Expand All')
-        layout.addWidget(self.uncollall, y, x)
+        self.categoryGridLayout.addWidget(self.uncollall, y, 5)
         self.uncollall.released.connect(self.UncollapseAll)
         
         self.radioInconsistentTranslationOrStatus = QtGui.QRadioButton('Inconsistent Translation or Status')
@@ -72,17 +72,10 @@ class DuplicateText(QtGui.QDialog):
         
         self.go = QtGui.QPushButton('Search')
 
-        self.progressbar = QtGui.QProgressBar()
-        self.progressbar.setRange(0, 100000)
-        
-        self.progressLabel = QtGui.QLabel('Pending')
-        
         layoutSystemButtons = QtGui.QGridLayout()
         layoutSystemButtons.addWidget(self.radioInconsistentTranslationOrStatus, 0, 0)
         layoutSystemButtons.addWidget(self.radioInconsistentTranslationOnly, 0, 1)
         layoutSystemButtons.addWidget(self.radioAllDuplicates, 0, 2)
-        #layoutSystemButtons.addWidget(self.progressbar, 3, 1)
-        #layoutSystemButtons.addWidget(self.progressLabel, 4, 1)
         layoutSystemButtons.addWidget(self.go, 0, 3)
         layoutSystemButtons.setColumnMinimumWidth(0, 100)
         
@@ -91,7 +84,7 @@ class DuplicateText(QtGui.QDialog):
         self.setWindowTitle('Duplicate Text Retriever')
         subLayout = QtGui.QVBoxLayout()
         subLayout.addLayout(layoutSystemButtons)
-        subLayout.addLayout(layout)
+        subLayout.addLayout(self.categoryGridLayout)
         subLayout.addWidget(self.treewidget)
         self.setLayout(subLayout)
 
@@ -125,6 +118,7 @@ class DuplicateText(QtGui.QDialog):
         BlackList = []
         Globals.CursorGracesJapanese.execute('SELECT MAX(ID) FROM Japanese')
         maxid = int(Globals.CursorGracesJapanese.fetchall()[0][0])
+        # TODO: This loop has terrible performance, find a better way to handle.
         for i in xrange( maxid + 1 ):
             Table.append([0, set([])]) # stores number of occurances, set of english+status
             BlackList.append(0)
@@ -134,31 +128,32 @@ class DuplicateText(QtGui.QDialog):
         BlackListDB = Globals.CursorGracesJapanese.fetchall()
         for ID in BlackListDB:
             BlackList[int(ID[0])] = 1
-        aList = Globals.configData.FileList
-
-        i = 1
+        
         Globals.MainWindow.displayStatusMessage( 'Duplicate Text: Processing databases...' )
-        for category in self.categories:
-            if category.isChecked():
-                for filename in aList[i]:
-                    #print 'Processing ' + filename + '...'
 
-                    results = Globals.Cache.GetDatabase(filename)
-                    
-                    for item in results:
-                        StringId = item.stringId
-                        if BlackList[StringId] == 0:
-                            Table[StringId][0] += 1
-                            if not self.radioInconsistentTranslationOnly.isChecked():
-                                Table[StringId][1].add((item.english, item.status))
-                            else:
-                                # set status to something constant to remove check against that
-                                Table[StringId][1].add((item.english, 0))
-#                    self.progressbar.setValue(self.progressbar.value() + (6250/len(Globals.configData.FileList[i])))
-#                    self.progressLabel.setText("Processing {0}".format(category))
-#                    self.progressLabel.update()
-#            self.progressbar.setValue(i * 6250)
-            i += 1
+        self.databasesToSearch = set()
+        def AddCategoryToSearch( categoryNode ):
+            for node in categoryNode.Data:
+                if node.IsCategory:
+                    AddCategoryToSearch( node )
+                else:
+                    self.databasesToSearch.add( node.Name )
+        
+        for i, category in enumerate( self.categories ):
+            if category.isChecked():
+                AddCategoryToSearch( self.categoryTreeItems[i] )
+        
+        for filename in self.databasesToSearch:
+            results = Globals.Cache.GetDatabase(filename)
+            for item in results:
+                StringId = item.stringId
+                if BlackList[StringId] == 0:
+                    Table[StringId][0] += 1
+                    if not self.radioInconsistentTranslationOnly.isChecked():
+                        Table[StringId][1].add((item.english, item.status))
+                    else:
+                        # set status to something constant to remove check against that
+                        Table[StringId][1].add((item.english, 0))
         
         showAllDupes = self.radioAllDuplicates.isChecked()
         showOnlyInconsistencies = self.radioInconsistentTranslationOrStatus.isChecked() or self.radioInconsistentTranslationOnly.isChecked() 
@@ -186,15 +181,10 @@ class DuplicateText(QtGui.QDialog):
                         englishDisplayText = '[' + ENvarReplaced +']'
                     newline = QtGui.QTreeWidgetItem(textOriginalJapaneseText, ['',  englishDisplayText])
                     newline.GraceNoteText = ENvarReplaced
-#           self.progressLabel.setText("Processing {0}/50000".format(i))
             i += 1
-#           self.progressbar.setValue(self.progressbar.value() + 1)
-#       self.progressLabel.setText('Done!')
         i = 0
 
         Globals.MainWindow.displayStatusMessage( 'Duplicate Text: Done!' )
-
-#       self.progressbar.reset
 
     def InitiateMassReplaceSearch(self, item, column):
         parentItem = item.parent()
