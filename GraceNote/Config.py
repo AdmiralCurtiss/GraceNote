@@ -120,18 +120,16 @@ class Configuration:
             categoryName = category.attrib['name']
             treeNode = DatabaseTreeNode( True, categoryName, [] )
             
-            subCategories = category.findall('Category')
-            for cat in subCategories:
-                AddCategory( cat, treeNode )
-
-            files = category.findall('File')
-            for file in files:
-                databaseName = file.attrib['name']
-                self.FileList.add( databaseName )
-                databaseDescription = file.attrib.get('desc')
-                if databaseDescription != None:
-                    self.FileDescriptions[databaseName] = databaseDescription
-                treeNode.Data.append( DatabaseTreeNode( False, databaseName ) )
+            for node in category:
+                if node.tag == 'Category':
+                    AddCategory( node, treeNode )
+                elif node.tag == 'File':
+                    databaseName = node.attrib['name']
+                    self.FileList.add( databaseName )
+                    databaseDescription = node.attrib.get('desc')
+                    if databaseDescription != None:
+                        self.FileDescriptions[databaseName] = databaseDescription
+                    treeNode.Data.append( DatabaseTreeNode( False, databaseName ) )
 
             parentTreeNode.Data.append( treeNode )
         
