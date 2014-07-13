@@ -1,6 +1,6 @@
 ﻿# -*- coding: utf-8 -*-
 
-from xml.dom import minidom
+import xml.etree.ElementTree as ET
 from PyQt4 import QtCore, QtGui
 import os
 import re
@@ -62,157 +62,144 @@ class Configuration:
     FileDescriptions = {}
     
     def __init__(self, configfilename):
-        dom = minidom.parse(configfilename)
-        mainNode = dom.getElementsByTagName('GraceNoteConfig')[0]
+        tree = ET.parse( configfilename )
+        root = tree.getroot()
 
         self.ConfigFileDir = os.path.dirname(os.path.realpath(configfilename))
+        
+        self.ID = root.attrib.get('ID', 'UnknownID')
 
+        self.LocalDatabasePath = self.ConfigFileDir + '/' + root.attrib['LocalDatabasePath']
+        self.RemoteDatabasePath = root.attrib['RemoteDatabasePath']
+        self.FTPServer = root.attrib['FTPServer']
         try:
-            self.ID = mainNode.getAttribute('ID')
-            if self.ID == '':
-                self.ID = 'UnknownID'
-        except:
-            self.ID = 'UnknownID'
-
-        self.LocalDatabasePath = self.ConfigFileDir + '/' + mainNode.getAttribute('LocalDatabasePath')
-        self.RemoteDatabasePath = mainNode.getAttribute('RemoteDatabasePath')
-        self.FTPServer = mainNode.getAttribute('FTPServer')
-        try:
-            self.FTPPort = int(mainNode.getAttribute('FTPPort'))
+            self.FTPPort = int( root.attrib['FTPPort'] )
         except:
             self.FTPPort = 21
-        self.FTPUsername = mainNode.getAttribute('FTPUsername')
-        self.FTPPassword = mainNode.getAttribute('FTPPassword')
+        self.FTPUsername = root.attrib['FTPUsername']
+        self.FTPPassword = root.attrib['FTPPassword']
         
-        try:
-            if mainNode.getAttribute('UseGracesVoiceHash') == 'true':
-                self.UseGracesVoiceHash = True
-        except:
+        if root.attrib.get( 'UseGracesVoiceHash' ) == 'true':
+            self.UseGracesVoiceHash = True
+        else:
             self.UseGracesVoiceHash = False
 
         try:
-            self.TranslationStagesCount = int(mainNode.getAttribute('TranslationStagesCount'))
+            self.TranslationStagesCount = int( root.attrib['TranslationStagesCount'] )
         except:
             self.TranslationStagesCount = 4
 
-        try:
-            if mainNode.getAttribute('UseLegacyApostropheSettings') == 'true':
-                self.UseLegacyApostropheSettings = True
-        except:
+        if root.attrib.get( 'UseLegacyApostropheSettings' ) == 'true':
+            self.UseLegacyApostropheSettings = True
+        else:
             self.UseLegacyApostropheSettings = False
 
-        self.VoicePathJpPrefix = self.ConfigFileDir + '/' + mainNode.getAttribute('VoicePathJpPrefix')
-        self.VoicePathJpPostfix = mainNode.getAttribute('VoicePathJpPostfix')
-        self.VoicePathEnPrefix = self.ConfigFileDir + '/' + mainNode.getAttribute('VoicePathEnPrefix')
-        self.VoicePathEnPostfix = mainNode.getAttribute('VoicePathEnPostfix')
-        self.VoiceEntryOffset = int(mainNode.getAttribute('VoiceEntryOffset'))
+        self.VoicePathJpPrefix = self.ConfigFileDir + '/' + root.attrib['VoicePathJpPrefix']
+        self.VoicePathJpPostfix = root.attrib['VoicePathJpPostfix']
+        self.VoicePathEnPrefix = self.ConfigFileDir + '/' + root.attrib['VoicePathEnPrefix']
+        self.VoicePathEnPostfix = root.attrib['VoicePathEnPostfix']
+        self.VoiceEntryOffset = int( root.attrib['VoiceEntryOffset'] )
         
-        self.mainNode = mainNode
+        self.root = root
 
         return
 
     def DelayedLoad(self):
-        self.LoadFileList(self.mainNode)
-        self.LoadDictionary(self.mainNode)
-        self.LoadTerms(self.mainNode)
-        self.LoadFont(self.mainNode)
-        self.LoadImages(self.mainNode)
+        self.LoadFileList(self.root)
+        self.LoadDictionary(self.root)
+        self.LoadTerms(self.root)
+        self.LoadFont(self.root)
+        self.LoadImages(self.root)
 
-    def LoadFileList(self, mainNode):
+    def LoadFileList(self, root):
         self.FileList = set()
         self.FileTree = DatabaseTreeNode( True, 'root', [] )
         self.FileDescriptions = {}
 
         def AddCategory( category, parentTreeNode ):
-            categoryName = category.getAttribute('name')
+            categoryName = category.attrib['name']
             treeNode = DatabaseTreeNode( True, categoryName, [] )
             
-            subCategories = category.getElementsByTagName('Category')
+            subCategories = category.findall('Category')
             for cat in subCategories:
                 AddCategory( cat, treeNode )
 
-            files = category.getElementsByTagName('File')
+            files = category.findall('File')
             for file in files:
-                databaseName = file.getAttribute('name')
+                databaseName = file.attrib['name']
                 self.FileList.add( databaseName )
-                try:
-                    databaseDescription = file.getAttribute('desc')
-                    if databaseDescription != '':
-                        self.FileDescriptions[databaseName] = databaseDescription
-                except:
-                    pass
+                databaseDescription = file.attrib.get('desc')
+                if databaseDescription != None:
+                    self.FileDescriptions[databaseName] = databaseDescription
                 treeNode.Data.append( DatabaseTreeNode( False, databaseName ) )
 
             parentTreeNode.Data.append( treeNode )
         
-        categories = mainNode.getElementsByTagName('Categories')[0].getElementsByTagName('Category')
+        categories = root.find('Categories').findall('Category')
         for category in categories:
             AddCategory( category, self.FileTree )
 
        
-    def LoadFont(self, mainNode):
+    def LoadFont(self, root):
         try:
-            fonts = mainNode.getElementsByTagName('Fonts')[0].getElementsByTagName('Font')
+            fonts = root.find('Fonts').findall('Font')
             self.Fonts = {}
             for font in fonts:
-                imgs = font.getElementsByTagName('Image')
-                fontname = font.getAttribute('name')
+                imgs = font.findall('Image')
+                fontname = font.attrib['name']
                 currentFont = {}
                 for img in imgs:
-                    path = self.ConfigFileDir + '/' + img.getAttribute('Path')
+                    path = self.ConfigFileDir + '/' + img.attrib['Path']
                     image = QtGui.QImage(path)
-                    glyphs = img.getElementsByTagName('Glyph')
+                    glyphs = img.findall('Glyph')
                 
                     for glyph in glyphs:
                         newGlyph = GlyphStruct()
                         newGlyph.img = image
-                        newGlyph.x = int(glyph.getAttribute('x'))
-                        newGlyph.y = int(glyph.getAttribute('y'))
-                        newGlyph.width = int(glyph.getAttribute('width'))
-                        newGlyph.height = int(glyph.getAttribute('height'))
-                        currentFont[glyph.getAttribute('char')] = newGlyph
+                        newGlyph.x = int(glyph.attrib['x'])
+                        newGlyph.y = int(glyph.attrib['y'])
+                        newGlyph.width = int(glyph.attrib['width'])
+                        newGlyph.height = int(glyph.attrib['height'])
+                        currentFont[glyph.attrib['char']] = newGlyph
 
                 self.Fonts[fontname] = currentFont
         except:
             self.Fonts = {}
 
         try:
-            repls = mainNode.getElementsByTagName('Fonts')[0].getElementsByTagName('Replacement')
+            repls = root.find('Fonts').findall('Replacement')
             self.FontReplacements = []
             for rep in repls:
-                o = rep.getAttribute('old')
-                n = rep.getAttribute('new')
-                type = rep.getAttribute('type')
+                o = rep.attrib['old']
+                n = rep.attrib['new']
+                type = rep.attrib['type']
                 self.FontReplacements.append( (o, n, type) )
         except:
             self.FontReplacements = []
 
         try:
-            lines = mainNode.getElementsByTagName('Fonts')[0].getElementsByTagName('Line')
+            lines = root.find('Fonts').findall('Line')
             self.FontLines = []
             for line in lines:
                 newLine = GlyphStruct()
-                newLine.style = int(line.getAttribute('style'))
-                newLine.x = int(line.getAttribute('x'))
-                newLine.y = int(line.getAttribute('y'))
+                newLine.style = int(line.attrib['style'])
+                newLine.x = int(line.attrib['x'])
+                newLine.y = int(line.attrib['y'])
                 newLine.color = self.GetColor( line )
-                newLine.name = line.getAttribute('name')
+                newLine.name = line.attrib['name']
                 self.FontLines.append(newLine)
         except:
             self.FontLines = []
 
         try:
-            formats = mainNode.getElementsByTagName('Fonts')[0].getElementsByTagName('Formatting')
+            formats = root.find('Fonts').findall('Formatting')
             self.FontFormatting = {}
             for fmt in formats:
                 newFormat = GlyphStruct()
-                trigger = fmt.getAttribute('Trigger')
-                newFormat.Font = fmt.getAttribute('Font')
-                newFormat.Color = self.GetColor(fmt)
-                if fmt.hasAttribute('Scale'):
-                    newFormat.Scale = float(fmt.getAttribute('Scale'))
-                else:
-                    newFormat.Scale = 1.0
+                trigger = fmt.attrib['Trigger']
+                newFormat.Font = fmt.attrib['Font']
+                newFormat.Color = self.GetColor( fmt )
+                newFormat.Scale = float(fmt.attrib.get('Scale', 1.0))
                 self.FontFormatting[trigger] = newFormat
         except:
             self.FontFormatting = {}
@@ -220,45 +207,45 @@ class Configuration:
         return
 
     def GetColor(self, node):
-        if node.hasAttribute('color'):
-            return QtGui.QColor( node.getAttribute('color') )
-        elif node.hasAttribute('colorR') and node.hasAttribute('colorG') and node.hasAttribute('colorB'):
-            return QtGui.QColor( int(node.getAttribute('colorR')), int(node.getAttribute('colorG')), int(node.getAttribute('colorB')) )
+        if node.attrib.get('color'):
+            return QtGui.QColor( node.attrib['color'] )
+        elif node.attrib.get('colorR') and node.attrib.get('colorG') and node.attrib.get('colorB'):
+            return QtGui.QColor( int(node.attrib['colorR']), int(node.attrib['colorG']), int(node.attrib['colorB']) )
         else:
             return QtGui.QColor( 'white' )
 
-    def LoadImages(self, mainNode):
+    def LoadImages(self, root):
         try:
             self.Images = []
-            imgs = mainNode.getElementsByTagName('Images')[0].getElementsByTagName('Image')
+            imgs = root.find('Images').findall('Image')
             for img in imgs:
                 newImage = ImageMediumStruct()
-                newImage.name = img.getAttribute('Name')
-                newImage.var = img.getAttribute('Variable')
-                newImage.path = self.ConfigFileDir + '/' + img.getAttribute('Path')
-                newImage.offs = int(img.getAttribute('Offset'))
+                newImage.name = img.attrib['Name']
+                newImage.var = img.attrib['Variable']
+                newImage.path = self.ConfigFileDir + '/' + img.attrib['Path']
+                newImage.offs = int( img.attrib['Offset'] )
                 self.Images.append(newImage)
         except:
             self.Images = []
 
-    def LoadTerms(self, mainNode):
+    def LoadTerms(self, root):
         try:
             self.Terms = []
-            terms = mainNode.getElementsByTagName('Terms')[0].getElementsByTagName('Term')
+            terms = root.find('Terms').findall('Term')
             for term in terms:
                 newTerm = ImageMediumStruct()
-                newTerm.JP = term.getAttribute('JP')
-                newTerm.EN = term.getAttribute('EN')
+                newTerm.JP = term.attrib['JP']
+                newTerm.EN = term.attrib['EN']
                 self.Terms.append(newTerm)
         except:
             self.Terms = []
 
-    def LoadDictionary(self, mainNode):
+    def LoadDictionary(self, root):
         try:
             self.Dictionary = []
-            dict = mainNode.getElementsByTagName('Dictionary')[0].getElementsByTagName('Entry')
+            dict = root.find('Dictionary').findall('Entry')
             for entry in dict:
-                word = entry.getAttribute('Word')
+                word = entry.attrib['Word']
                 self.Dictionary.append(word)
         except:
             self.Dictionary = []
