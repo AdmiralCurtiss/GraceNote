@@ -1220,6 +1220,13 @@ class Scripts2(QtGui.QWidget):
             MaxId = 0
         self.historyWindow.setHistoryList(HistoryList, MaxId, TempList)
 
+        def inSubsection(i, subsections):
+            for sec in subsections:
+                if i >= sec.Start and i <= sec.End:
+                    return True
+            return False
+
+        subsections = itemFromIndex.DatabaseTreeNode.Subsections
         for i in xrange(len(TempList)):
             Globals.CursorGracesJapanese.execute("SELECT ID, string, debug FROM Japanese WHERE ID={0}".format(TempList[i][1]))
             TempString = Globals.CursorGracesJapanese.fetchall() 
@@ -1297,6 +1304,8 @@ class Scripts2(QtGui.QWidget):
             self.FormatEntryListItemColor(additemEntryCommentText, TempStatus)        
     
             if (TempDebug == 1) and (not self.debugOnOffButton.isChecked()):
+                pass
+            elif subsections and not inSubsection(i + 1, subsections):
                 pass
             elif (TempDebug == 1) and (self.debugOnOffButton.isChecked()):
                 additemEntryIsDebug.setCheckState(QtCore.Qt.Checked)

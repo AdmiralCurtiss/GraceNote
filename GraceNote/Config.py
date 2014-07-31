@@ -12,11 +12,16 @@ class GlyphStruct():
 class DatabaseTreeNode():
     # if IsCategory == True, Data is a list of DatabaseTreeNodes
     # if IsCategory == False, Data is nothing
-    def __init__( self, isCategory = False, name = None, desc = None, data = None ):
+    def __init__( self, isCategory = False, name = None, desc = None, data = None, subsections = None ):
         self.IsCategory = isCategory
         self.Name = name
         self.Desc = desc
         self.Data = data
+        self.Subsections = subsections
+class DatabaseSubsection():
+    def __init__( self, entryStart, entryEnd ):
+        self.Start = entryStart
+        self.End = entryEnd
 
 class Configuration:
     ID = 'UnknownID'
@@ -127,11 +132,21 @@ class Configuration:
                 elif node.tag == 'File':
                     databaseName = node.attrib['name']
                     databaseDescription = node.attrib.get('desc')
+                    
+                    subsectionNodes = node.findall('Subsection')
+                    subsections = None
+                    if subsectionNodes:
+                        subsections = []
+                        for subsectionNode in subsectionNodes:
+                            entryStart = subsectionNode.attrib.get('entryStart')
+                            entryEnd = subsectionNode.attrib.get('entryEnd')
+                            subsections.append( DatabaseSubsection( int(entryStart), int(entryEnd) ) )
+
                     if databaseName not in self.FileList:
                         self.FileList.add( databaseName )
                         if databaseDescription != None:
                             self.FileDescriptions[databaseName] = databaseDescription
-                    treeNode.Data.append( DatabaseTreeNode( isCategory = False, name = databaseName, desc = databaseDescription ) )
+                    treeNode.Data.append( DatabaseTreeNode( isCategory = False, name = databaseName, desc = databaseDescription, subsections = subsections ) )
 
             parentTreeNode.Data.append( treeNode )
         
