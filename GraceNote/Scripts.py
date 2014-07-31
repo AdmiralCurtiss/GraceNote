@@ -1073,19 +1073,23 @@ class Scripts2(QtGui.QWidget):
                     AddCategory( db, categoryItem )
                 else:
                     dbItem = QtGui.QStandardItem()
+                    dbItem.DatabaseTreeNode = db
                     dbItem.setStatusTip( db.Name )
                     dbItem.setEditable( False )
-                    self.FormatDatabaseListItem( db.Name, dbItem, PercentageCursor )
+                    self.FormatDatabaseListItem( db.Name, dbItem, databaseDescription = db.Desc, PercentageCursor = PercentageCursor )
                     categoryItem.appendRow( dbItem )
         
         for category in fileTree.Data:
             AddCategory( category, self.databaseTreeModel )
 
-    def FormatDatabaseListItem(self, databaseName, treeItem, PercentageCursor = None):
+    def FormatDatabaseListItem(self, databaseName, treeItem, databaseDescription = None, PercentageCursor = None):
         if PercentageCursor is None:
             PercentageConnection, PercentageCursor = DatabaseHandler.GetCompletionPercentageConnectionAndCursor()
 
-        treeItem.setText(Globals.GetDatabaseDescriptionString(databaseName))
+        if databaseDescription is None:
+            databaseDescription = Globals.GetDatabaseDescriptionString(databaseName)
+        treeItem.setText(databaseDescription)
+
         PercentageCursor.execute("SELECT Count(1) FROM StatusData WHERE Database = ?", [databaseName])
         exists = PercentageCursor.fetchall()[0][0]
         if exists > 0:
@@ -1181,7 +1185,7 @@ class Scripts2(QtGui.QWidget):
         # refresh the string & color in the list to the left of the entry we just changed from
         if self.currentTreeIndex is not None:
             treeItem = self.databaseTreeModel.itemFromIndex(self.currentTreeIndex)
-            self.FormatDatabaseListItem(self.currentlyOpenDatabase, treeItem)
+            self.FormatDatabaseListItem( self.currentlyOpenDatabase, treeItem, databaseDescription = treeItem.DatabaseTreeNode.Desc )
 
         index = self.databaseTreeView.currentIndex()
         if index is None:
