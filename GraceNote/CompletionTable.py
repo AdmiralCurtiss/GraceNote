@@ -65,7 +65,7 @@ class CompletionTable(QtGui.QDialog):
                     tempCur.execute("SELECT Count(1) FROM StatusData WHERE Database = ?", [databaseName])
                     exists = tempCur.fetchall()[0][0]
                     if exists < Globals.configData.TranslationStagesCount + 2:
-                        CalculateCompletionForDatabase( databaseName )
+                        CalculateCompletionForDatabase( item.Name )
 
                     tempCur.execute("SELECT type, amount FROM StatusData WHERE Database = ?", [databaseName])
                     rows = tempCur.fetchall()
