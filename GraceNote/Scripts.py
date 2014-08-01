@@ -1076,13 +1076,17 @@ class Scripts2(QtGui.QWidget):
                     dbItem.DatabaseTreeNode = db
                     dbItem.setStatusTip( db.Name )
                     dbItem.setEditable( False )
-                    self.FormatDatabaseListItem( db.Name, dbItem, databaseDescription = db.Desc, PercentageCursor = PercentageCursor )
+                    self.FormatDatabaseListItem( dbItem, PercentageCursor = PercentageCursor )
                     categoryItem.appendRow( dbItem )
         
         for category in fileTree.Data:
             AddCategory( category, self.databaseTreeModel )
 
-    def FormatDatabaseListItem(self, databaseName, treeItem, databaseDescription = None, PercentageCursor = None):
+    def FormatDatabaseListItem(self, treeItem, PercentageCursor = None):
+        databaseName = treeItem.DatabaseTreeNode.Name
+        databaseDescription = treeItem.DatabaseTreeNode.Desc
+        completionDbName = CompletionTable.GetCompletionTableDatabaseNameOfTreeNode( treeItem.DatabaseTreeNode )
+
         if PercentageCursor is None:
             PercentageConnection, PercentageCursor = DatabaseHandler.GetCompletionPercentageConnectionAndCursor()
 
@@ -1090,10 +1094,10 @@ class Scripts2(QtGui.QWidget):
             databaseDescription = Globals.GetDatabaseDescriptionString(databaseName)
         treeItem.setText(databaseDescription)
 
-        PercentageCursor.execute("SELECT Count(1) FROM StatusData WHERE Database = ?", [databaseName])
+        PercentageCursor.execute("SELECT Count(1) FROM StatusData WHERE Database = ?", [completionDbName])
         exists = PercentageCursor.fetchall()[0][0]
         if exists > 0:
-            PercentageCursor.execute("SELECT type, amount FROM StatusData WHERE Database = ?", [databaseName])
+            PercentageCursor.execute("SELECT type, amount FROM StatusData WHERE Database = ?", [completionDbName])
             rows = PercentageCursor.fetchall()
 
             # type == 0 -> non-debug linecount, type == -2 -> comment count, otherwise type == status
@@ -1185,7 +1189,7 @@ class Scripts2(QtGui.QWidget):
         # refresh the string & color in the list to the left of the entry we just changed from
         if self.currentTreeIndex is not None:
             treeItem = self.databaseTreeModel.itemFromIndex(self.currentTreeIndex)
-            self.FormatDatabaseListItem( self.currentlyOpenDatabase, treeItem, databaseDescription = treeItem.DatabaseTreeNode.Desc )
+            self.FormatDatabaseListItem( treeItem )
 
         index = self.databaseTreeView.currentIndex()
         if index is None:
