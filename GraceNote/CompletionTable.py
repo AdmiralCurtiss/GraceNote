@@ -61,12 +61,13 @@ class CompletionTable(QtGui.QDialog):
                 if item.IsCategory:
                     AddCategory( item, cat )
                 else:
-                    tempCur.execute("SELECT Count(1) FROM StatusData WHERE Database = ?", [item.Name])
+                    databaseName = GetCompletionTableDatabaseNameOfTreeNode( item )
+                    tempCur.execute("SELECT Count(1) FROM StatusData WHERE Database = ?", [databaseName])
                     exists = tempCur.fetchall()[0][0]
                     if exists < Globals.configData.TranslationStagesCount + 2:
-                        CalculateCompletionForDatabase(item.Name)
+                        CalculateCompletionForDatabase( databaseName )
 
-                    tempCur.execute("SELECT type, amount FROM StatusData WHERE Database = ?", [item.Name])
+                    tempCur.execute("SELECT type, amount FROM StatusData WHERE Database = ?", [databaseName])
                     rows = tempCur.fetchall()
 
                     databaseCounts = {}
@@ -90,7 +91,7 @@ class CompletionTable(QtGui.QDialog):
                         for i in range(0, Globals.configData.TranslationStagesCount):
                             databaseCountStrings.append('N/A')
                    
-                    rowdata = [item.Name]
+                    rowdata = [item.Desc if item.Desc is not None else item.Name]
                     for s in databaseCountStrings:
                         rowdata.append(s)
                     rowdata.append('{0}'.format(commentamount))
@@ -141,35 +142,75 @@ def CalculateAllCompletionPercentagesForDatabase():
     for item in Globals.configData.FileList:
         CalculateCompletionForDatabase(item)
 
-def CalculateCompletionForDatabase(database):
+def CalculateCompletionForDatabase( databaseName ):
     #print 'Calculating percentages for ' + database + '...'
-    
+    def CalculateCompletionForDatabaseInTree( categoryNode ):
+        for item in categoryNode.Data:
+            if item.IsCategory:
+                CalculateCompletionForDatabaseInTree( item )
+            else:
+                if item.Name == databaseName:
+                    CalculateCompletionForDatabaseTreeNode( item )
+        return
+
+    for category in Globals.configData.FileTree.Data:
+        CalculateCompletionForDatabaseInTree( category )
+    return
+
+# since subsectioned databases have different completion % on the same file, generate unique names for them
+def GetCompletionTableDatabaseNameOfTreeNode( node ):
+    databaseName = node.Name
+
+    # if the database is subsectioned, extend the database name by the subsections for a unique name
+    if node.Subsections:
+        for sub in node.Subsections:
+            databaseName += "/{0}-{1}".format(sub.Start, sub.End)
+
+    return databaseName
+
+def CalculateCompletionForDatabaseTreeNode( node ):
+
     Globals.Cache.databaseAccessRLock.acquire()
 
     CompletionConnection, CompletionCursor = DatabaseHandler.GetCompletionPercentageConnectionAndCursor()
-    DatabaseConnection = DatabaseHandler.OpenEntryDatabase(database)
+    DatabaseConnection = DatabaseHandler.OpenEntryDatabase(node.Name)
     DatabaseCursor = DatabaseConnection.cursor()
 
+    databaseName = GetCompletionTableDatabaseNameOfTreeNode( node )
+    
     for i in range(0, Globals.configData.TranslationStagesCount + 1):
-        DatabaseCursor.execute('SELECT Count(1) FROM Text WHERE status >= {0}'.format(i))
-        count = DatabaseCursor.fetchall()[0][0]
+        if not node.Subsections:
+            DatabaseCursor.execute('SELECT Count(1) FROM Text WHERE status >= {0}'.format(i))
+            count = DatabaseCursor.fetchall()[0][0]
+        else:
+            count = 0
+            for sub in node.Subsections:
+                DatabaseCursor.execute('SELECT Count(1) FROM Text WHERE status >= {0} AND ID >= {1} AND ID <= {2}'.format(i, sub.Start, sub.End))
+                count += int(DatabaseCursor.fetchall()[0][0])
 
-        CompletionCursor.execute("SELECT Count(1) FROM StatusData WHERE database = ? AND type = ?", [database, i])
+        CompletionCursor.execute("SELECT Count(1) FROM StatusData WHERE database = ? AND type = ?", [databaseName, i])
         exists = CompletionCursor.fetchall()[0][0]
         if exists > 0:
-            CompletionCursor.execute("UPDATE StatusData SET amount = ? WHERE database = ? AND type = ?", [count, database, i])
+            CompletionCursor.execute("UPDATE StatusData SET amount = ? WHERE database = ? AND type = ?", [count, databaseName, i])
         else:
-            CompletionCursor.execute("INSERT INTO StatusData (database, type, amount) VALUES (?, ?, ?)", [database, i, count])
+            CompletionCursor.execute("INSERT INTO StatusData (database, type, amount) VALUES (?, ?, ?)", [databaseName, i, count])
 
-    DatabaseCursor.execute("SELECT Count(1) FROM Text WHERE comment != ''")
-    count = DatabaseCursor.fetchall()[0][0]
+    if not node.Subsections:
+        DatabaseCursor.execute("SELECT Count(1) FROM Text WHERE comment != ''")
+        count = DatabaseCursor.fetchall()[0][0]
+    else:
+        count = 0
+        for sub in node.Subsections:
+            DatabaseCursor.execute("SELECT Count(1) FROM Text WHERE comment != '' AND ID >= {0} AND ID <= {1}".format(sub.Start, sub.End))
+            count += int(DatabaseCursor.fetchall()[0][0])
 
-    CompletionCursor.execute("SELECT Count(1) FROM StatusData WHERE database = ? AND type = -2", [database])
+    # type == -2 for comment count
+    CompletionCursor.execute("SELECT Count(1) FROM StatusData WHERE database = ? AND type = -2", [databaseName])
     exists = CompletionCursor.fetchall()[0][0]
     if exists > 0:
-        CompletionCursor.execute("UPDATE StatusData SET amount = ? WHERE database = ? AND type = -2", [count, database])
+        CompletionCursor.execute("UPDATE StatusData SET amount = ? WHERE database = ? AND type = -2", [count, databaseName])
     else:
-        CompletionCursor.execute("INSERT INTO StatusData (database, type, amount) VALUES (?, -2, ?)", [database, count])
+        CompletionCursor.execute("INSERT INTO StatusData (database, type, amount) VALUES (?, -2, ?)", [databaseName, count])
     
     CompletionConnection.commit()
 
