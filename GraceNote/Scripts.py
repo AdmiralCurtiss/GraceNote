@@ -1241,9 +1241,6 @@ class Scripts2(QtGui.QWidget):
             TempJPN = TempString[0][1]
             TempDebug = TempString[0][2]
 
-            if TempDebug == 1 and not debugButtonChecked:
-                continue
-
             TempENG = TempList[i][2]
             TempCOM = TempList[i][3]
             TempStatus = TempList[i][5]
@@ -1318,6 +1315,8 @@ class Scripts2(QtGui.QWidget):
                 additemEntryIsDebug.setCheckState(QtCore.Qt.Checked)
                 additemEntryIsDebug.DebugStatus = True
                 self.entryStandardItemModel.appendRow([additemEntryEnglishID, additemEntryStatus, additemEntryCommentExists, additemEntryIdentifyString, additemEntryText, additemEntryCommentText, additemEntryUpdatedBy, additemEntryTimestamp, additemEntryIsDebug])
+            elif TempDebug == 1 and not debugButtonChecked:
+                pass
             else:
                 additemEntryIsDebug.DebugStatus = False
                 self.entryStandardItemModel.appendRow([additemEntryEnglishID, additemEntryStatus, additemEntryCommentExists, additemEntryIdentifyString, additemEntryText, additemEntryCommentText, additemEntryUpdatedBy, additemEntryTimestamp, additemEntryIsDebug])
