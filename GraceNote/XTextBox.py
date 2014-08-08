@@ -82,17 +82,17 @@ class XTextBox(QtGui.QTextEdit):
             self.jpflag = QtGui.QToolButton()
             self.jpflag.setCheckable(False)
             self.jpflag.setAutoRaise(True)
-            self.jpflag.setIcon(QtGui.QIcon('icons/japanflag.png'))
+            
+            if contentType == 'JPN':
+                self.role = 1
+                self.jpflag.setIcon(QtGui.QIcon('icons/japanflag.png'))
+            if contentType == 'COM':
+                self.role = 2
+                self.jpflag.setIcon(QtGui.QIcon('icons/comment.png'))
             
             layout = HUDLayout()
             layout.addWidget(self.jpflag)
             self.setLayout(layout)
-
-            self.role = 1
-
-            if contentType == 'COM':
-                self.flagToggle()
-            
             
         self.highlighter = CustomHighlighter(self)
 
@@ -125,6 +125,11 @@ class XTextBox(QtGui.QTextEdit):
         for s in splitOnFeeds:
             highestBoxNewlines = max(highestBoxNewlines, s.count('\n')+1)
         self.footer.setText(prepend + 'Textboxes: ' + str(feedCount+1) + ' / Highest Box: ' + str(highestBoxNewlines) + ' lines / Longest Line: ' + str(longestLineChars) + ' chars')
+
+    def clearFooter(self):
+        if not Globals.FooterVisibleFlag:
+            return
+        self.footer.setText('')
     
     def makePlaybackButtons(self, clipList):
         if not self.buttonLess:
@@ -497,20 +502,6 @@ class XTextBox(QtGui.QTextEdit):
         for i in range( 1, icon + 1 ):
             self.StatusButtons[i].setIcon(QtGui.QIcon('icons/status/{0}g.png'.format(i)))
         self.currentlySetStatus = icon
-
-    def flagToggle(self):
-        if self.readOnly:
-            return
-
-        if self.role == 2:
-            self.jpflag.setIcon(QtGui.QIcon('icons/cdnflag.png'))
-            self.role = 0
-        elif self.role == 1:
-            self.jpflag.setIcon(QtGui.QIcon('icons/comment.png'))
-            self.role = 2
-        else:
-            self.jpflag.setIcon(QtGui.QIcon('icons/japanflag.png'))
-            self.role = 1
 
 class TextAction(QtGui.QAction):
     textActionTriggered = QtCore.pyqtSignal(unicode)

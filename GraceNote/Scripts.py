@@ -1408,21 +1408,15 @@ class Scripts2(QtGui.QWidget):
                 rowBoxes.append( -2 )
                 self.currentOpenedEntryIndexes.append( None )
         
-        textEntries1 = []
-        textEntries1raw = []
-        textEntries2 = []
-        textEntries2raw = []
-        textEntries3 = []
-        textEntries3raw = []
+        textEntriesEng = []
         for i in range(len(self.textEditingBoxes)):
             if rowBoxes[i] >= 0:
                 textEntry = self.text[rowBoxes[i]]
-                textEntries1.append( Globals.VariableReplace(textEntry[0]) )
-                textEntries1raw.append( textEntry[0] )
-                textEntries2.append( Globals.VariableReplace(textEntry[1]) )
-                textEntries2raw.append( textEntry[1] )
-                textEntries3.append( Globals.VariableReplace(textEntry[2]) )
-                textEntries3raw.append( textEntry[2] )
+                textEntriesEng.append( Globals.VariableReplace(textEntry[0]) )
+                self.xTextBoxesJPN[i].setText( Globals.VariableReplace(textEntry[1]) )
+                self.xTextBoxesCOM[i].setText( Globals.VariableReplace(textEntry[2]) )
+                self.xTextBoxesENG[i].refreshFooter(textEntry[0], 'E: ')
+                self.xTextBoxesJPN[i].refreshFooter(textEntry[1], 'J: ')
                 commentTexts[i] = textEntry[5] + '     '
                 self.xTextBoxesENG[i].iconToggle(textEntry[4])
                 self.xTextBoxesENG[i].currentEntry = rowBoxes[i] + 1
@@ -1432,12 +1426,11 @@ class Scripts2(QtGui.QWidget):
                 self.xTextBoxesJPN[i].setReadOnly(True)
                 self.xTextBoxesCOM[i].setReadOnly(False)
             else:
-                textEntries1.append( '' )
-                textEntries1raw.append( '' )
-                textEntries2.append( '' )
-                textEntries2raw.append( '' )
-                textEntries3.append( '' )
-                textEntries3raw.append( '' )
+                textEntriesEng.append( '' )
+                self.xTextBoxesJPN[i].setText( '' )
+                self.xTextBoxesCOM[i].setText( '' )
+                self.xTextBoxesENG[i].clearFooter()
+                self.xTextBoxesJPN[i].clearFooter()
                 self.xTextBoxesENG[i].iconToggle(0)
                 self.xTextBoxesENG[i].currentEntry = -1
                 self.xTextBoxesJPN[i].currentEntry = -1
@@ -1489,19 +1482,11 @@ class Scripts2(QtGui.QWidget):
         self.historyWindow.displayHistoryOfEntry(self.xTextBoxesENG[centerPanel].currentEntry)
                     
         # put text into textboxes, display entry number
-        twoupTypeHelper = []
-        twoupTypeHelper.append('E')
-        twoupTypeHelper.append('J')
-        twoupTypeHelper.append('C')
         for i in range(len(self.textEditingBoxes)):
-            self.xTextBoxesENG[i].setText(textEntries1[i])
-            self.xTextBoxesJPN[i].setText(textEntries2[i])
-            self.xTextBoxesCOM[i].setText(textEntries3[i])
+            self.xTextBoxesENG[i].setText(textEntriesEng[i])
                 
             if self.xTextBoxesENG[i].currentEntry >= 0:
                 self.textEditingTitles[i].setText('Entry {0}: {1}'.format(rowBoxes[i]+1, commentTexts[i]))
-                self.xTextBoxesENG[i].refreshFooter(textEntries1raw[i], 'ENG: ')
-                self.xTextBoxesJPN[i].refreshFooter(textEntries2raw[i], twoupTypeHelper[self.xTextBoxesJPN[i].role] + ': ')
                 if self.termTooltips[i] != '':
                     self.textEditingTermIcons[i].setToolTip( 'Terminology in this Entry:\n' + self.termTooltips[i] )
                     self.textEditingTermIcons[i].show()
@@ -1509,7 +1494,7 @@ class Scripts2(QtGui.QWidget):
                     self.textEditingTermIcons[i].setToolTip('')
                     self.textEditingTermIcons[i].hide()
 
-                if textEntries1[i].count('<') != textEntries1[i].count('>'):
+                if textEntriesEng[i].count('<') != textEntriesEng[i].count('>'):
                     self.textEditingWarningIcons[i].setToolTip('WARNING: It looks like there\'s a broken variable or control code in this entry.')
                     self.textEditingWarningIcons[i].show()
                 else:
