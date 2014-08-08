@@ -120,7 +120,7 @@ class Scripts2(QtGui.QWidget):
         self.comDialog = None
         self.dupeDialog = None
         self.optionsWindow = None
-        self.text = []
+        self.text = {}
         self.databaseWriteStorage = deque()
         self.currentTreeIndex = None
         self.currentOpenedEntryIndexes = None
@@ -1175,7 +1175,7 @@ class Scripts2(QtGui.QWidget):
 
         self.currentOpenedEntryIndexes = None
         
-        self.text = []
+        self.text = {}
 
         for editbox in self.xTextBoxesENG:
             editbox.setText('')
@@ -1231,11 +1231,18 @@ class Scripts2(QtGui.QWidget):
             return False
 
         subsections = itemFromIndex.DatabaseTreeNode.Subsections
+        debugButtonChecked = self.debugOnOffButton.isChecked()
         for i in xrange(len(TempList)):
+            if subsections and not inSubsection(i + 1, subsections):
+                continue
+
             Globals.CursorGracesJapanese.execute("SELECT ID, string, debug FROM Japanese WHERE ID={0}".format(TempList[i][1]))
             TempString = Globals.CursorGracesJapanese.fetchall() 
             TempJPN = TempString[0][1]
             TempDebug = TempString[0][2]
+
+            if TempDebug == 1 and not debugButtonChecked:
+                continue
 
             TempENG = TempList[i][2]
             TempCOM = TempList[i][3]
@@ -1307,11 +1314,7 @@ class Scripts2(QtGui.QWidget):
             self.FormatEntryListItemColor(additemEntryEnglishID, TempStatus)        
             self.FormatEntryListItemColor(additemEntryCommentText, TempStatus)        
     
-            if (TempDebug == 1) and (not self.debugOnOffButton.isChecked()):
-                pass
-            elif subsections and not inSubsection(i + 1, subsections):
-                pass
-            elif (TempDebug == 1) and (self.debugOnOffButton.isChecked()):
+            if TempDebug == 1 and debugButtonChecked:
                 additemEntryIsDebug.setCheckState(QtCore.Qt.Checked)
                 additemEntryIsDebug.DebugStatus = True
                 self.entryStandardItemModel.appendRow([additemEntryEnglishID, additemEntryStatus, additemEntryCommentExists, additemEntryIdentifyString, additemEntryText, additemEntryCommentText, additemEntryUpdatedBy, additemEntryTimestamp, additemEntryIsDebug])
@@ -1319,7 +1322,7 @@ class Scripts2(QtGui.QWidget):
                 additemEntryIsDebug.DebugStatus = False
                 self.entryStandardItemModel.appendRow([additemEntryEnglishID, additemEntryStatus, additemEntryCommentExists, additemEntryIdentifyString, additemEntryText, additemEntryCommentText, additemEntryUpdatedBy, additemEntryTimestamp, additemEntryIsDebug])
                 
-            self.text.append([TempENG, TempJPN, TempCOM, TempDebug, TempStatus, TempIdentifyString])
+            self.text[i] = [TempENG, TempJPN, TempCOM, TempDebug, TempStatus, TempIdentifyString]
             
         Globals.commentsAvailableLabel.setText(databasefilename)
             
@@ -1341,9 +1344,10 @@ class Scripts2(QtGui.QWidget):
 
     def ReformatEntryInEntryList(self, entryListRow, entryBoxNumber):
         textBox = self.xTextBoxesENG[entryBoxNumber]
+        textEntry = self.text[textBox.currentEntry - 1]
         for i in range( len( self.entryTreeViewHeaderLabels ) ):
             item = self.entryStandardItemModel.item( entryListRow, i )
-            self.FormatEntryListItemColor( item, self.text[textBox.currentEntry - 1][4] )
+            self.FormatEntryListItemColor( item, textEntry[4] )
 
         itemStatus = self.entryStandardItemModel.item( entryListRow, 1 )
         itemCommentExists = self.entryStandardItemModel.item( entryListRow, 2 )
@@ -1352,10 +1356,10 @@ class Scripts2(QtGui.QWidget):
         itemUpdatedBy = self.entryStandardItemModel.item( entryListRow, 6 )
         itemTimestamp = self.entryStandardItemModel.item( entryListRow, 7 )
 
-        entryDisplayString = Globals.VariableReplace( self.text[textBox.currentEntry - 1][0].replace('\f', ' ').replace('\n', ' ') )
-        commentDisplayString = Globals.VariableReplace( self.text[textBox.currentEntry - 1][2].replace('\f', ' ').replace('\n', ' ') )
+        entryDisplayString = Globals.VariableReplace( textEntry[0].replace('\f', ' ').replace('\n', ' ') )
+        commentDisplayString = Globals.VariableReplace( textEntry[2].replace('\f', ' ').replace('\n', ' ') )
 
-        itemStatus.setText( str(self.text[textBox.currentEntry - 1][4]) )
+        itemStatus.setText( str(textEntry[4]) )
         itemCommentExists.setText( '' if commentDisplayString == '' else 'C' )
         itemText.setText( entryDisplayString )
         itemCommentText.setText( commentDisplayString )
@@ -1374,8 +1378,6 @@ class Scripts2(QtGui.QWidget):
 
         if index == None or row == -1:
             return
-        
-        t = 0
         
         commentTexts = []
         for i in range(len(self.textEditingBoxes)):
@@ -1414,14 +1416,15 @@ class Scripts2(QtGui.QWidget):
         textEntries3raw = []
         for i in range(len(self.textEditingBoxes)):
             if rowBoxes[i] >= 0:
-                textEntries1.append( Globals.VariableReplace(self.text[rowBoxes[i]][t]) )
-                textEntries1raw.append( self.text[rowBoxes[i]][t] )
-                textEntries2.append( Globals.VariableReplace(self.text[rowBoxes[i]][self.xTextBoxesJPN[i].role]) )
-                textEntries2raw.append( self.text[rowBoxes[i]][self.xTextBoxesJPN[i].role] )
-                textEntries3.append( Globals.VariableReplace(self.text[rowBoxes[i]][self.xTextBoxesCOM[i].role]) )
-                textEntries3raw.append( self.text[rowBoxes[i]][self.xTextBoxesCOM[i].role] )
-                commentTexts[i] = self.text[rowBoxes[i]][5] + '     '
-                self.xTextBoxesENG[i].iconToggle(self.text[rowBoxes[i]][4])
+                textEntry = self.text[rowBoxes[i]]
+                textEntries1.append( Globals.VariableReplace(textEntry[0]) )
+                textEntries1raw.append( textEntry[0] )
+                textEntries2.append( Globals.VariableReplace(textEntry[1]) )
+                textEntries2raw.append( textEntry[1] )
+                textEntries3.append( Globals.VariableReplace(textEntry[2]) )
+                textEntries3raw.append( textEntry[2] )
+                commentTexts[i] = textEntry[5] + '     '
+                self.xTextBoxesENG[i].iconToggle(textEntry[4])
                 self.xTextBoxesENG[i].currentEntry = rowBoxes[i] + 1
                 self.xTextBoxesJPN[i].currentEntry = rowBoxes[i] + 1
                 self.xTextBoxesCOM[i].currentEntry = rowBoxes[i] + 1
@@ -1449,7 +1452,7 @@ class Scripts2(QtGui.QWidget):
             for i in range(lengthEditingBoxes):
                 if self.xTextBoxesENG[i].currentEntry == -1:
                     continue
-                AudioSearchText = Globals.VariableReplace(self.text[rowBoxes[i] + Globals.configData.VoiceEntryOffset][t])
+                AudioSearchText = Globals.VariableReplace(self.text[rowBoxes[i] + Globals.configData.VoiceEntryOffset][0])
                 AudioClips = re.findall('<Audio: (.*?)>', AudioSearchText, re.DOTALL)
                 AudioClips = AudioClips + re.findall('<Voice: (.*?)>', AudioSearchText, re.DOTALL)
                 if AudioClips == []:
@@ -1474,8 +1477,9 @@ class Scripts2(QtGui.QWidget):
         # inform media boxes
         centerPanel = 1
         for name, medium in self.media.iteritems():
-            #print self.text[rowBoxes[centerPanel] + medium.medium.offs][t]
-            medium.refreshInfo( Globals.VariableReplace(self.text[rowBoxes[centerPanel] + medium.medium.offs][t]) )
+            textEntry = self.text.get(rowBoxes[centerPanel] + medium.medium.offs)
+            if textEntry:
+                medium.refreshInfo( Globals.VariableReplace(textEntry[0]) )
 
         # inform font box
         databasefilename = self.databaseTreeModel.itemFromIndex(self.databaseTreeView.currentIndex()).statusTip()
