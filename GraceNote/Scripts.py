@@ -1445,7 +1445,10 @@ class Scripts2(QtGui.QWidget):
             for i in range(lengthEditingBoxes):
                 if self.xTextBoxesENG[i].currentEntry == -1:
                     continue
-                AudioSearchText = Globals.VariableReplace(self.text[rowBoxes[i] + Globals.configData.VoiceEntryOffset][0])
+                audioTextBox = self.text.get(rowBoxes[i] + Globals.configData.VoiceEntryOffset)
+                if not audioTextBox:
+                    continue
+                AudioSearchText = Globals.VariableReplace(audioTextBox[0])
                 AudioClips = re.findall('<Audio: (.*?)>', AudioSearchText, re.DOTALL)
                 AudioClips = AudioClips + re.findall('<Voice: (.*?)>', AudioSearchText, re.DOTALL)
                 if AudioClips == []:
