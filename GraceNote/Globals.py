@@ -11,6 +11,7 @@ HaveUnsavedChanges = False
 
 ConnectionGracesJapanese = None
 CursorGracesJapanese = None
+ConnectionsOriginalDatabases = []
 
 Settings = None
 

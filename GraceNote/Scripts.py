@@ -84,8 +84,12 @@ def SetupEnvironment():
 
     os.chdir(os.path.dirname(os.path.abspath(sys.argv[0])))
 
-    Globals.ConnectionGracesJapanese = sqlite3.connect(Globals.configData.LocalDatabasePath + '/GracesJapanese')
+    Globals.ConnectionGracesJapanese = sqlite3.connect( Globals.configData.LocalDatabasePath + '/' + Globals.configData.OriginalDatabases[0] )
     Globals.CursorGracesJapanese = Globals.ConnectionGracesJapanese.cursor()
+    Globals.ConnectionsOriginalDatabases = []
+    for db in Globals.configData.OriginalDatabases:
+        conn = sqlite3.connect( Globals.configData.LocalDatabasePath + '/' + db )
+        Globals.ConnectionsOriginalDatabases.append( conn )
 
     Globals.EnglishVoiceLanguageFlag = False
     Globals.UpdateLowerStatusFlag = False

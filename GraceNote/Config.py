@@ -28,6 +28,7 @@ class Configuration:
 
     LocalDatabasePath = ''
     RemoteDatabasePath = ''
+    OriginalDatabases = []
     
     FTPServer = ''
     FTPPort = 21
@@ -105,6 +106,12 @@ class Configuration:
         self.VoicePathEnPrefix = self.ConfigFileDir + '/' + root.attrib['VoicePathEnPrefix']
         self.VoicePathEnPostfix = root.attrib['VoicePathEnPostfix']
         self.VoiceEntryOffset = int( root.attrib['VoiceEntryOffset'] )
+
+        self.OriginalDatabases = []
+        for ogdb in root.findall( 'OriginalDatabase' ):
+            self.OriginalDatabases.append( ogdb.get( 'name' ) )
+        if len( self.OriginalDatabases ) == 0:
+            self.OriginalDatabases.append( 'GracesJapanese' )
         
         self.root = root
 
