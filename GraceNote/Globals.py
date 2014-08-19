@@ -391,14 +391,16 @@ def GetDatabaseDescriptionString(filename):
     if configData.FileDescriptions.has_key(filename):
         return configData.FileDescriptions[filename]
 
-    CursorGracesJapanese.execute("SELECT count(1) FROM descriptions WHERE filename = ?", [filename])
+    CursorGracesJapanese.execute("SELECT COUNT(1) FROM sqlite_master WHERE type='table' AND name='descriptions'")
     exists = CursorGracesJapanese.fetchall()[0][0]
     if exists > 0:
-        CursorGracesJapanese.execute("SELECT shortdesc FROM descriptions WHERE filename = ?", [filename])
-        desc = CursorGracesJapanese.fetchall()[0][0]
-        return desc
-    else:
-        return filename
+        CursorGracesJapanese.execute("SELECT count(1) FROM descriptions WHERE filename = ?", [filename])
+        exists = CursorGracesJapanese.fetchall()[0][0]
+        if exists > 0:
+            CursorGracesJapanese.execute("SELECT shortdesc FROM descriptions WHERE filename = ?", [filename])
+            desc = CursorGracesJapanese.fetchall()[0][0]
+            return desc
+    return filename
 
 def CopyFile(sourcepath, targetpath):
     sourcefile = open(sourcepath, 'rb')
