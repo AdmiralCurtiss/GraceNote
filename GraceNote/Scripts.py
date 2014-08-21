@@ -1325,7 +1325,14 @@ class Scripts2(QtGui.QWidget):
                 additemEntryIsDebug.DebugStatus = False
                 self.entryStandardItemModel.appendRow([additemEntryEnglishID, additemEntryStatus, additemEntryCommentExists, additemEntryIdentifyString, additemEntryText, additemEntryCommentText, additemEntryUpdatedBy, additemEntryTimestamp, additemEntryIsDebug])
                 
-            self.text[i] = [TempENG, TempJPN, TempCOM, TempDebug, TempStatus, TempIdentifyString]
+            self.text[i] = {
+                'eng': TempENG,
+                'jpn': TempJPN,
+                'com': TempCOM,
+                'debug': TempDebug,
+                'status': TempStatus,
+                'ident': TempIdentifyString,
+            }
             
         Globals.commentsAvailableLabel.setText(databasefilename)
             
@@ -1350,7 +1357,7 @@ class Scripts2(QtGui.QWidget):
         textEntry = self.text[textBox.currentEntry - 1]
         for i in range( len( self.entryTreeViewHeaderLabels ) ):
             item = self.entryStandardItemModel.item( entryListRow, i )
-            self.FormatEntryListItemColor( item, textEntry[4] )
+            self.FormatEntryListItemColor( item, textEntry['status'] )
 
         itemStatus = self.entryStandardItemModel.item( entryListRow, 1 )
         itemCommentExists = self.entryStandardItemModel.item( entryListRow, 2 )
@@ -1359,10 +1366,10 @@ class Scripts2(QtGui.QWidget):
         itemUpdatedBy = self.entryStandardItemModel.item( entryListRow, 6 )
         itemTimestamp = self.entryStandardItemModel.item( entryListRow, 7 )
 
-        entryDisplayString = Globals.VariableReplace( textEntry[0].replace('\f', ' ').replace('\n', ' ') )
-        commentDisplayString = Globals.VariableReplace( textEntry[2].replace('\f', ' ').replace('\n', ' ') )
+        entryDisplayString = Globals.VariableReplace( textEntry['eng'].replace('\f', ' ').replace('\n', ' ') )
+        commentDisplayString = Globals.VariableReplace( textEntry['com'].replace('\f', ' ').replace('\n', ' ') )
 
-        itemStatus.setText( str(textEntry[4]) )
+        itemStatus.setText( str(textEntry['status']) )
         itemCommentExists.setText( '' if commentDisplayString == '' else 'C' )
         itemText.setText( entryDisplayString )
         itemCommentText.setText( commentDisplayString )
@@ -1415,13 +1422,13 @@ class Scripts2(QtGui.QWidget):
         for i in range(len(self.textEditingBoxes)):
             if rowBoxes[i] >= 0:
                 textEntry = self.text[rowBoxes[i]]
-                textEntriesEng.append( Globals.VariableReplace(textEntry[0]) )
-                self.xTextBoxesJPN[i].setText( Globals.VariableReplace(textEntry[1]) )
-                self.xTextBoxesCOM[i].setText( Globals.VariableReplace(textEntry[2]) )
-                self.xTextBoxesENG[i].refreshFooter(textEntry[0], 'E: ')
-                self.xTextBoxesJPN[i].refreshFooter(textEntry[1], 'J: ')
-                commentTexts[i] = textEntry[5] + '     '
-                self.xTextBoxesENG[i].iconToggle(textEntry[4])
+                textEntriesEng.append( Globals.VariableReplace(textEntry['eng']) )
+                self.xTextBoxesJPN[i].setText( Globals.VariableReplace(textEntry['jpn']) )
+                self.xTextBoxesCOM[i].setText( Globals.VariableReplace(textEntry['com']) )
+                self.xTextBoxesENG[i].refreshFooter(textEntry['eng'], 'E: ')
+                self.xTextBoxesJPN[i].refreshFooter(textEntry['jpn'], 'J: ')
+                commentTexts[i] = textEntry['ident'] + '     '
+                self.xTextBoxesENG[i].iconToggle(textEntry['status'])
                 self.xTextBoxesENG[i].currentEntry = rowBoxes[i] + 1
                 self.xTextBoxesJPN[i].currentEntry = rowBoxes[i] + 1
                 self.xTextBoxesCOM[i].currentEntry = rowBoxes[i] + 1
@@ -1451,7 +1458,7 @@ class Scripts2(QtGui.QWidget):
                 audioTextBox = self.text.get(rowBoxes[i] + Globals.configData.VoiceEntryOffset)
                 if not audioTextBox:
                     continue
-                AudioSearchText = Globals.VariableReplace(audioTextBox[0])
+                AudioSearchText = Globals.VariableReplace(audioTextBox['eng'])
                 AudioClips = re.findall('<Audio: (.*?)>', AudioSearchText, re.DOTALL)
                 AudioClips = AudioClips + re.findall('<Voice: (.*?)>', AudioSearchText, re.DOTALL)
                 if AudioClips == []:
@@ -1464,7 +1471,7 @@ class Scripts2(QtGui.QWidget):
         self.termTooltips = []
         for i in range(lengthEditingBoxes):
             if rowBoxes[i] >= 0:
-                japanese = self.text[rowBoxes[i]][1]
+                japanese = self.text[rowBoxes[i]]['jpn']
                 tooltip = ''
                 for term in Globals.configData.Terms:
                     if japanese.find(term.JP) > -1:
@@ -1478,11 +1485,11 @@ class Scripts2(QtGui.QWidget):
         for name, medium in self.media.iteritems():
             textEntry = self.text.get(rowBoxes[centerPanel] + medium.medium.offs)
             if textEntry:
-                medium.refreshInfo( Globals.VariableReplace(textEntry[0]) )
+                medium.refreshInfo( Globals.VariableReplace(textEntry['eng']) )
 
         # inform font box
         databasefilename = self.databaseTreeModel.itemFromIndex(self.databaseTreeView.currentIndex()).statusTip()
-        self.fontWindow.drawText( self.text[rowBoxes[centerPanel]][0], self.text[rowBoxes[centerPanel]][1], Globals.GetDatabaseDescriptionString(str(databasefilename)) )
+        self.fontWindow.drawText( self.text[rowBoxes[centerPanel]]['eng'], self.text[rowBoxes[centerPanel]]['jpn'], Globals.GetDatabaseDescriptionString(str(databasefilename)) )
 
         # inform history window
         self.historyWindow.displayHistoryOfEntry(self.xTextBoxesENG[centerPanel].currentEntry)
@@ -1527,19 +1534,19 @@ class Scripts2(QtGui.QWidget):
         string = ''
         i = 1
         for entry in self.text:
-            if entry[3] == 0 or self.debugOnOffButton.isChecked():
+            if entry['debug'] == 0 or self.debugOnOffButton.isChecked():
                 string = string + '{0}'.format(i) # entry id
-                string = string + seperator + entry[5]  # identifystring
-                string = string + seperator + str(entry[4]) # status
+                string = string + seperator + entry['ident']
+                string = string + seperator + str(entry['status'])
                 string = string + seperator
 
                 currentEntryString = ''
                 if dumpJapanese:
-                    currentEntryString = currentEntryString + (entry[1] if not replaceVariables else Globals.VariableReplace(entry[1])) + seperator
+                    currentEntryString = currentEntryString + (entry['jpn'] if not replaceVariables else Globals.VariableReplace(entry['jpn'])) + seperator
                 if dumpEnglish:
-                    currentEntryString = currentEntryString + (entry[0] if not replaceVariables else Globals.VariableReplace(entry[0])) + seperator
+                    currentEntryString = currentEntryString + (entry['eng'] if not replaceVariables else Globals.VariableReplace(entry['eng'])) + seperator
                 if dumpComments:
-                    currentEntryString = currentEntryString + (entry[2] if not replaceVariables else Globals.VariableReplace(entry[2])) + seperator
+                    currentEntryString = currentEntryString + (entry['com'] if not replaceVariables else Globals.VariableReplace(entry['com'])) + seperator
 
                 string = string + currentEntryString.replace('\n','').replace('\r', '') + entrySeperator
             
@@ -1924,7 +1931,7 @@ class Scripts2(QtGui.QWidget):
             return
         
         CommandOriginAutoMode = ( role == -2 )
-        currentDatabaseStatus = self.text[textBox.currentEntry - 1][4]
+        currentDatabaseStatus = self.text[textBox.currentEntry - 1]['status']
 
         # if this was triggered by the Auto mode feature but the status wouldn't actually change by this operation
         if CommandOriginAutoMode and currentDatabaseStatus == self.role:
@@ -1948,7 +1955,7 @@ class Scripts2(QtGui.QWidget):
         
         updateStatusValue = self.FigureOutNewStatusValue(role, currentDatabaseStatus, textBox.contentType, CommandOriginButton, CommandOriginAutoMode)
 
-        self.text[textBox.currentEntry - 1][4] = updateStatusValue
+        self.text[textBox.currentEntry - 1]['status'] = updateStatusValue
         if textBox.contentType == 'ENG':
             textBox.iconToggle(updateStatusValue)
         
@@ -1969,13 +1976,13 @@ class Scripts2(QtGui.QWidget):
         
         # write the new string back into the main window, this is neccessary or else the new string isn't there when the displayed entry is changed!
         if textBox.contentType == 'ENG':
-            self.text[textBox.currentEntry - 1][0] = GoodString
+            self.text[textBox.currentEntry - 1]['eng'] = GoodString
         elif textBox.contentType == "COM":
-            self.text[textBox.currentEntry - 1][2] = GoodString
+            self.text[textBox.currentEntry - 1]['com'] = GoodString
         
         # should probably make this optional
         if not CommandOriginAutoMode and textBox.contentType == 'ENG':
-            self.fontWindow.drawText( GoodString, self.text[textBox.currentEntry - 1][1], Globals.GetDatabaseDescriptionString(str(databasefilename)) )
+            self.fontWindow.drawText( GoodString, self.text[textBox.currentEntry - 1]['jpn'], Globals.GetDatabaseDescriptionString(str(databasefilename)) )
 
         return
 
