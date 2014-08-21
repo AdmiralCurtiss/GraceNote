@@ -297,6 +297,7 @@ class Scripts2(QtGui.QWidget):
         # should probably make this more readable and cleaner at some point...
         self.xTextBoxesENG = []
         self.xTextBoxesJPN = []
+        self.xTextBoxesOrigLangs = []
         self.xTextBoxesCOM = []
         self.textEditingBoxes = []
         self.textEditingTitles = []
@@ -324,9 +325,20 @@ class Scripts2(QtGui.QWidget):
                 tb3.setFontPointSize(size)
                 tb3.document().setDefaultFont( font )
 
+            tbOrig = []
+            for i in range(1, len(Globals.configData.OriginalDatabases)):
+                tmp = XTextBox(self, 'JPN')
+                tmp.setReadOnly(True)
+                if Globals.Settings.contains('font'):
+                    tmp.setFontPointSize(size)
+                    tmp.document().setDefaultFont( font )
+                tmp.setFooter(QtGui.QLabel())
+                tbOrig.append(tmp)
+
             self.xTextBoxesENG.append(tb1)
             self.xTextBoxesJPN.append(tb2)
             self.xTextBoxesCOM.append(tb3)
+            self.xTextBoxesOrigLangs.append( tbOrig )
             
             footer = QtGui.QLabel('')
             footer.setContentsMargins(0, 0, 0, 0)
@@ -352,13 +364,18 @@ class Scripts2(QtGui.QWidget):
             titlelayoutwgt = QtGui.QWidget()
             titlelayoutwgt.setLayout(htitlelayout)
 
-            tmplayout.addWidget(titlelayoutwgt, 1, 1, 1, 3)
+            totalWidth = len(Globals.configData.OriginalDatabases) + 2
+            tmplayout.addWidget(titlelayoutwgt, 1, 1, 1, totalWidth)
             tmplayout.addWidget(tb1, 2, 1, 1, 1)
             tmplayout.addWidget(tb2, 2, 2, 1, 1)
-            tmplayout.addWidget(tb3, 2, 3, 1, 1)
+            counter = 3
+            for tb in tbOrig:
+                tmplayout.addWidget(tb, 2, counter, 1, 1)
+                counter += 1
+            tmplayout.addWidget(tb3, 2, counter, 1, 1)
             if Globals.FooterVisibleFlag:
-                tmplayout.addWidget(footer , 3, 1, 1, 3)
-                tmplayout.addWidget(footer2, 4, 1, 1, 3)
+                tmplayout.addWidget(footer , 3, 1, 1, totalWidth)
+                tmplayout.addWidget(footer2, 4, 1, 1, totalWidth)
             tmplayout.setContentsMargins(0, 0, 0, 0)
 
             tmpqgrpbox = QtGui.QWidget()
@@ -1240,10 +1257,19 @@ class Scripts2(QtGui.QWidget):
             if subsections and not inSubsection(i + 1, subsections):
                 continue
 
-            Globals.CursorGracesJapanese.execute("SELECT ID, string, debug FROM Japanese WHERE ID={0}".format(TempList[i][1]))
+            Globals.CursorGracesJapanese.execute("SELECT string, debug FROM Japanese WHERE ID={0}".format(TempList[i][1]))
             TempString = Globals.CursorGracesJapanese.fetchall() 
-            TempJPN = TempString[0][1]
-            TempDebug = TempString[0][2]
+            TempJPN = TempString[0][0]
+            TempDebug = TempString[0][1]
+
+            alternateOriginalLanguageStrings = []
+            for j in range( 1, len( Globals.ConnectionsOriginalDatabases ) ):
+                conn = Globals.ConnectionsOriginalDatabases[j]
+                cur = conn.cursor()
+                cur.execute( "SELECT string FROM Japanese WHERE ID={0}".format( TempList[i][1] ) )
+                data = cur.fetchone()
+                if data:
+                    alternateOriginalLanguageStrings.append( data[0] )
 
             TempENG = TempList[i][2]
             TempCOM = TempList[i][3]
@@ -1332,6 +1358,7 @@ class Scripts2(QtGui.QWidget):
                 'debug': TempDebug,
                 'status': TempStatus,
                 'ident': TempIdentifyString,
+                'alts': alternateOriginalLanguageStrings,
             }
             
         Globals.commentsAvailableLabel.setText(databasefilename)
@@ -1435,6 +1462,10 @@ class Scripts2(QtGui.QWidget):
                 self.xTextBoxesENG[i].setReadOnly(False)
                 self.xTextBoxesJPN[i].setReadOnly(True)
                 self.xTextBoxesCOM[i].setReadOnly(False)
+                for j, tb in enumerate( self.xTextBoxesOrigLangs[i] ):
+                    tb.setText( Globals.VariableReplace( textEntry['alts'][j] ) )
+                    tb.currentEntry = rowBoxes[i] + 1
+                    tb.setReadOnly(True)
             else:
                 textEntriesEng.append( '' )
                 self.xTextBoxesJPN[i].setText( '' )
@@ -1448,6 +1479,10 @@ class Scripts2(QtGui.QWidget):
                 self.xTextBoxesENG[i].setReadOnly(True)
                 self.xTextBoxesJPN[i].setReadOnly(True)
                 self.xTextBoxesCOM[i].setReadOnly(True)
+                for tb in self.xTextBoxesOrigLangs[i]:
+                    tb.setText( '' )
+                    tb.currentEntry = -1
+                    tb.setReadOnly(True)
 
         # audio clip check
         if Globals.Audio:
