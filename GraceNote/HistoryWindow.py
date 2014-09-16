@@ -80,8 +80,9 @@ class HistoryWindow(QtGui.QDialog):
         for i in range( 1, Globals.configData.TranslationStagesCountMaximum + 1 ):
             self.StatusIcons[i] = QtGui.QPixmap('icons/status/{0}g.png'.format(i)).scaled(13, 13, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation);
 
-        self.scrollAreaGridLayout.addWidget( QtGui.QLabel("English"), 0, 1 )
-        self.scrollAreaGridLayout.addWidget( QtGui.QLabel("Comment"), 0, 2 )
+        self.scrollAreaGridLayout.addWidget( QtGui.QLabel("User"), 0, 1 )
+        self.scrollAreaGridLayout.addWidget( QtGui.QLabel("English"), 0, 2 )
+        self.scrollAreaGridLayout.addWidget( QtGui.QLabel("Comment"), 0, 3 )
 
         self.ShowFullHistory()
 
@@ -177,33 +178,40 @@ class HistoryWindow(QtGui.QDialog):
         for d in self.detailHistoryLabels:
             d.englishTextBox.hide()
             d.commentTextBox.hide()
+            d.authorTextBox.hide()
             d.statusIconLabel.hide()
 
         for index, entry in enumerate( self.History[entryId] ):
             text = Globals.VariableReplace( entry[1] ).replace( '\n', '' ).replace( '<Feed>', '<Feed>\n' )
             comment = Globals.VariableReplace( entry[2] )
             icon = self.StatusIcons[entry[3]]
+            author = str( entry[4] )[:4]
 
             if index < existingBoxCount:
                 self.detailHistoryLabels[index].englishTextBox.setText( text )
                 self.detailHistoryLabels[index].englishTextBox.show()
                 self.detailHistoryLabels[index].commentTextBox.setText( comment )
                 self.detailHistoryLabels[index].commentTextBox.show()
+                self.detailHistoryLabels[index].authorTextBox.setText( author )
+                self.detailHistoryLabels[index].authorTextBox.show()
                 self.detailHistoryLabels[index].statusIconLabel.setPixmap( icon )
                 self.detailHistoryLabels[index].statusIconLabel.show()
             else:
                 textbox = QtGui.QLabel( text )
                 commentbox = QtGui.QLabel( comment )
+                authorbox = QtGui.QLabel( author )
                 statusIconLabel = QtGui.QLabel()
                 statusIconLabel.setPixmap( icon )
 
                 self.scrollAreaGridLayout.addWidget( statusIconLabel, index + 1, 0 )
-                self.scrollAreaGridLayout.addWidget( textbox, index + 1, 1 )
-                self.scrollAreaGridLayout.addWidget( commentbox, index + 1, 2 )
+                self.scrollAreaGridLayout.addWidget( authorbox, index + 1, 1 )
+                self.scrollAreaGridLayout.addWidget( textbox, index + 1, 2 )
+                self.scrollAreaGridLayout.addWidget( commentbox, index + 1, 3 )
                 
                 d = HistoryDataHelper()
                 d.englishTextBox = textbox
                 d.commentTextBox = commentbox
+                d.authorTextBox = authorbox
                 d.statusIconLabel = statusIconLabel
                 self.detailHistoryLabels.append( d )
         return
