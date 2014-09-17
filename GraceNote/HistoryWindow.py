@@ -114,6 +114,21 @@ class HistoryWindow(QtGui.QDialog):
 
         return
 
+    def checkChangesBetweenEntries(self, entryId, index):
+        englishChanged = False
+        commentChanged = False
+        statusChanged = False
+        if index + 1 != len( self.History[entryId] ):
+            entry = self.History[entryId][index]
+            entryNext = self.History[entryId][index + 1]
+            if entry[1] != entryNext[1]:
+                englishChanged = True
+            if entry[2] != entryNext[2]:
+                commentChanged = True
+            if entry[3] != entryNext[3]:
+                statusChanged = True
+        return englishChanged, commentChanged, statusChanged
+
     def displayHistoryOfEntry(self, entryId):
         self.entryId = entryId
         self.entryModel.clear()
@@ -126,7 +141,6 @@ class HistoryWindow(QtGui.QDialog):
         self.entryList.setColumnWidth(4, 115)
         self.entryList.setColumnWidth(5, 100)
 
-        entryCount = len( self.History[entryId] )
         for index, entry in enumerate( self.History[entryId] ):
             if entry[5] is not None:
                 date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(entry[5]))
@@ -134,18 +148,7 @@ class HistoryWindow(QtGui.QDialog):
                 date = 'Unknown'
             
             # check what was changed
-            englishChanged = False
-            commentChanged = False
-            statusChanged = False
-            if index + 1 != entryCount:
-                entryNext = self.History[entryId][index + 1]
-                if entry[1] != entryNext[1]:
-                    englishChanged = True
-                if entry[2] != entryNext[2]:
-                    commentChanged = True
-                if entry[3] != entryNext[3]:
-                    statusChanged = True
-                    
+            englishChanged, commentChanged, statusChanged = self.checkChangesBetweenEntries( entryId, index )
             englishChangedItem = QtGui.QStandardItem('E' if englishChanged else '')
             englishChangedItem.setEditable(False)
             commentChangedItem = QtGui.QStandardItem('C' if commentChanged else '')
@@ -181,9 +184,20 @@ class HistoryWindow(QtGui.QDialog):
             d.authorTextBox.hide()
             d.statusIconLabel.hide()
 
+        entryCount = len( self.History[entryId] )
         for index, entry in enumerate( self.History[entryId] ):
-            text = Globals.VariableReplace( entry[1] ).replace( '\n', '' ).replace( '<Feed>', '<Feed>\n' )
-            comment = Globals.VariableReplace( entry[2] )
+            englishChanged, commentChanged, statusChanged = self.checkChangesBetweenEntries( entryId, index )
+
+            if englishChanged or index == entryCount - 1:
+                text = Globals.VariableReplace( entry[1] ).replace( '\n', '' ).replace( '<Feed>', '<Feed>\n' )
+            else:
+                text = u"\u2015" # horizontal line
+            
+            if commentChanged or index == entryCount - 1:
+                comment = Globals.VariableReplace( entry[2] )
+            else:
+                comment = u"\u2015"
+
             icon = self.StatusIcons[entry[3]]
             author = str( entry[4] )[:4]
 
