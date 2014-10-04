@@ -1692,15 +1692,22 @@ class Scripts2(QtGui.QWidget):
             category = self.databaseTreeModel.item(i)
 
             for p in xrange(category.rowCount()):
-            
-                if str(category.child(p).statusTip()) == databaseName:
+                dbNode = category.child(p).DatabaseTreeNode
+
+                if dbNode.Name == databaseName:
+                    # if the database is a subsectioned one, also make sure the requested entry is in this subsection
+                    if not dbNode.ContainsEntry(entry):
+                        continue
+
                     treeExpand = self.databaseTreeModel.indexFromItem(category)
                     self.databaseTreeView.expand(treeExpand)
+
+                    # open up database
                     treeIndex = self.databaseTreeModel.indexFromItem(category.child(p))
-                            
                     self.databaseTreeView.setCurrentIndex(treeIndex)
                     self.databaseTreeView.selectionModel().select(treeIndex, QtGui.QItemSelectionModel.SelectionFlags(3))
 
+                    # select requested entry
                     try:
                         for i in xrange(self.entryStandardItemModel.rowCount()):
                             item = self.entryStandardItemModel.item(i, 0)

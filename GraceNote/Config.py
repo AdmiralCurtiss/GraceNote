@@ -18,6 +18,15 @@ class DatabaseTreeNode():
         self.Desc = desc
         self.Data = data
         self.Subsections = subsections
+
+    def ContainsEntry( self, entry ):
+        if self.Subsections:
+            for s in self.Subsections:
+                if entry >= s.Start and entry <= s.End:
+                    return True
+            return False
+        return True
+
 class DatabaseSubsection():
     def __init__( self, entryStart, entryEnd ):
         self.Start = entryStart
