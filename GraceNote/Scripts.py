@@ -18,6 +18,7 @@ from MainWindow import *
 from XTextBox import *
 from CustomHighlighter import *
 from MassReplace import *
+from MassSpellcheck import *
 from GlobalChangelog import *
 from LocalChangelog import *
 from Statistics import *
@@ -121,6 +122,7 @@ class Scripts2(QtGui.QWidget):
         self.gLogDialog = None
         self.statDialog = None
         self.massDialog = None
+        self.massSpellcheckDialog = None
         self.comDialog = None
         self.dupeDialog = None
         self.optionsWindow = None
@@ -464,6 +466,9 @@ class Scripts2(QtGui.QWidget):
         self.openMassReplaceAction = QtGui.QAction(QtGui.QIcon('icons/massreplace.png'), 'Mass &Replace', None)
         self.openMassReplaceAction.triggered.connect(self.ShowMassReplace)
         self.openMassReplaceAction.setShortcut(QtGui.QKeySequence('Ctrl+M'))
+        
+        self.openMassSpellcheckAction = QtGui.QAction(QtGui.QIcon('icons/massreplace.png'), 'Mass Spellcheck', None)
+        self.openMassSpellcheckAction.triggered.connect(self.ShowMassSpellcheck)
 
         self.openCompletionAction = QtGui.QAction(QtGui.QIcon('icons/completion.png'), 'Completion', None)
         self.openCompletionAction.triggered.connect(self.ShowCompletionTable)
@@ -582,6 +587,7 @@ class Scripts2(QtGui.QWidget):
         self.Toolbar.addAction(self.openStatisticsAction)
         self.Toolbar.addAction(self.openCompletionAction)
         self.Toolbar.addAction(self.openMassReplaceAction)
+        self.Toolbar.addAction(self.openMassSpellcheckAction)
         self.Toolbar.addAction(self.openDuplicateTextAction)
         self.Toolbar.addWidget(FlexibleSpace)
 
@@ -706,6 +712,7 @@ class Scripts2(QtGui.QWidget):
         toolsMenu.addAction(self.openCompletionAction)
         toolsMenu.addSeparator()
         toolsMenu.addAction(self.openMassReplaceAction)
+        toolsMenu.addAction(self.openMassSpellcheckAction)
         toolsMenu.addAction(self.openDuplicateTextAction)
         toolsMenu.addSeparator()
         toolsMenu.addAction(self.formatCentralTextMode1Action)
@@ -764,6 +771,7 @@ class Scripts2(QtGui.QWidget):
         self.setLayout(layoutWidgetAdapter)
 
         self.massDialogOpened = False
+        self.massSpellcheckDialogOpened = False
         self.globalChangelogOpened = False
         self.statsDialogOpened = False
         self.duplicateTextDialogOpened = False
@@ -1776,6 +1784,15 @@ class Scripts2(QtGui.QWidget):
         self.massDialog.raise_()
         self.massDialog.activateWindow()
 
+    def ShowMassSpellcheck(self):
+        self.WriteDatabaseStorageToHdd()
+        
+        if not self.massSpellcheckDialogOpened:
+            self.massSpellcheckDialog = MassSpellcheck(self)
+            self.massSpellcheckDialogOpened = True
+        self.massSpellcheckDialog.show()
+        self.massSpellcheckDialog.raise_()
+        self.massSpellcheckDialog.activateWindow()
 
     def OpenOptionsWindow(self):
         self.WriteDatabaseStorageToHdd()

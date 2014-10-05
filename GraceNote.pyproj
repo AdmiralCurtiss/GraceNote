@@ -44,6 +44,7 @@
     <Compile Include="GraceNote\LocalChangelog.py" />
     <Compile Include="GraceNote\MainWindow.py" />
     <Compile Include="GraceNote\MassReplace.py" />
+    <Compile Include="GraceNote\MassSpellcheck.py" />
     <Compile Include="GraceNote\NetworkHandler.py" />
     <Compile Include="GraceNote\NetworkTransferWindow.py" />
     <Compile Include="GraceNote\OptionsWindow.py" />
