@@ -97,6 +97,7 @@ class CompletionTable(QtGui.QDialog):
                     rowdata.append('{0}'.format(commentamount))
 
                     newrow = QtGui.QTreeWidgetItem(cat, rowdata)
+                    newrow.DatabaseNode = item
                     
                     progress.setValue(progress.value() + 1)
     
@@ -132,8 +133,8 @@ class CompletionTable(QtGui.QDialog):
         if item.childCount() > 0:
             return
 
-        databaseName = item.data(0, 0)
-        self.parent.JumpToEntry(databaseName, 1)
+        databaseName = item.DatabaseNode.Name
+        self.parent.JumpToEntry(databaseName, item.DatabaseNode.GetFirstEntry())
 
     def closeEvent(self, event):
         Globals.Settings.setValue('Geometry/CompletionTable', self.saveGeometry())

@@ -27,6 +27,15 @@ class DatabaseTreeNode():
             return False
         return True
 
+    def GetFirstEntry( self ):
+        if self.Subsections:
+            lowest = 2147483647
+            for s in self.Subsections:
+                if s.Start < lowest:
+                    lowest = s.Start
+            return lowest
+        return 1
+
 class DatabaseSubsection():
     def __init__( self, entryStart, entryEnd ):
         self.Start = entryStart
