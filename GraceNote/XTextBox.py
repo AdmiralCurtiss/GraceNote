@@ -27,6 +27,8 @@ class XTextBox(QtGui.QTextEdit):
         self.Jpcur = self.Jpcon.cursor()
         self.modified = False
         self.setAcceptRichText( False )
+        self.setMinimumSize( 0, 0 )
+        self.setViewportMargins(0, 0, 0, 0)
         
         self.currentlySetStatus = 0
         self.contentType = contentType

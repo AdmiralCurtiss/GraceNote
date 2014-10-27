@@ -385,6 +385,8 @@ class Scripts2(QtGui.QWidget):
 
             tmpqgrpbox = QtGui.QWidget()
             tmpqgrpbox.setLayout(tmplayout)
+            tmpqgrpbox.setContentsMargins( 0, 0, 0, 0 )
+            tmpqgrpbox.setMinimumSize( 0, 0 )
 
             termicon.setPixmap(self.termInEntryIcon)
             termicon.hide()
@@ -752,6 +754,9 @@ class Scripts2(QtGui.QWidget):
         
         EditingWindowSubLayoutSplitter = QtGui.QSplitter()
         EditingWindowSubLayoutSplitter.setOrientation(QtCore.Qt.Vertical)
+        EditingWindowSubLayoutSplitter.setChildrenCollapsible( False )
+        EditingWindowSubLayoutSplitter.setMidLineWidth( 0 )
+        EditingWindowSubLayoutSplitter.setMinimumSize( 0, 0 )
         for i in range(len(self.textEditingBoxes)):
             EditingWindowSubLayoutSplitter.addWidget(self.textEditingBoxes[i])
         
