@@ -1481,7 +1481,11 @@ class Scripts2(QtGui.QWidget):
                 self.xTextBoxesJPN[i].setReadOnly(True)
                 self.xTextBoxesCOM[i].setReadOnly(False)
                 for j, tb in enumerate( self.xTextBoxesOrigLangs[i] ):
-                    tb.setText( Globals.VariableReplace( textEntry['alts'][j] ) )
+                    try:
+                        tb.setText( Globals.VariableReplace( textEntry['alts'][j] ) )
+                    except IndexError:
+                        tb.setText( '' )
+                        pass
                     tb.currentEntry = rowBoxes[i] + 1
                     tb.setReadOnly(True)
             else:
