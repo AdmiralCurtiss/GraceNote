@@ -18,7 +18,10 @@ from MainWindow import *
 from XTextBox import *
 from CustomHighlighter import *
 from MassReplace import *
-from MassSpellcheck import *
+try:
+    from MassSpellcheck import *
+except ImportError:
+    pass
 from GlobalChangelog import *
 from LocalChangelog import *
 from Statistics import *
@@ -587,7 +590,8 @@ class Scripts2(QtGui.QWidget):
         self.Toolbar.addAction(self.openStatisticsAction)
         self.Toolbar.addAction(self.openCompletionAction)
         self.Toolbar.addAction(self.openMassReplaceAction)
-        self.Toolbar.addAction(self.openMassSpellcheckAction)
+        if Globals.enchanted:
+            self.Toolbar.addAction(self.openMassSpellcheckAction)
         self.Toolbar.addAction(self.openDuplicateTextAction)
         self.Toolbar.addWidget(FlexibleSpace)
 
@@ -712,7 +716,8 @@ class Scripts2(QtGui.QWidget):
         toolsMenu.addAction(self.openCompletionAction)
         toolsMenu.addSeparator()
         toolsMenu.addAction(self.openMassReplaceAction)
-        toolsMenu.addAction(self.openMassSpellcheckAction)
+        if Globals.enchanted:
+            toolsMenu.addAction(self.openMassSpellcheckAction)
         toolsMenu.addAction(self.openDuplicateTextAction)
         toolsMenu.addSeparator()
         toolsMenu.addAction(self.formatCentralTextMode1Action)
