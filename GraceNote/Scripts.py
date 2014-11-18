@@ -1590,7 +1590,15 @@ class Scripts2(QtGui.QWidget):
     def GetFullText(self, replaceVariables, dumpEnglish=True, dumpJapanese=False, dumpComments=False, seperator='\n', entrySeperator='\n\n\n'):
         string = ''
         i = 1
-        for entry in self.text:
+        textToDump = []
+        if dumpJapanese:
+            textToDump.append('jpn')
+        if dumpEnglish:
+            textToDump.append('eng')
+        if dumpComments:
+            textToDump.append('com')
+
+        for entry in self.text.itervalues():
             if entry['debug'] == 0 or self.debugOnOffButton.isChecked():
                 string = string + '{0}'.format(i) # entry id
                 string = string + seperator + entry['ident']
@@ -1598,14 +1606,11 @@ class Scripts2(QtGui.QWidget):
                 string = string + seperator
 
                 currentEntryString = ''
-                if dumpJapanese:
-                    currentEntryString = currentEntryString + (entry['jpn'] if not replaceVariables else Globals.VariableReplace(entry['jpn'])) + seperator
-                if dumpEnglish:
-                    currentEntryString = currentEntryString + (entry['eng'] if not replaceVariables else Globals.VariableReplace(entry['eng'])) + seperator
-                if dumpComments:
-                    currentEntryString = currentEntryString + (entry['com'] if not replaceVariables else Globals.VariableReplace(entry['com'])) + seperator
+                for type in textToDump:
+                    txt = (entry[type] if not replaceVariables else Globals.VariableReplace(entry[type])).replace('\n','').replace('\r', '')
+                    currentEntryString = currentEntryString + txt + seperator
 
-                string = string + currentEntryString.replace('\n','').replace('\r', '') + entrySeperator
+                string = string + currentEntryString + entrySeperator
             
             i += 1
         return string
