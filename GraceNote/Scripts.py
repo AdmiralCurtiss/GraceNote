@@ -562,6 +562,9 @@ class Scripts2(QtGui.QWidget):
         self.runScrollUpAction2 = QtGui.QAction('Scroll Up', None)
         self.runScrollUpAction2.triggered.connect(self.ScrollUp)
         self.runScrollUpAction2.setShortcut(QtGui.QKeySequence('Alt+Up'))
+        self.runScrollUpAction3 = QtGui.QAction('Scroll Up', None)
+        self.runScrollUpAction3.triggered.connect(self.ScrollUp)
+        self.runScrollUpAction3.setShortcut(QtGui.QKeySequence('PgUp'))
 
         self.runScrollDownAction = QtGui.QAction('Scroll Down', None)
         self.runScrollDownAction.triggered.connect(self.ScrollDown)
@@ -569,6 +572,9 @@ class Scripts2(QtGui.QWidget):
         self.runScrollDownAction2 = QtGui.QAction('Scroll Down', None)
         self.runScrollDownAction2.triggered.connect(self.ScrollDown)
         self.runScrollDownAction2.setShortcut(QtGui.QKeySequence('Alt+Down'))
+        self.runScrollDownAction3 = QtGui.QAction('Scroll Down', None)
+        self.runScrollDownAction3.triggered.connect(self.ScrollDown)
+        self.runScrollDownAction3.setShortcut(QtGui.QKeySequence('PgDown'))
         
         self.openMediaWindowsAction = QtGui.QAction('Reopen Media Windows', None)
         self.openMediaWindowsAction.triggered.connect(self.OpenMediumWindows)
@@ -653,6 +659,8 @@ class Scripts2(QtGui.QWidget):
         viewMenu.addAction(self.runScrollDownAction)
         viewMenu.addAction(self.runScrollUpAction2)
         viewMenu.addAction(self.runScrollDownAction2)
+        viewMenu.addAction(self.runScrollUpAction3)
+        viewMenu.addAction(self.runScrollDownAction3)
         viewMenu.addSeparator()
         viewMenu.addAction(self.openFontWindownAction)
         viewMenu.addAction(self.openMediaWindowsAction)
