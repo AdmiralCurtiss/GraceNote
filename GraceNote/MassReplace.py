@@ -292,6 +292,9 @@ class MassReplace(QtGui.QDialog):
             if reply != QtGui.QMessageBox.Yes:
                 return
                 
+        # workaround for qt iterator bug, is fixed in newer Qt versions so can be removed if ported to PyQt5
+        currentTab.setSortingEnabled(False)
+
         Iterator = QtGui.QTreeWidgetItemIterator(currentTab)
         while Iterator.value():
         
@@ -319,6 +322,9 @@ class MassReplace(QtGui.QDialog):
         
         self.parent.WriteDatabaseStorageToHdd()    
         self.UpdateReplacementText()
+
+        # workaround for qt iterator bug, is fixed in newer Qt versions so can be removed if ported to PyQt5
+        currentTab.setSortingEnabled(True)
 
         return
 
