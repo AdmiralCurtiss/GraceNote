@@ -1114,17 +1114,26 @@ class Scripts2(QtGui.QWidget):
             categoryItem = QtGui.QStandardItem( category.Name )
             categoryItem.setEditable( False )
             parent.appendRow( categoryItem )
+            categoryPhase = Globals.configData.TranslationStagesCountMaximum
             
             for db in category.Data:
                 if db.IsCategory:
-                    AddCategory( db, categoryItem )
+                    newCatPhase = AddCategory( db, categoryItem )
+                    categoryPhase = min( newCatPhase, categoryPhase )
                 else:
                     dbItem = QtGui.QStandardItem()
                     dbItem.DatabaseTreeNode = db
                     dbItem.setStatusTip( db.Name )
                     dbItem.setEditable( False )
-                    self.FormatDatabaseListItem( dbItem, PercentageCursor = PercentageCursor )
+                    dbPhase = self.FormatDatabaseListItem( dbItem, PercentageCursor = PercentageCursor )
+                    categoryPhase = min( dbPhase, categoryPhase )
                     categoryItem.appendRow( dbItem )
+
+            categoryItem.setText( '[' + str(categoryPhase) + '] ' + category.Name )
+            if categoryPhase >= self.role:
+                categoryItem.setBackground( QtGui.QBrush( Globals.ColorCurrentStatus ) )
+
+            return categoryPhase
         
         for category in fileTree.Data:
             AddCategory( category, self.databaseTreeModel )
@@ -1143,6 +1152,7 @@ class Scripts2(QtGui.QWidget):
 
         PercentageCursor.execute("SELECT Count(1) FROM StatusData WHERE Database = ?", [completionDbName])
         exists = PercentageCursor.fetchall()[0][0]
+        dbPhase = 0
         if exists > 0:
             PercentageCursor.execute("SELECT type, amount FROM StatusData WHERE Database = ?", [completionDbName])
             rows = PercentageCursor.fetchall()
@@ -1163,7 +1173,6 @@ class Scripts2(QtGui.QWidget):
                 treeItem.setBackground(QtGui.QBrush( Globals.ColorLowerStatus ));
 
             # figure out the minimum status of all entries in the DB
-            dbPhase = 0
             for i in range(1, Globals.configData.TranslationStagesCount + 1):
                 try:
                     if linecountTotal == data[i]:
@@ -1175,7 +1184,8 @@ class Scripts2(QtGui.QWidget):
                 treeItem.setText('[' + str(dbPhase) + 'c] ' + treeItem.text())
             else:
                 treeItem.setText('[' + str(dbPhase) + '  ] ' + treeItem.text())
-        return
+        
+        return dbPhase
 
     def FormatEntryListItemColor(self, item, status):
         if status == -1:
