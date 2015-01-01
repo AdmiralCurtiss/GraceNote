@@ -1317,10 +1317,12 @@ class Scripts2(QtGui.QWidget):
 
             if TempENG == '' or TempENG == None:
                 TempENG = TempJPN
+            if TempUpdatedBy is None:
+                TempUpdatedBy = '[None]'
             if TempUpdatedTimestamp is not None:
                 TempUpdatedTimestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(TempUpdatedTimestamp))
             else:
-                TempUpdatedTimestamp = 'Unknown'
+                TempUpdatedTimestamp = '0000-00-00 00:00:00'
             
             if TempCOM == None:
                 TempCOM = ''
