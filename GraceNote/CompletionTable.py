@@ -102,7 +102,11 @@ class CompletionTable(QtGui.QDialog):
                     progress.setValue(progress.value() + 1)
     
             for i in range(1, Globals.configData.TranslationStagesCount + 1):
-                cat.setData(i, 0, '{0:06.2f}% ({1:06d}/{2:06d})'.format(float(translationStageCounts[i])/float(translationStageCounts[0])*100, translationStageCounts[i], translationStageCounts[0]))
+                if translationStageCounts[0] > 0:
+                    percentage = float(translationStageCounts[i])/float(translationStageCounts[0])*100
+                else:
+                    percentage = 100.0
+                cat.setData(i, 0, '{0:06.2f}% ({1:06d}/{2:06d})'.format(percentage, translationStageCounts[i], translationStageCounts[0]))
             cat.setData(i+1, 0, '{0}'.format(commentCount))
             
             for i in range(0, Globals.configData.TranslationStagesCount + 1):
