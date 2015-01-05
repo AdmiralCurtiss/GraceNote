@@ -1731,43 +1731,55 @@ class Scripts2(QtGui.QWidget):
     def JumpToEntry(self, databaseName, entry):
         self.WriteDatabaseStorageToHdd()
         entry = int(entry)
-
         if databaseName == '':
-            databaseName = self.currentlyOpenDatabase
-        self.databaseTreeView.collapseAll()
+            return
+
+        def SearchCategory( category ):
+            for p in xrange(category.rowCount()):
+                child = category.child(p)
+                try:
+                    dbNode = child.DatabaseTreeNode
+                    if dbNode.Name == databaseName:
+                        # if the database is a subsectioned one, also make sure the requested entry is in this subsection
+                        if not dbNode.ContainsEntry(entry):
+                            continue
+
+                        # found correct database, expand
+                        treeExpand = self.databaseTreeModel.indexFromItem(category)
+                        self.databaseTreeView.expand(treeExpand)
+
+                        # and select
+                        treeIndex = self.databaseTreeModel.indexFromItem(category.child(p))
+                        self.databaseTreeView.setCurrentIndex(treeIndex)
+                        self.databaseTreeView.selectionModel().select(treeIndex, QtGui.QItemSelectionModel.SelectionFlags(3))
+
+                        # select requested entry
+                        try:
+                            for i in xrange(self.entryStandardItemModel.rowCount()):
+                                item = self.entryStandardItemModel.item(i, 0)
+                                if item.GraceNoteEntryId == entry:
+                                    entryIndex = self.entryStandardItemModel.indexFromItem(item)
+                                    sortIndex = self.entrySortFilterProxyModel.mapFromSource(entryIndex)
+                                    self.entryTreeView.setCurrentIndex(sortIndex)
+                                    self.entryTreeView.selectionModel().select(sortIndex, QtGui.QItemSelectionModel.SelectionFlags(3))
+                                    break
+                        except:
+                            pass
+
+                        return True
+
+                except AttributeError:
+                    # I don't think this is the best way to handle that honestly
+                    # but if this happens this is a category node
+                    if SearchCategory( child ):
+                        return True
+
+            return False
+
         for i in xrange(self.databaseTreeModel.rowCount()):
             category = self.databaseTreeModel.item(i)
-
-            for p in xrange(category.rowCount()):
-                dbNode = category.child(p).DatabaseTreeNode
-
-                if dbNode.Name == databaseName:
-                    # if the database is a subsectioned one, also make sure the requested entry is in this subsection
-                    if not dbNode.ContainsEntry(entry):
-                        continue
-
-                    treeExpand = self.databaseTreeModel.indexFromItem(category)
-                    self.databaseTreeView.expand(treeExpand)
-
-                    # open up database
-                    treeIndex = self.databaseTreeModel.indexFromItem(category.child(p))
-                    self.databaseTreeView.setCurrentIndex(treeIndex)
-                    self.databaseTreeView.selectionModel().select(treeIndex, QtGui.QItemSelectionModel.SelectionFlags(3))
-
-                    # select requested entry
-                    try:
-                        for i in xrange(self.entryStandardItemModel.rowCount()):
-                            item = self.entryStandardItemModel.item(i, 0)
-                            if item.GraceNoteEntryId == entry:
-                                entryIndex = self.entryStandardItemModel.indexFromItem(item)
-                                sortIndex = self.entrySortFilterProxyModel.mapFromSource(entryIndex)
-                                self.entryTreeView.setCurrentIndex(sortIndex)
-                                self.entryTreeView.selectionModel().select(sortIndex, QtGui.QItemSelectionModel.SelectionFlags(3))
-                                break
-                    except:
-                        pass
-
-                    return
+            if SearchCategory( category ):
+                return
 
 
     def DebugFilter(self, bool):
