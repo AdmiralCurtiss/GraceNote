@@ -6,6 +6,9 @@ import os
 import sqlite3
 import DatabaseHandler
 
+class CategoryCounts():
+    pass
+
 class CompletionTable(QtGui.QDialog):
 
     def __init__(self, parent):
@@ -52,14 +55,18 @@ class CompletionTable(QtGui.QDialog):
         def AddCategory( categoryNode, treeWidgetItem ):
             cat = QtGui.QTreeWidgetItem(treeWidgetItem, [categoryNode.Name])
             
-            translationStageCounts = []
+            categoryCounts = CategoryCounts()
+            categoryCounts.stages = []
             for i in range(0, Globals.configData.TranslationStagesCount + 1):
-                translationStageCounts.append(0)
-            commentCount = 0
+                categoryCounts.stages.append(0)
+            categoryCounts.comments = 0
             
             for item in categoryNode.Data:
                 if item.IsCategory:
-                    AddCategory( item, cat )
+                    subCatCount = AddCategory( item, cat )
+                    for i in range(0, Globals.configData.TranslationStagesCount + 1):
+                        categoryCounts.stages[i] += subCatCount.stages[i]
+                    categoryCounts.comments += subCatCount.comments
                 else:
                     databaseName = GetCompletionTableDatabaseNameOfTreeNode( item )
                     tempCur.execute("SELECT Count(1) FROM StatusData WHERE Database = ?", [databaseName])
@@ -77,10 +84,13 @@ class CompletionTable(QtGui.QDialog):
                         databaseCounts[type] = count
 
                     for i in range(0, Globals.configData.TranslationStagesCount + 1):
-                        translationStageCounts[i] += databaseCounts[i]
+                        categoryCounts.stages[i] += databaseCounts[i]
                     
                     commentamount = databaseCounts[-2]
-                    commentCount += commentamount
+                    categoryCounts.comments += commentamount
+                    
+                    for i in range(0, Globals.configData.TranslationStagesCount + 1):
+                        self.totalCounts[i] += databaseCounts[i]
                     self.totalCommentCount += commentamount
 
                     databaseCountStrings = []
@@ -102,15 +112,14 @@ class CompletionTable(QtGui.QDialog):
                     progress.setValue(progress.value() + 1)
     
             for i in range(1, Globals.configData.TranslationStagesCount + 1):
-                if translationStageCounts[0] > 0:
-                    percentage = float(translationStageCounts[i])/float(translationStageCounts[0])*100
+                if categoryCounts.stages[0] > 0:
+                    percentage = float(categoryCounts.stages[i])/float(categoryCounts.stages[0])*100
                 else:
                     percentage = 100.0
-                cat.setData(i, 0, '{0:06.2f}% ({1:06d}/{2:06d})'.format(percentage, translationStageCounts[i], translationStageCounts[0]))
-            cat.setData(i+1, 0, '{0}'.format(commentCount))
+                cat.setData(i, 0, '{0:06.2f}% ({1:06d}/{2:06d})'.format(percentage, categoryCounts.stages[i], categoryCounts.stages[0]))
+            cat.setData(i+1, 0, '{0}'.format(categoryCounts.comments))
             
-            for i in range(0, Globals.configData.TranslationStagesCount + 1):
-                self.totalCounts[i] += translationStageCounts[i]
+            return categoryCounts
 
         for category in Globals.configData.FileTree.Data:
             AddCategory( category, self.treewidget )
