@@ -451,6 +451,7 @@ class Scripts2(QtGui.QWidget):
         self.playCentralAudioAction.setShortcut(QtGui.QKeySequence('Ctrl+-'))
         self.formatCentralTextMode1Action = QtGui.QAction('[BETA] Format Text (Max JP Width, any linecount)', None)
         self.formatCentralTextMode1Action.triggered.connect(self.FormatCentralTextMatchJapaneseWidth)
+        self.formatCentralTextMode1Action.setShortcut(QtGui.QKeySequence('Ctrl+P'))
         self.formatCentralTextMode2Action = QtGui.QAction('[BETA] Format Text (Any width, max JP linecount)', None)
         self.formatCentralTextMode2Action.triggered.connect(self.FormatCentralTextAllowExceedWidth)
         self.formatCentralTextMode3Action = QtGui.QAction('[BETA] Format Text (Match JP Linecount in Block)', None)
