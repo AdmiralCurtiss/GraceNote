@@ -271,10 +271,10 @@ class Scripts2(QtGui.QWidget):
         self.entryTreeView.setModel(self.entrySortFilterProxyModel)
         self.entryTreeView.setRootIsDecorated(False)
 
-        self.entryTreeViewHeaderLabels = ['ID', 'Status', 'Comment?', 'IdentifyString', 'Text', 'Comment', 'Last updated by', 'Last updated at', 'Debug?']
+        self.entryTreeViewHeaderLabels = ['ID', 'Status', 'Comment?', 'IdentifyString', 'Translated Text', 'Comment', 'Last updated by', 'Last updated at', 'Original Text', 'Debug?']
         self.entryTreeViewHeadersVisible = []
         self.entryTreeViewHasBeenFilledOnce = False
-        self.entryTreeViewHeaderWidthsDefaults = [30, 10, 10, 50, 200, 100, 90, 110, 20]
+        self.entryTreeViewHeaderWidthsDefaults = [30, 10, 10, 50, 200, 100, 90, 110, 200, 20]
 
         # figure out which entry columns are visible
         visibleCount = 0
@@ -1220,7 +1220,7 @@ class Scripts2(QtGui.QWidget):
         self.entryTreeViewHasBeenFilledOnce = True
 
         self.entryStandardItemModel.clear()
-        self.entryStandardItemModel.setColumnCount(9)
+        self.entryStandardItemModel.setColumnCount(10)
         self.entryStandardItemModel.setHorizontalHeaderLabels(self.entryTreeViewHeaderLabels)
         if self.entryTreeViewHeaderState is not None:
             self.entryTreeView.header().restoreState(self.entryTreeViewHeaderState)
@@ -1346,6 +1346,7 @@ class Scripts2(QtGui.QWidget):
 
             entryDisplayString = Globals.VariableReplace( TempENG.replace('\f', ' ').replace('\n', ' ') )
             commentDisplayString = Globals.VariableReplace( TempCOM.replace('\f', ' ').replace('\n', ' ') )
+            japaneseDisplayString = Globals.VariableReplace( TempJPN.replace('\f', ' ').replace('\n', ' ') )
                         
             additemEntryEnglishID = QtGui.QStandardItem(str(TempID))
             additemEntryEnglishID.setStatusTip(TempIdentifyString)
@@ -1368,6 +1369,8 @@ class Scripts2(QtGui.QWidget):
             additemEntryIsDebug.setEditable(False)
             additemEntryCommentText = QtGui.QStandardItem(commentDisplayString)
             additemEntryCommentText.setEditable(False)
+            additemEntryJpText = QtGui.QStandardItem(japaneseDisplayString)
+            additemEntryJpText.setEditable(False)
     
             self.FormatEntryListItemColor(additemEntryStatus, TempStatus)        
             self.FormatEntryListItemColor(additemEntryText, TempStatus)        
@@ -1378,16 +1381,17 @@ class Scripts2(QtGui.QWidget):
             self.FormatEntryListItemColor(additemEntryIsDebug, TempStatus)        
             self.FormatEntryListItemColor(additemEntryEnglishID, TempStatus)        
             self.FormatEntryListItemColor(additemEntryCommentText, TempStatus)        
+            self.FormatEntryListItemColor(additemEntryJpText, TempStatus)
     
             if TempDebug == 1 and debugButtonChecked:
                 additemEntryIsDebug.setCheckState(QtCore.Qt.Checked)
                 additemEntryIsDebug.DebugStatus = True
-                self.entryStandardItemModel.appendRow([additemEntryEnglishID, additemEntryStatus, additemEntryCommentExists, additemEntryIdentifyString, additemEntryText, additemEntryCommentText, additemEntryUpdatedBy, additemEntryTimestamp, additemEntryIsDebug])
+                self.entryStandardItemModel.appendRow([additemEntryEnglishID, additemEntryStatus, additemEntryCommentExists, additemEntryIdentifyString, additemEntryText, additemEntryCommentText, additemEntryUpdatedBy, additemEntryTimestamp, additemEntryJpText, additemEntryIsDebug])
             elif TempDebug == 1 and not debugButtonChecked:
                 pass
             else:
                 additemEntryIsDebug.DebugStatus = False
-                self.entryStandardItemModel.appendRow([additemEntryEnglishID, additemEntryStatus, additemEntryCommentExists, additemEntryIdentifyString, additemEntryText, additemEntryCommentText, additemEntryUpdatedBy, additemEntryTimestamp, additemEntryIsDebug])
+                self.entryStandardItemModel.appendRow([additemEntryEnglishID, additemEntryStatus, additemEntryCommentExists, additemEntryIdentifyString, additemEntryText, additemEntryCommentText, additemEntryUpdatedBy, additemEntryTimestamp, additemEntryJpText, additemEntryIsDebug])
                 
             self.text[i] = {
                 'eng': TempENG,
