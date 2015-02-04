@@ -216,6 +216,15 @@ class Scripts2(QtGui.QWidget):
             self.TextboxVisibleFlagJapanese = Globals.Settings.value('TextboxVisibleFlagJapanese') == 'True'
         else:
             self.TextboxVisibleFlagJapanese = True
+
+        self.TextboxVisibleFlagOrigLang = []
+        for i in range( 1, len( Globals.ConnectionsOriginalDatabases ) ):
+            if Globals.Settings.contains('TextboxVisibleFlagOrigLang' + str(i)):
+                visible = Globals.Settings.value('TextboxVisibleFlagOrigLang' + str(i)) == 'True'
+            else:
+                visible = True
+            self.TextboxVisibleFlagOrigLang.append( visible )
+
         if Globals.Settings.contains('TextboxVisibleFlagComment'):
             self.TextboxVisibleFlagComment = Globals.Settings.value('TextboxVisibleFlagComment') == 'True'
         else:
@@ -439,12 +448,15 @@ class Scripts2(QtGui.QWidget):
         self.switchEngOnOffAction = QtGui.QAction(QtGui.QIcon('icons/globe.png'), 'English', None)
         self.switchEngOnOffAction.triggered.connect(self.SwitchVisibleEng)
         self.switchEngOnOffAction.setShortcut(QtGui.QKeySequence('Ctrl+1'))
-        self.switchJpnOnOffAction = QtGui.QAction(QtGui.QIcon('icons/japan.png'), 'Japanese', None)
-        self.switchJpnOnOffAction.triggered.connect(self.SwitchVisibleJpn)
-        self.switchJpnOnOffAction.setShortcut(QtGui.QKeySequence('Ctrl+2'))
+        self.switchJpnOnOffActions = []
+        for i in range( len( Globals.ConnectionsOriginalDatabases ) ):
+            s = QtGui.QAction(QtGui.QIcon('icons/japan.png'), 'Japanese', None)
+            s.triggered.connect( self.SwitchVisibleJpnGetFunc(i) )
+            s.setShortcut(QtGui.QKeySequence('Ctrl+' + str(i + 2)))
+            self.switchJpnOnOffActions.append( s )
         self.switchComOnOffAction = QtGui.QAction(QtGui.QIcon('icons/comment.png'), 'Comments', None)
         self.switchComOnOffAction.triggered.connect(self.SwitchVisibleCom)
-        self.switchComOnOffAction.setShortcut(QtGui.QKeySequence('Ctrl+3'))
+        self.switchComOnOffAction.setShortcut(QtGui.QKeySequence('Ctrl+' + str(i + 3)))
 
         self.playCentralAudioAction = QtGui.QAction('Play Audio (2nd Textbox)', None)
         self.playCentralAudioAction.triggered.connect(self.PlayCentralAudio)
@@ -592,7 +604,8 @@ class Scripts2(QtGui.QWidget):
         self.Toolbar.clear()
         
         self.Toolbar.addAction(self.switchEngOnOffAction)
-        self.Toolbar.addAction(self.switchJpnOnOffAction)
+        for action in self.switchJpnOnOffActions:
+            self.Toolbar.addAction(action)
         self.Toolbar.addAction(self.switchComOnOffAction)
         self.Toolbar.addAction(self.openLocalChangelogAction)
         self.Toolbar.addAction(self.openGlobalChangelogAction)
@@ -651,7 +664,8 @@ class Scripts2(QtGui.QWidget):
         # === View Menu ===
         viewMenu = QtGui.QMenu("View", self)
         viewMenu.addAction(self.switchEngOnOffAction)
-        viewMenu.addAction(self.switchJpnOnOffAction)
+        for action in self.switchJpnOnOffActions:
+            viewMenu.addAction(action)
         viewMenu.addAction(self.switchComOnOffAction)
         viewMenu.addSeparator()
         viewMenu.addAction(self.playCentralAudioAction)
@@ -805,6 +819,10 @@ class Scripts2(QtGui.QWidget):
         if not self.TextboxVisibleFlagJapanese:
             for box in self.xTextBoxesJPN:
                 box.hide()
+        for i in range( 1, len( Globals.ConnectionsOriginalDatabases ) ):
+            if not self.TextboxVisibleFlagOrigLang[i-1]:
+                for boxes in self.xTextBoxesOrigLangs:
+                    boxes[i-1].hide()
         if not self.TextboxVisibleFlagComment:
             for box in self.xTextBoxesCOM:
                 box.hide()
@@ -2195,17 +2213,31 @@ class Scripts2(QtGui.QWidget):
         Globals.Settings.sync()
         return
 
-    def SwitchVisibleJpn(self):
-        self.TextboxVisibleFlagJapanese = not self.TextboxVisibleFlagJapanese
-        if self.TextboxVisibleFlagJapanese:
-            for box in self.xTextBoxesJPN:
-                box.show()
-        else:
-            for box in self.xTextBoxesJPN:
-                box.hide()
-        Globals.Settings.setValue('TextboxVisibleFlagJapanese', 'True' if self.TextboxVisibleFlagJapanese else 'False')
-        Globals.Settings.sync()
-        return
+    def SwitchVisibleJpnGetFunc(self, index):
+        def SwitchVisibleJpn():
+            if index == 0:
+                self.TextboxVisibleFlagJapanese = not self.TextboxVisibleFlagJapanese
+                if self.TextboxVisibleFlagJapanese:
+                    for box in self.xTextBoxesJPN:
+                        box.show()
+                else:
+                    for box in self.xTextBoxesJPN:
+                        box.hide()
+                Globals.Settings.setValue('TextboxVisibleFlagJapanese', 'True' if self.TextboxVisibleFlagJapanese else 'False')
+                Globals.Settings.sync()
+            else:
+                i = index - 1
+                self.TextboxVisibleFlagOrigLang[i] = not self.TextboxVisibleFlagOrigLang[i]
+                if self.TextboxVisibleFlagOrigLang[i]:
+                    for boxes in self.xTextBoxesOrigLangs:
+                        boxes[i].show()
+                else:
+                    for boxes in self.xTextBoxesOrigLangs:
+                        boxes[i].hide()
+                Globals.Settings.setValue('TextboxVisibleFlagOrigLang' + str(index), 'True' if self.TextboxVisibleFlagOrigLang[i] else 'False')
+                Globals.Settings.sync()
+            return
+        return SwitchVisibleJpn
 
     def SwitchVisibleCom(self):
         self.TextboxVisibleFlagComment = not self.TextboxVisibleFlagComment
