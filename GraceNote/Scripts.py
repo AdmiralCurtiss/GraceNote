@@ -1274,7 +1274,7 @@ class Scripts2(QtGui.QWidget):
         SaveCur.execute('SELECT ID, StringID, english, comment, updated, status, IdentifyString, UpdatedBy, UpdatedTimestamp FROM Text ORDER BY ID ASC')
         TempList = SaveCur.fetchall()
 
-        SaveCur.execute('SELECT ID, english, comment, status, UpdatedBy, UpdatedTimestamp FROM History ORDER BY ID ASC, UpdatedTimestamp DESC')
+        SaveCur.execute('SELECT ID, english, comment, status, UpdatedBy, UpdatedTimestamp FROM History ORDER BY ID ASC, UpdatedTimestamp DESC, rowid DESC')
         HistoryList = SaveCur.fetchall()
         SaveCur.execute('SELECT MAX(ID) FROM Text')
         MaxId = SaveCur.fetchall()[0][0]
