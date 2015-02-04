@@ -135,8 +135,8 @@ class MassReplace(QtGui.QDialog):
     def generateSearchTab(self):
         treewidget = QtGui.QTreeWidget()
         
-        treewidget.setColumnCount(10)
-        treewidget.setHeaderLabels(['Database Desc.', 'Entry', 'Info', 'Replace?', 'Current String', 'Replace String', 'Japanese String', 'Status', 'Database Name', 'Replacement Type'])
+        treewidget.setColumnCount(11)
+        treewidget.setHeaderLabels(['Database Desc.', 'Entry', 'Info', 'Replace?', 'Current String', 'Replace String', 'Japanese String', 'Status', 'Database Name', 'Replacement Type', 'Comment'])
         treewidget.setSortingEnabled(True)
         treewidget.setRootIsDecorated(False)
         
@@ -150,6 +150,7 @@ class MassReplace(QtGui.QDialog):
         treewidget.setColumnWidth(7, 30)
         treewidget.setColumnWidth(8, 100)
         treewidget.setColumnWidth(9, 50)
+        treewidget.setColumnWidth(10, 100)
         
         treewidget.sortItems(0, QtCore.Qt.AscendingOrder)
         
@@ -243,7 +244,7 @@ class MassReplace(QtGui.QDialog):
                         if searchDebug or data[i].status >= 0:
                             Globals.CursorGracesJapanese.execute('SELECT string FROM Japanese WHERE ID={0}'.format(data[i].stringId))
                             JPString = Globals.CursorGracesJapanese.fetchall()[0][0]
-                            MatchedEntries.append( [File, i+1, data[i].english, JPString, data[i].IdentifyString, data[i].status, Globals.GetDatabaseDescriptionString(File)] )
+                            MatchedEntries.append( [File, i+1, data[i].english, JPString, data[i].IdentifyString, data[i].status, Globals.GetDatabaseDescriptionString(File), data[i].comment] )
                         
         if len(MatchedEntries) == 0:
             return
@@ -262,12 +263,13 @@ class MassReplace(QtGui.QDialog):
                 infoString = item[4]
                 status = item[5]
                 databaseDescriptor = item[6]
+                comment = item[7]
                                 
                 if checkForExceptions:
                     if exceptString in englishString or exceptString in japaneseString:
                         continue
                     
-                treeItem = QtGui.QTreeWidgetItem([databaseDescriptor, str(entryID), str(infoString), "", englishString, englishString, japaneseString, str(int(status)), filename, ReplacementType])
+                treeItem = QtGui.QTreeWidgetItem([databaseDescriptor, str(entryID), str(infoString), "", englishString, englishString, japaneseString, str(int(status)), filename, ReplacementType, comment])
                 treeItem.setCheckState(3, QtCore.Qt.Checked)
                 newSearchTab.addTopLevelItem(treeItem)
             except:
