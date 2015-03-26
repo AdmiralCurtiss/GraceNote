@@ -340,7 +340,7 @@ class Scripts2(QtGui.QWidget):
                 tb3.document().setDefaultFont( font )
 
             tbOrig = []
-            for i in range(1, len(Globals.configData.OriginalDatabases)):
+            for j in range(1, len(Globals.configData.OriginalDatabases)):
                 tmp = XTextBox(self, 'JPN')
                 tmp.setReadOnly(True)
                 if Globals.Settings.contains('font'):
