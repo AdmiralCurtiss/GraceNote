@@ -787,8 +787,16 @@ class Scripts2(QtGui.QWidget):
         FileListSubLayoutWidget = QtGui.QWidget()
         FileListSubLayoutWidget.setLayout(FileListSubLayout)
         self.mainAreaSplitLayout.addWidget(FileListSubLayoutWidget)
-        self.mainAreaSplitLayout.addWidget(EditingWindowSubLayoutSplitter)
-        self.mainAreaSplitLayout.addWidget(self.entryTreeView)
+
+        vertical = True
+        if vertical:
+            vSplitter = QtGui.QSplitter( Qt.Qt.Vertical )
+            vSplitter.addWidget( self.entryTreeView )
+            vSplitter.addWidget( EditingWindowSubLayoutSplitter )
+            self.mainAreaSplitLayout.addWidget( vSplitter )
+        else:
+            self.mainAreaSplitLayout.addWidget(EditingWindowSubLayoutSplitter)
+            self.mainAreaSplitLayout.addWidget(self.entryTreeView)
         
         self.mainAreaSplitLayout.setSizes( [200, 400, 200] )
 
