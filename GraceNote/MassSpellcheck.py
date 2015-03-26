@@ -117,8 +117,13 @@ class MassSpellcheck(QtGui.QDialog):
         
         searchDebug = self.searchDebug.isChecked()
 
-        MatchedEntries = []
+        sortedfiles = []
         for File in Globals.configData.FileList:
+            sortedfiles.append(File)
+        sortedfiles.sort()
+
+        MatchedEntries = []
+        for File in sortedfiles:
             if dbFilter in File.lower() or dbFilter in Globals.GetDatabaseDescriptionString(File).lower():
                 data = Globals.Cache.GetDatabase(File)
                 for i in xrange(len(data)):
@@ -130,6 +135,32 @@ class MassSpellcheck(QtGui.QDialog):
         if len(MatchedEntries) == 0:
             return
 
+        def html_escape(text):
+            """Produce entities within text."""
+            html_escape_table = {
+                 "&": "&amp;",
+                 '"': "&quot;",
+                 "'": "&apos;",
+                 ">": "&gt;",
+                 "<": "&lt;",
+                 }
+            return "".join(html_escape_table.get(c,c) for c in text)
+
+        html = open('spellcheck.html', 'w')
+        html.write('<html>')
+        html.write('<head>')
+        html.write('<style>')
+        html.write('body { background-color: #68504F; color: #EFD1AE; font-size: 16; }')
+        html.write('table, tr, td, th { padding: 0px 4px 0px 0px; border-spacing: 0px; }')
+        html.write('td, td > a { padding-right: 16px; padding-bottom: 16px; }')
+        html.write('span.mis { font-weight: bold; text-decoration: underline; }')
+        html.write('</style>')
+        html.write('</head>')
+        html.write('<body>')
+        html.write('<table>')
+        html.write('\n')
+
+        MisWords = {}
         for item in MatchedEntries:
             try:
                 filename = item[0]
@@ -142,9 +173,37 @@ class MassSpellcheck(QtGui.QDialog):
                                 
                 treeItem = QtGui.QTreeWidgetItem([databaseDescriptor, str(entryID), str(infoString), englishString, misspelledWord, str(int(status)), filename])
                 newSearchTab.addTopLevelItem(treeItem)
+
             except:
                 Globals.MainWindow.displayStatusMessage("Mass Spellcheck: Failed adding file [" + filename + "], entry [" + str(entryID) + "]")
+
+            html.write('<tr>')
+            html.write('<td>' + html_escape(unicode(filename)) + '</td>')
+            html.write('<td>' + html_escape(unicode(databaseDescriptor)) + '</td>')
+            html.write('<td>' + html_escape(unicode(entryID)) + '</td>')
+            html.write('<td>' + html_escape(unicode(infoString)) + '</td>')
+            html.write('<td>' + html_escape(unicode(status)) + '</td>')
+            html.write('<td>' + html_escape(unicode(misspelledWord)).encode('utf8') + '</td>')
+            html.write('<td>' + html_escape(unicode(englishString)).replace(html_escape(misspelledWord), '<span class="mis">' + html_escape(misspelledWord) + '</span>').encode('utf8') + '</td>')
+            html.write('</tr>')
+            html.write('\n')
+
+            if misspelledWord not in MisWords:
+                MisWords[misspelledWord] = 1
+            else:
+                MisWords[misspelledWord] += 1
         
+        html.write('</table>')
+        html.write('</body>')
+        html.write('</html>')
+        html.close()
+        xml = open('dictionary.xml', 'w')
+
+        import operator
+        for misspelledWord, count in sorted(MisWords.items(), key=operator.itemgetter(1), reverse=True):
+            xml.write('\t\t<!-- ' + str(count) + ' --> <Entry Word="' + html_escape(unicode(misspelledWord)).encode('utf8') + '" />\n')
+        xml.close()
+
         self.tabwidget.addTab(newSearchTab, tabNameString)
         self.tabwidget.setCurrentIndex(self.tabwidget.count()-1)
         
