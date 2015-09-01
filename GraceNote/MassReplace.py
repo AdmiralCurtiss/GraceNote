@@ -34,6 +34,7 @@ class MassReplace(QtGui.QDialog):
         self.fileFilter = QtGui.QLineEdit()
         self.matchJpnCheckbox = QtGui.QCheckBox('Search Japanese')
         self.matchEngCheckbox = QtGui.QCheckBox('Search English')
+        self.matchComCheckbox = QtGui.QCheckBox('Search Comments')
         self.matchEntryCheckbox = QtGui.QCheckBox('Complete Entry Only')
         self.matchEngCheckbox.setChecked(True)
         self.matchCase = QtGui.QCheckBox('Match Case')
@@ -44,6 +45,7 @@ class MassReplace(QtGui.QDialog):
         self.matchEngCheckbox.setFont(font)
         self.matchJpnCheckbox.setFont(font)
         self.matchEntryCheckbox.setFont(font)
+        self.matchComCheckbox.setFont(font)
                 
         originalLabel = QtGui.QLabel('Search for:')
         originalLabel.setFont(font)
@@ -98,15 +100,16 @@ class MassReplace(QtGui.QDialog):
         optionsWidget.setLayout(optionsLayout)
                 
         inputLayout = QtGui.QGridLayout()
-        inputLayout.addWidget(textboxWidget    , 0, 0, 3, 2)
-        inputLayout.addWidget(exceptionLabel   , 3, 0, 1, 1)
-        inputLayout.addWidget(self.exceptions  , 3, 1, 1, 1)
-        inputLayout.addWidget(optionsWidget    , 4, 0, 1, 2)
-        inputLayout.addWidget(filterLabel      , 0, 2, 1, 1)
-        inputLayout.addWidget(self.fileFilter  , 1, 2, 1, 1)
-        inputLayout.addWidget(self.matchEntryCheckbox  , 2, 2, 1, 1)
+        inputLayout.addWidget(textboxWidget          , 0, 0, 3, 2)
+        inputLayout.addWidget(exceptionLabel         , 3, 0, 1, 1)
+        inputLayout.addWidget(self.exceptions        , 3, 1, 1, 1)
+        inputLayout.addWidget(optionsWidget          , 4, 0, 1, 2)
+        inputLayout.addWidget(filterLabel            , 0, 2, 1, 1)
+        inputLayout.addWidget(self.fileFilter        , 1, 2, 1, 1)
+        inputLayout.addWidget(self.matchEntryCheckbox, 2, 2, 1, 1)
         inputLayout.addWidget(self.matchJpnCheckbox  , 3, 2, 1, 1)
-        inputLayout.addWidget(self.matchEngCheckbox, 4, 2, 1, 1)
+        inputLayout.addWidget(self.matchEngCheckbox  , 4, 2, 1, 1)
+        #inputLayout.addWidget(self.matchComCheckbox  , 5, 2, 1, 1)
         
         inputLayout.setColumnStretch(1, 1)
         
@@ -201,6 +204,7 @@ class MassReplace(QtGui.QDialog):
         matchFullEntry = self.matchEntryCheckbox.isChecked()
         matchJapanese = self.matchJpnCheckbox.isChecked()
         matchEnglish = self.matchEngCheckbox.isChecked()
+        matchComments = self.matchComCheckbox.isChecked()
 
         if not matchFullEntry:
             if len(matchString) == 1:
@@ -240,7 +244,8 @@ class MassReplace(QtGui.QDialog):
                     if ( matchJapanese and data[i].stringId in JPmatches ) \
                     or ( matchEnglish and matchFullEntry and data[i].english == matchString ) \
                     or ( matchEnglish and not matchFullEntry and matchCase and matchString in data[i].english ) \
-                    or ( matchEnglish and not matchFullEntry and not matchCase and matchString.upper() in data[i].english.upper() > -1 ):
+                    or ( matchEnglish and not matchFullEntry and not matchCase and matchString.upper() in data[i].english.upper() > -1 ) \
+                    or ( matchComments and data[i].comment != "" ):
                         if searchDebug or data[i].status >= 0:
                             Globals.CursorGracesJapanese.execute('SELECT string FROM Japanese WHERE ID={0}'.format(data[i].stringId))
                             JPString = Globals.CursorGracesJapanese.fetchall()[0][0]

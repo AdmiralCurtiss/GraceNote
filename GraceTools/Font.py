@@ -1,3 +1,5 @@
+﻿# -*- coding: utf-8 -*-
+
 import struct, math, shutil, os, sys
 from binascii import unhexlify
 from PyQt4 import QtCore, QtGui
@@ -100,7 +102,16 @@ class Font(QtGui.QWidget):
         LatinSet.extend([0x2B, 0x2D, 0x817D, 0x817E, 0x00, 0x8180, 0x3D]) #math signs
         LatinSet.extend(range(0x8182, 0x8190)) #Symbols
         LatinSet.extend([0x24, 0x8191, 0x7E, 0x25, 0x23, 0x26]) #Monetary and Numeric signs
-        LatinSet.extend(range(0x8196, 0x820F)) #symbols
+        
+        #symbols
+        LatinSet.extend(range(0x8196, 0x81F0))
+        LatinSet.extend(range(0x81F0, 0x81F1))
+        LatinSet.extend([0x7FFFFF00,]) # ï here
+        LatinSet.extend(range(0x81F2, 0x81F5))
+        LatinSet.extend([0x7FFFFF01,0x7FFFFF02]) # í and é here
+        LatinSet.extend(range(0x81F7, 0x8200))
+        LatinSet.extend(range(0x8200, 0x820F))
+        
         LatinSet.extend(range(0x30, 0x3A)) #Numbers
         LatinSet.extend([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
         LatinSet.extend(range(0x41, 0x5B)) #Uppercase Letters
@@ -239,9 +250,19 @@ class Font(QtGui.QWidget):
             print 'Loop: {0}'.format(p)
             for char in Loop:
                 if self.rangeList[p].isChecked():
-                    text = struct.unpack('>2s', struct.pack('>H', char))[0]
-#                    try:
-                    text = text.decode('cp932', 'ignore')
+                    if char >= 0x7FFFFF00:
+                        if char == 0x7FFFFF00:
+                            text = u'ï'
+                        elif char == 0x7FFFFF01:
+                            text = u'í'
+                        elif char == 0x7FFFFF02:
+                            text = u'é'
+                        else:
+                            raise "illegal char!!"
+                    else :
+                        text = struct.unpack('>2s', struct.pack('>H', char))[0]
+                        text = text.decode('cp932', 'ignore')
+                        
                     text = text.replace('\x00', '')
                     if text == '':
                         text = ' '
@@ -259,17 +280,21 @@ class Font(QtGui.QWidget):
                     textPath = QtGui.QPainterPath()
 #                    textPath.addText(0, 0, self.font, text)
 #                    textPath.addText(18 - (fontMet.width(text)/2), 32-fontMet.descent(), self.font, text)
-
+                    
+                    
+                    #textoffs = -4 # font11
+                    textoffs = -2 # font12
+                    
                     if self.fontAlt is None or fontMet.inFont( QtCore.QChar( ord( text[0] ) ) ):
                         if char >= 0x20 and char < 0x80:
-                            textPath.addText(0, fontMet.ascent() - 4, self.font, text)
+                            textPath.addText(0, fontMet.ascent() + textoffs, self.font, text)
                         else:
-                            textPath.addText(0, fontMet.ascent() - 4, self.font, text)
+                            textPath.addText(0, fontMet.ascent() + textoffs, self.font, text)
                     else:
                         if char >= 0x20 and char < 0x80:
-                            textPath.addText(0, fontMetAlt.ascent() - 2, self.fontAlt, text)
+                            textPath.addText(0, fontMetAlt.ascent() + textoffs, self.fontAlt, text)
                         else:
-                            textPath.addText(0, fontMetAlt.ascent(), self.fontAlt, text)
+                            textPath.addText(0, fontMetAlt.ascent() + textoffs, self.fontAlt, text)
                     
                     #print 'tile 0x{0}: '.format(hex(char)) + str(fontMet.ascent())
 

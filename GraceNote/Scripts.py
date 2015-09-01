@@ -319,6 +319,7 @@ class Scripts2(QtGui.QWidget):
         self.textEditingWarningIcons = []
         self.textEditingFootersENG = []
         self.textEditingFootersJPN = []
+        self.textEditingCopyButtons = []
         for i in range(Globals.AmountEditingWindows):
             # create text boxes, set defaults
             tb1 = XTextBox(self, 'ENG')
@@ -370,7 +371,15 @@ class Scripts2(QtGui.QWidget):
             termicon = QtGui.QLabel('')
             warningIcon = QtGui.QLabel('')
 
+            btn = QtGui.QAction( 'C', None )
+            btn.triggered.connect( self.copygetfunc(i) )
+            self.textEditingCopyButtons.append( btn )
+
             htitlelayout = QtGui.QHBoxLayout()
+            toolb = QtGui.QToolBar()
+            toolb.addAction(btn)
+            toolb.setMinimumWidth(0)
+            htitlelayout.addWidget(toolb)
             htitlelayout.addWidget(warningIcon)
             htitlelayout.addWidget(termicon)
             htitlelayout.addWidget(title)
@@ -408,6 +417,7 @@ class Scripts2(QtGui.QWidget):
             self.textEditingTitles.append(title)
             self.textEditingTermIcons.append(termicon)
             self.textEditingWarningIcons.append(warningIcon)
+
             
         # ------------------------------------------------------ #
 
@@ -588,7 +598,17 @@ class Scripts2(QtGui.QWidget):
         self.runScrollDownAction3 = QtGui.QAction('Scroll Down', None)
         self.runScrollDownAction3.triggered.connect(self.ScrollDown)
         self.runScrollDownAction3.setShortcut(QtGui.QKeySequence('PgDown'))
-        
+
+        self.cycleFocusAction = QtGui.QAction('Cycle Focus', None)
+        self.cycleFocusAction.triggered.connect(self.CycleFocus)
+        self.cycleFocusAction.setShortcut(QtGui.QKeySequence('Tab'))
+        self.cycleFocusAction2 = QtGui.QAction('Cycle Focus', None)
+        self.cycleFocusAction2.triggered.connect(self.CycleFocus)
+        self.cycleFocusAction2.setShortcut(QtGui.QKeySequence('Ctrl+Tab'))
+        self.cycleFocusAction3 = QtGui.QAction('Cycle Focus (Backwards)', None)
+        self.cycleFocusAction3.triggered.connect(self.CycleFocusBackwards)
+        self.cycleFocusAction3.setShortcut(QtGui.QKeySequence('Ctrl+Shift+Tab'))
+
         self.openMediaWindowsAction = QtGui.QAction('Reopen Media Windows', None)
         self.openMediaWindowsAction.triggered.connect(self.OpenMediumWindows)
 
@@ -676,6 +696,9 @@ class Scripts2(QtGui.QWidget):
         viewMenu.addAction(self.runScrollDownAction2)
         viewMenu.addAction(self.runScrollUpAction3)
         viewMenu.addAction(self.runScrollDownAction3)
+        viewMenu.addAction(self.cycleFocusAction)
+        viewMenu.addAction(self.cycleFocusAction2)
+        viewMenu.addAction(self.cycleFocusAction3)
         viewMenu.addSeparator()
         viewMenu.addAction(self.openFontWindownAction)
         viewMenu.addAction(self.openMediaWindowsAction)
@@ -940,7 +963,14 @@ class Scripts2(QtGui.QWidget):
         quit()
 
         return True
-        
+    
+    
+    def CycleFocus(self, action):
+        self.focusNextChild()
+        return
+    def CycleFocusBackwards(self, action):
+        self.focusPreviousChild()
+        return
 
     def ScrollUp(self, action):
         try:
@@ -1513,6 +1543,8 @@ class Scripts2(QtGui.QWidget):
             except:
                 rowBoxes.append( -2 )
                 self.currentOpenedEntryIndexes.append( None )
+
+        self.currentOpenedEntryIds = rowBoxes
         
         textEntriesEng = []
         for i in range(len(self.textEditingBoxes)):
@@ -1633,14 +1665,29 @@ class Scripts2(QtGui.QWidget):
 
         # auto-update in Auto mode
         if Globals.ModeFlag == 'Auto':
-            for i in range(len(self.textEditingBoxes)):
+            AutoForCenterEntryOnly = True
+            loopRange = range(1, 2) if AutoForCenterEntryOnly else range(len(self.textEditingBoxes))
+            for i in loopRange:
                 self.xTextBoxesENG[i].manualEdit.emit(-2, self.xTextBoxesENG[i], self.textEditingFootersENG[i])
 
 
         
     def GetFullText(self, replaceVariables, dumpEnglish=True, dumpJapanese=False, dumpComments=False, seperator='\n', entrySeperator='\n\n\n'):
         string = ''
-        i = 1
+
+        for key, entry in self.text.iteritems():
+            if entry['debug'] == 0 or self.debugOnOffButton.isChecked():
+                string = string + '{0}'.format( key + 1 ) # entry id
+                string = string + seperator + entry['ident']
+                string = string + seperator + str(entry['status'])
+                string = string + seperator
+
+                currentEntryString = self.GetEntryText( entry, replaceVariables, dumpEnglish, dumpJapanese, dumpComments, seperator )
+
+                string = string + currentEntryString + entrySeperator
+        return string
+
+    def GetEntryText(self, entry, replaceVariables, dumpEnglish=True, dumpJapanese=False, dumpComments=False, seperator='\n'):
         textToDump = []
         if dumpJapanese:
             textToDump.append('jpn')
@@ -1649,22 +1696,11 @@ class Scripts2(QtGui.QWidget):
         if dumpComments:
             textToDump.append('com')
 
-        for entry in self.text.itervalues():
-            if entry['debug'] == 0 or self.debugOnOffButton.isChecked():
-                string = string + '{0}'.format(i) # entry id
-                string = string + seperator + entry['ident']
-                string = string + seperator + str(entry['status'])
-                string = string + seperator
-
-                currentEntryString = ''
-                for type in textToDump:
-                    txt = (entry[type] if not replaceVariables else Globals.VariableReplace(entry[type])).replace('\n','').replace('\r', '')
-                    currentEntryString = currentEntryString + txt + seperator
-
-                string = string + currentEntryString + entrySeperator
-            
-            i += 1
-        return string
+        currentEntryString = ''
+        for type in textToDump:
+            txt = (entry[type] if not replaceVariables else Globals.VariableReplace(entry[type])).replace('\n','').replace('\r', '')
+            currentEntryString = currentEntryString + txt + seperator
+        return currentEntryString
 
     def FullTextCopy(self):
         string = self.GetFullText(True, self.TextboxVisibleFlagEnglish, self.TextboxVisibleFlagJapanese, self.TextboxVisibleFlagComment)
@@ -1914,14 +1950,17 @@ class Scripts2(QtGui.QWidget):
         engTextSplit = unformattedText.split('\f')
         jpnTextSplit = jpnText.split('\f')
 
-        if len(engTextSplit) != len(jpnTextSplit):
-            self.parent.displayStatusMessage('<Feed> count inconsistent between English and Japanese, can\'t format.')
-            return
+        #if len(engTextSplit) != len(jpnTextSplit):
+        #    self.parent.displayStatusMessage('<Feed> count inconsistent between English and Japanese, can\'t format.')
+        #    return
 
         formattedTextSplit = []
         for i in range(len(engTextSplit)):
-            width = FontDisplayWindow.renderText(Globals.configData.ReplaceInGameString(jpnTextSplit[i]), None, 1, font)[0]
-            linecount = jpnTextSplit[i].count('\n') + 1
+            #width = FontDisplayWindow.renderText(Globals.configData.ReplaceInGameString(jpnTextSplit[i]), None, 1, font)[0]
+            #width = 640 # skits
+            #width = 584 # synopsis
+            width = 430 # battle book
+            linecount = 9 #jpnTextSplit[i].count('\n') + 1
 
             formattedText = FontDisplayWindow.formatText(engTextSplit[i], font, width, linecount, mode)
             formattedTextSplit.append( formattedText )
@@ -2320,3 +2359,11 @@ class Scripts2(QtGui.QWidget):
     def CallRetrieveModifiedFiles(self):
         NetworkHandler.RetrieveModifiedFiles(self, None)
         return
+
+    def copygetfunc(self, idx):
+        def copyfunc():
+            string = self.GetEntryText(self.text[self.currentOpenedEntryIds[idx]], True, self.TextboxVisibleFlagEnglish, self.TextboxVisibleFlagJapanese, self.TextboxVisibleFlagComment)
+            clipboard = QtGui.QApplication.clipboard()
+            clipboard.setText(string)
+            print str(idx)
+        return copyfunc
